@@ -1,6 +1,5 @@
 if not IsAddOnLoaded('ElvUI') then return end
 local E, L = unpack(ElvUI)
-local GLOBAL = _G
 
 -- Are you local?
 local tonumber, print, format, strupper, math = tonumber, print, format, strupper, math

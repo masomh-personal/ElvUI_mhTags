@@ -1,5 +1,5 @@
 # ElvUI MH Tags
 
-## [1.0] (2023-11-28)
+## [1.0] (2023-12-12)
 
-- Retail (10.2): Initial tag creation for custom ui
+- Retail (10.2): ElvUI plugin to create custom tags
