@@ -1,6 +1,6 @@
 ## Interface: 100200
-## Title: "ElvUI_|cff0388fcmh|r|cffccff33Tags|r"
-## Notes: Adds extra tags for use across ElvUI
+## Title: |cff1784d1ElvUI|r |cffccff33MH Tags|r
+## Notes: Extra custom tags for use across ElvUI
 ## Author: masomh
 ## Version: 1.0
 ## RequiredDeps: ElvUI
