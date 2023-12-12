@@ -20,7 +20,7 @@ local GetCreatureDifficultyColor = GetCreatureDifficultyColor
 -------------------------------------
 -- HELPERS
 -------------------------------------
-local category = "|cff0388fcmh|r|cffccff33Tags|r"
+local TAG_CATEGORY_NAME = "|cff0388fcmh|r|cffccff33Tags|r"
 local MAX_PLAYER_LEVEL = 70 -- XPAC: DF
 
 local rgbToHexDecimal = function(r, g, b)
@@ -113,7 +113,7 @@ end
 --------------------------------------
 -- HEALTH RELATED TAGS
 --------------------------------------
-E:AddTagInfo("mh-health:current:percent:left", category, "Shows at all times similar to following example: 85% | 100k")
+E:AddTagInfo("mh-health:current:percent:left", TAG_CATEGORY_NAME, "Shows at all times similar to following example: 85% | 100k")
 E:AddTag('mh-health:current:percent:left', 'UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED', function(unit)
 	local status = statusCheck(unit)
 	
@@ -128,7 +128,7 @@ E:AddTag('mh-health:current:percent:left', 'UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONN
 end)
 
 --
-E:AddTagInfo("mh-health:current:percent:right", category, "Shows at all times similar to following example: 100k | 85%")
+E:AddTagInfo("mh-health:current:percent:right", TAG_CATEGORY_NAME, "Shows at all times similar to following example: 100k | 85%")
 E:AddTag('mh-health:current:percent:right', 'UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED', function(unit)
 	local status = statusCheck(unit)
 	
@@ -143,7 +143,7 @@ E:AddTag('mh-health:current:percent:right', 'UNIT_HEALTH UNIT_MAXHEALTH UNIT_CON
 end)
 
 -- HEALTH: show percent on right of | and current HP on left, but only if not at 100%
-E:AddTagInfo("mh-health:current:percent:right-hidefull", category, "Hides percent at full health else shows at all times similar to following example: 100k | 85%")
+E:AddTagInfo("mh-health:current:percent:right-hidefull", TAG_CATEGORY_NAME, "Hides percent at full health else shows at all times similar to following example: 100k | 85%")
 E:AddTag('mh-health:current:percent:right-hidefull', 'UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED', function(unit)
 	local status = statusCheck(unit)
 	
@@ -163,7 +163,7 @@ E:AddTag('mh-health:current:percent:right-hidefull', 'UNIT_HEALTH UNIT_MAXHEALTH
 end)
 
 -- PLAYER frame: to show health in custom format + show absorb amount if applicable
-E:AddTagInfo("mh-health:absorb:current:percent:right", category, "Hides percent at full health else shows absorb, current, and percent to following example: (<absorb amount>) 100k | 85%")
+E:AddTagInfo("mh-health:absorb:current:percent:right", TAG_CATEGORY_NAME, "Hides percent at full health else shows absorb, current, and percent to following example: (<absorb amount>) 100k | 85%")
 E:AddTag('mh-health:absorb:current:percent:right', 'UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED UNIT_ABSORB_AMOUNT_CHANGED', function(unit)
 	local status = statusCheck(unit)
 	
@@ -191,7 +191,7 @@ E:AddTag('mh-health:absorb:current:percent:right', 'UNIT_HEALTH UNIT_MAXHEALTH U
 end)
 
 -- Use dynamic argument to add decimal places
-E:AddTagInfo("mh-health:simple:percent", category, "Shows max hp at full or percent with dynamic # of decimals")
+E:AddTagInfo("mh-health:simple:percent", TAG_CATEGORY_NAME, "Shows max hp at full or percent with dynamic # of decimals")
 E:AddTag('mh-health:simple:percent', 'UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED', function(unit, _, args)
 	local status = statusCheck(unit)
 	if (status) then
@@ -210,7 +210,7 @@ E:AddTag('mh-health:simple:percent', 'UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION
 end)
 
 -- Use dynamic argument to cap number of characters in name (default: 12) + dead icon if dead/offline (raid)
-E:AddTagInfo("mh-dynamic:name:caps-deadicon", category, "Shows unit name in all CAPS with a dynamic # of characters")
+E:AddTagInfo("mh-dynamic:name:caps-deadicon", TAG_CATEGORY_NAME, "Shows unit name in all CAPS with a dynamic # of characters")
 E:AddTag('mh-dynamic:name:caps-deadicon', 'UNIT_NAME_UPDATE UNIT_CONNECTION PLAYER_FLAGS_CHANGED UNIT_HEALTH INSTANCE_ENCOUNTER_ENGAGE_UNIT', function(unit, _, args)
 	local name = UnitName(unit) or ''
 	if not name then 
@@ -231,7 +231,7 @@ E:AddTag('mh-dynamic:name:caps-deadicon', 'UNIT_NAME_UPDATE UNIT_CONNECTION PLAY
 end)
 
 -- Use dynamic argument to cap number of characters in name (default: 12)
-E:AddTagInfo("mh-dynamic:name:caps", category, "Shows unit name in all CAPS with a dynamic # of characters")
+E:AddTagInfo("mh-dynamic:name:caps", TAG_CATEGORY_NAME, "Shows unit name in all CAPS with a dynamic # of characters")
 E:AddTag('mh-dynamic:name:caps', 'UNIT_NAME_UPDATE', function(unit, _, args)
 	local name = UnitName(unit) or ''
 	local cname = strupper(name)
@@ -242,7 +242,7 @@ E:AddTag('mh-dynamic:name:caps', 'UNIT_NAME_UPDATE', function(unit, _, args)
 end)
 
 -- Use dynamic argument to cap number of characters in name (default: 12)
-E:AddTagInfo("mh-player:frame:name:caps-groupnumber", category, "Shows unit name in all CAPS with a dynamic # of characters + unit group number if in raid")
+E:AddTagInfo("mh-player:frame:name:caps-groupnumber", TAG_CATEGORY_NAME, "Shows unit name in all CAPS with a dynamic # of characters + unit group number if in raid")
 E:AddTag('mh-player:frame:name:caps-groupnumber', 'UNIT_NAME_UPDATE GROUP_ROSTER_UPDATE', function(unit, _, args)	
 	local name = UnitName(unit) or ''
 	local cname = strupper(name)
@@ -267,7 +267,7 @@ E:AddTag('mh-player:frame:name:caps-groupnumber', 'UNIT_NAME_UPDATE GROUP_ROSTER
 end)
 
 -- Power: shows simple percent of power (dynamic for decimal points)
-E:AddTagInfo("mh-target:frame:power-percent", category, "Simple power percent, no percentage sign with dynamic number of decimals")
+E:AddTagInfo("mh-target:frame:power-percent", TAG_CATEGORY_NAME, "Simple power percent, no percentage sign with dynamic number of decimals")
 E:AddTag('mh-target:frame:power-percent', 'UNIT_DISPLAYPOWER UNIT_POWER_FREQUENT UNIT_MAXPOWER', function(unit, _, args)	
 	local formatted = ''
 	local powerType = UnitPowerType(unit)
@@ -283,7 +283,7 @@ E:AddTag('mh-target:frame:power-percent', 'UNIT_DISPLAYPOWER UNIT_POWER_FREQUENT
 end)
 
 -- Classiciation
-E:AddTagInfo("mh-classification:icon", category, "Classification icon based on Plater addon stars")
+E:AddTagInfo("mh-classification:icon", TAG_CATEGORY_NAME, "Classification icon based on Plater addon stars")
 E:AddTag('mh-classification:icon', 'UNIT_NAME_UPDATE UNIT_LEVEL PLAYER_LEVEL_UP', function(unit)
 	local unitType = classificationType(unit)
 	local formattedString = ''
@@ -305,12 +305,12 @@ E:AddTag('mh-classification:icon', 'UNIT_NAME_UPDATE UNIT_LEVEL PLAYER_LEVEL_UP'
 end)
 
 -- Difficulty color + level
-E:AddTagInfo("mh-difficultycolor:level", category, "Traditional ElvUI difficulty color + level with more modern updates (will always show level)")
+E:AddTagInfo("mh-difficultycolor:level", TAG_CATEGORY_NAME, "Traditional ElvUI difficulty color + level with more modern updates (will always show level)")
 E:AddTag('mh-difficultycolor:level', 'UNIT_LEVEL PLAYER_LEVEL_UP', function(unit)
 	return difficultyLevelFormatter(unit, UnitEffectiveLevel(unit))
 end)
 
-E:AddTagInfo("mh-difficultycolor:level-hide", category, "Traditional ElvUI difficulty color + level with more modern updates (will always show level and only hide level when you reach max level and unit level is equal to player level)")
+E:AddTagInfo("mh-difficultycolor:level-hide", TAG_CATEGORY_NAME, "Traditional ElvUI difficulty color + level with more modern updates (will always show level and only hide level when you reach max level and unit level is equal to player level)")
 E:AddTag('mh-difficultycolor:level-hide', 'UNIT_LEVEL PLAYER_LEVEL_UP', function(unit)
 	local unitLevel = UnitEffectiveLevel(unit)
 	local playerLevel = UnitEffectiveLevel('player')
