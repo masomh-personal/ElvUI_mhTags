@@ -38,7 +38,7 @@ end
 local iconTable = {
 	['default'] = "|TInterface\\AddOns\\ElvUI_mhTags\\icons\\deadc:%s:%s:%s:%s|t",
 	['deadIcon'] = "|TInterface\\AddOns\\ElvUI_mhTags\\icons\\deadc:%s:%s:%s:%s|t",
-	['bossIcon'] = "|TInterface\\AddOns\\ElvUI_mhTags\\icons\\boss_skull2:%s:%s:%s:%s|t",
+	['bossIcon'] = "|TInterface\\AddOns\\ElvUI_mhTags\\icons\\boss_skull:%s:%s:%s:%s|t",
 	['yellowWarning'] = "|TInterface\\AddOns\\ElvUI_mhTags\\icons\\yellow_warning:%s:%s:%s:%s|t",
 	['redWarning'] = "|TInterface\\AddOns\\ElvUI_mhTags\\icons\\red_warning:%s:%s:%s:%s|t",
 	['questionIcon'] = "|TInterface\\AddOns\\ElvUI_mhTags\\icons\\question_mark:%s:%s:%s:%s|t",
