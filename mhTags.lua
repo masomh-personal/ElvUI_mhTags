@@ -206,24 +206,25 @@ E:AddTag('mh-health:simple:percent', 'UNIT_NAME_UPDATE UNIT_CONNECTION PLAYER_FL
 end)
 
 -- Use dynamic argument to cap number of characters in name (default: 12) + dead icon if dead/offline (raid)
-E:AddTagInfo("mh-dynamic:name:caps-deadicon", TAG_CATEGORY_NAME, "Shows unit name in all CAPS with a dynamic # of characters (dynamic number within {} of tag) - Example: mh-dynamic:name:caps-deadicon{20} will show name up to 20 characters")
-E:AddTag('mh-dynamic:name:caps-deadicon', 'UNIT_NAME_UPDATE UNIT_CONNECTION PLAYER_FLAGS_CHANGED UNIT_HEALTH INSTANCE_ENCOUNTER_ENGAGE_UNIT', function(unit, _, args)
+E:AddTagInfo("mh-dynamic:name:caps-statusicon", TAG_CATEGORY_NAME, "Shows unit name in all CAPS with a dynamic # of characters (dynamic number within {} of tag) - Example: mh-dynamic:name:caps-statusicon{20} will show name up to 20 characters")
+E:AddTag('mh-dynamic:name:caps-statusicon', 'UNIT_NAME_UPDATE UNIT_CONNECTION PLAYER_FLAGS_CHANGED UNIT_HEALTH INSTANCE_ENCOUNTER_ENGAGE_UNIT', function(unit, _, args)
 	local name = UnitName(unit) or ''
-	if not name then 
-		return 
-	end
+	if not name then return end
 
 	local cname = strupper(name)
 	local length = tonumber(args) or 12
+	local formatted = ''
 
-	-- Adding dead icon
+	-- Adding status icon
 	local status = statusCheck(unit)
 
 	if (status) then
-		return E:ShortenString(cname, length) .. getFormattedIcon('deadIcon', 12)
+		formatted = statusFormatter(status)
 	else
-		return E:ShortenString(cname, length)
+		formatted = E:ShortenString(cname, length)
 	end	
+
+	return formatted
 end)
 
 -- Use dynamic argument to cap number of characters in name (default: 12)
