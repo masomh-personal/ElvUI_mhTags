@@ -188,7 +188,7 @@ end)
 
 -- Use dynamic argument to add decimal places
 E:AddTagInfo("mh-health:simple:percent", TAG_CATEGORY_NAME, "Shows max hp at full or percent with dynamic # of decimals (dynamic number within {} of tag) - Example: mh-health:simple:percent{2} will show percent to 2 decimal places")
-E:AddTag('mh-health:simple:percent', 'UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED', function(unit, _, args)
+E:AddTag('mh-health:simple:percent', 'UNIT_NAME_UPDATE UNIT_CONNECTION PLAYER_FLAGS_CHANGED UNIT_HEALTH PLAYER_FLAGS_CHANGED', function(unit, _, args)
 	local status = statusCheck(unit)
 	if (status) then
 		return statusFormatter(status)
@@ -279,11 +279,11 @@ E:AddTag('mh-target:frame:power-percent', 'UNIT_DISPLAYPOWER UNIT_POWER_FREQUENT
 end)
 
 -- Classiciation
-E:AddTagInfo("mh-classification:icon", TAG_CATEGORY_NAME, "Classification custom blp icons (elite, minibosses, bosses, rares, and rare elites)")
-E:AddTag('mh-classification:icon', 'UNIT_NAME_UPDATE UNIT_LEVEL PLAYER_LEVEL_UP', function(unit)
+E:AddTagInfo("mh-classification:icon", TAG_CATEGORY_NAME, "Classification custom blp icons (elite, minibosses, bosses, rares, and rare elites - dynamic number within {} of tag = icon size with default size: 15px)")
+E:AddTag('mh-classification:icon', 'UNIT_NAME_UPDATE UNIT_LEVEL PLAYER_LEVEL_UP', function(unit, _, args)
 	local unitType = classificationType(unit)
 	local formattedString = ''
-	local baseIconSize = 15
+	local baseIconSize = tonumber(args) or 15
 	
 	if (unitType == 'boss') then
 		formattedString = getFormattedIcon('bossIcon', baseIconSize-1)
