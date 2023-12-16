@@ -11,6 +11,7 @@ local UnitHealth = UnitHealth
 local UnitHealthMax = UnitHealthMax
 local UnitIsGhost = UnitIsGhost
 local UnitIsDead = UnitIsDead
+local UnitIsFeignDeath = UnitIsFeignDeath
 local UnitIsConnected = UnitIsConnected
 local UnitGetTotalAbsorbs = UnitGetTotalAbsorbs
 local UnitClassification = UnitClassification
@@ -22,6 +23,7 @@ local GetCreatureDifficultyColor = GetCreatureDifficultyColor
 -------------------------------------
 local TAG_CATEGORY_NAME = "|cff0388fcmh|r|cffccff33Tags|r"
 local MAX_PLAYER_LEVEL = 70 -- XPAC: DF
+local DEFAULT_ICON_SIZE = 14
 
 local rgbToHexDecimal = function(r, g, b)
 	local rValue = math.floor(r * 255)
@@ -32,7 +34,7 @@ local rgbToHexDecimal = function(r, g, b)
 end
 
 local statusCheck = function(unit)
-	return UnitIsDead(unit) and L["Dead"] or UnitIsGhost(unit) and L["Ghost"] or not UnitIsConnected(unit) and L["Offline"]
+	return not UnitIsFeignDeath(unit) and UnitIsDead(unit) and L["Dead"] or UnitIsGhost(unit) and L["Ghost"] or not UnitIsConnected(unit) and L["Offline"]
 end
 
 local iconTable = {
@@ -52,7 +54,7 @@ local iconTable = {
 
 local getFormattedIcon = function(name, size, x, y)
 	local iconName = name or 'default'
-	local iconSize = size or 10
+	local iconSize = size or DEFAULT_ICON_SIZE
 	local xOffSet = x or 0
 	local yOffSet = y or 0
 
@@ -62,7 +64,7 @@ end
 local classificationType = function(unit)	
 	if UnitIsPlayer(unit) then return end
 
-	local unitType = 'normal'
+	local unitType = ''
 	local unitLevel = UnitEffectiveLevel(unit)
 	local classification = UnitClassification(unit)
 	
@@ -70,7 +72,7 @@ local classificationType = function(unit)
 		unitType = 'boss'
 	elseif (unitLevel > MAX_PLAYER_LEVEL) then
 		unitType = 'eliteplus'
-	elseif (classification == 'rareelite' or classification == 'rare' or classification == 'elite') then
+	else
 		unitType = classification
 	end
 
@@ -101,9 +103,10 @@ local difficultyLevelFormatter = function(unit, unitLevel)
 	return formattedString
 end
 
-local statusFormatter = function(status)
+local statusFormatter = function(status, size)
+	local iconSize = size or DEFAULT_ICON_SIZE -- default 14 if no size given
 	local statusInfo = (status == 'Offline') and 'offline' or 'deadIcon'
-	return format('%s %s', status, getFormattedIcon(statusInfo, 14))
+	return format('%s%s', status, getFormattedIcon(statusInfo, iconSize))
 end
 
 --------------------------------------
@@ -280,20 +283,20 @@ E:AddTag('mh-target:frame:power-percent', 'UNIT_DISPLAYPOWER UNIT_POWER_FREQUENT
 end)
 
 -- Classiciation
-E:AddTagInfo("mh-classification:icon", TAG_CATEGORY_NAME, "Classification custom blp icons (elite, minibosses, bosses, rares, and rare elites - dynamic number within {} of tag = icon size with default size: 15px)")
+E:AddTagInfo("mh-classification:icon", TAG_CATEGORY_NAME, "Classification custom blp icons (elite, minibosses, bosses, rares, and rare elites - dynamic number within {} of tag = icon size with default size: 14px)")
 E:AddTag('mh-classification:icon', 'UNIT_NAME_UPDATE UNIT_LEVEL PLAYER_LEVEL_UP', function(unit, _, args)
 	local unitType = classificationType(unit)
 	local formattedString = ''
-	local baseIconSize = tonumber(args) or 15
+	local baseIconSize = tonumber(args) or DEFAULT_ICON_SIZE
 	
 	if (unitType == 'boss') then
-		formattedString = getFormattedIcon('bossIcon', baseIconSize-1)
+		formattedString = getFormattedIcon('bossIcon', baseIconSize)
 	elseif (unitType == 'eliteplus') then
 		formattedString = getFormattedIcon('yellowBahai', baseIconSize)
 	elseif (unitType == 'elite') then
 		formattedString = getFormattedIcon('yellowStar', baseIconSize)
 	elseif (unitType == 'rareelite') then
-		formattedString = getFormattedIcon('silverBahai', baseIconSize, 0, 1)
+		formattedString = getFormattedIcon('silverBahai', baseIconSize)
 	elseif (unitType == 'rare') then
 		formattedString = getFormattedIcon('silverStar', baseIconSize)
 	end
@@ -316,4 +319,19 @@ E:AddTag('mh-difficultycolor:level-hide', 'UNIT_LEVEL PLAYER_LEVEL_UP', function
 	if (playerLevel == unitLevel and playerLevel == MAX_PLAYER_LEVEL) then return '' end
 	
 	return difficultyLevelFormatter(unit, unitLevel)
+end)
+
+-- Deficity (number) with status + icon (dead or offline)
+E:AddTagInfo("mh-deficit:num-status", TAG_CATEGORY_NAME, "Shows deficit shortvalue number when less than 100% health and status + icon if dead/offline/ghost")
+E:AddTag('mh-deficit:num-status', 'UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED', function(unit)
+	local formatted = ''
+	local status = statusCheck(unit)
+	if (status) then
+		formatted = statusFormatter(status)
+	else
+		local currentHp, maxHp = UnitHealth(unit), UnitHealthMax(unit)
+		formatted = (currentHp == maxHp) and '' or format('-%s', E:ShortValue(maxHp - currentHp) )
+	end
+
+	return formatted
 end)
