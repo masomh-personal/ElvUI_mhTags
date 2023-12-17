@@ -40,7 +40,7 @@ end
 local iconTable = {
 	['default'] = "|TInterface\\AddOns\\ElvUI_mhTags\\icons\\deadc:%s:%s:%s:%s|t",
 	['deadIcon'] = "|TInterface\\AddOns\\ElvUI_mhTags\\icons\\deadc:%s:%s:%s:%s|t",
-	['bossIcon'] = "|TInterface\\AddOns\\ElvUI_mhTags\\icons\\boss_skull:%s:%s:%s:%s|t",
+	['bossIcon'] = "|TInterface\\AddOns\\ElvUI_mhTags\\icons\\boss_shield:%s:%s:%s:%s|t",
 	['yellowWarning'] = "|TInterface\\AddOns\\ElvUI_mhTags\\icons\\yellow_warning:%s:%s:%s:%s|t",
 	['redWarning'] = "|TInterface\\AddOns\\ElvUI_mhTags\\icons\\red_warning:%s:%s:%s:%s|t",
 	['questionIcon'] = "|TInterface\\AddOns\\ElvUI_mhTags\\icons\\question_mark:%s:%s:%s:%s|t",
@@ -81,14 +81,14 @@ end
 
 local difficultyLevelFormatter = function(unit, unitLevel)
 	local unitType = classificationType(unit)	
-	local bossColor = '00FFFF' -- cyan (not base gray)
-	local bossSymbol = '' -- empty string for now
 	local crossSymbol = '+'
 	local difficultyColor = GetCreatureDifficultyColor(unitLevel)
 	local hexColor = rgbToHexDecimal(difficultyColor.r, difficultyColor.g, difficultyColor.b)
 	local formattedString = format('|cff%s%s|r', hexColor, unitLevel)
 
 	if (unitType == 'boss') then
+		local bossColor = '00FFFF' -- cyan (not base gray)
+		local bossSymbol = '' -- empty string for now
 		formattedString = format('|cff%s%s|r', bossColor, bossSymbol)
 	elseif (unitType == 'eliteplus') then
 		formattedString = format('|cff%s%s%s%s|r', hexColor, unitLevel, crossSymbol, crossSymbol)
@@ -230,7 +230,7 @@ E:AddTag('mh-dynamic:name:caps-statusicon', 'UNIT_NAME_UPDATE UNIT_CONNECTION PL
 	return formatted
 end)
 
--- Use dynamic argument to cap number of characters in name (default: 12)
+-- Use dynamic argument to cap number of characters in name (default: 12) with no status
 E:AddTagInfo("mh-dynamic:name:caps", TAG_CATEGORY_NAME, "Shows unit name in all CAPS with a dynamic # of characters (dynamic number within {} of tag - see examples above)")
 E:AddTag('mh-dynamic:name:caps', 'UNIT_NAME_UPDATE', function(unit, _, args)
 	local name = UnitName(unit) or ''
@@ -321,7 +321,7 @@ E:AddTag('mh-difficultycolor:level-hide', 'UNIT_LEVEL PLAYER_LEVEL_UP', function
 	return difficultyLevelFormatter(unit, unitLevel)
 end)
 
--- Deficity (number) with status + icon (dead or offline)
+-- Deficit (number) with status + icon (dead or offline)
 E:AddTagInfo("mh-deficit:num-status", TAG_CATEGORY_NAME, "Shows deficit shortvalue number when less than 100% health and status + icon if dead/offline/ghost")
 E:AddTag('mh-deficit:num-status', 'UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED', function(unit)
 	local formatted = ''
@@ -330,8 +330,42 @@ E:AddTag('mh-deficit:num-status', 'UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PL
 		formatted = statusFormatter(status)
 	else
 		local currentHp, maxHp = UnitHealth(unit), UnitHealthMax(unit)
-		formatted = (currentHp == maxHp) and '' or format('-%s', E:ShortValue(maxHp - currentHp) )
+		formatted = (currentHp == maxHp) and '' or format('-%s', E:ShortValue(maxHp - currentHp))
 	end
 
 	return formatted
+end)
+
+-- Deficit (number) with no status
+E:AddTagInfo("mh-deficit:num-nostatus", TAG_CATEGORY_NAME, "Shows deficit shortvalue number when less than 100% health (no status)")
+E:AddTag('mh-deficit:num-nostatus', 'UNIT_HEALTH UNIT_MAXHEALTH', function(unit)
+	local currentHp, maxHp = UnitHealth(unit), UnitHealthMax(unit)
+	return (currentHp == maxHp) and '' or format('-%s', E:ShortValue(maxHp - currentHp))
+end)
+
+
+-- Deficit (percent) with (dynamic decimal places)
+E:AddTagInfo("mh-deficit:percent-status", TAG_CATEGORY_NAME, "Shows deficit percent with dynamic decimal when less than 100% health + status icon")
+E:AddTag('mh-deficit:percent-status', 'UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED', function(unit, _, args)
+	local formatted = ''
+	local status = statusCheck(unit)
+	if (status) then
+		formatted = statusFormatter(status)
+	else
+		local decimalPlaces = tonumber(args) or 1
+		local currentHp, maxHp = UnitHealth(unit), UnitHealthMax(unit)
+		local formatDecimal = format('-%%.%sf%%%%', decimalPlaces)
+		formatted = (currentHp == maxHp) and '' or format(formatDecimal, 100 - (currentHp/maxHp)*100)
+	end
+
+	return formatted	
+end)
+
+-- Deficit (percent) with no status (dynamic decimal places)
+E:AddTagInfo("mh-deficit:percent-nostatus", TAG_CATEGORY_NAME, "Shows deficit percent with dynamic decimal when less than 100% health (no status)")
+E:AddTag('mh-deficit:percent-nostatus', 'UNIT_HEALTH UNIT_MAXHEALTH', function(unit, _, args)
+	local decimalPlaces = tonumber(args) or 1
+	local currentHp, maxHp = UnitHealth(unit), UnitHealthMax(unit)
+	local formatDecimal = format('-%%.%sf%%%%', decimalPlaces)
+	return (currentHp == maxHp) and '' or format(formatDecimal, 100 - (currentHp/maxHp)*100)
 end)
