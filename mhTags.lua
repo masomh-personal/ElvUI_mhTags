@@ -1,5 +1,6 @@
 if not IsAddOnLoaded('ElvUI') then return end
 local E, L = unpack(ElvUI)
+local ElvUF = E.oUF
 
 -- Are you local?
 local tonumber, print, format, strupper, math = tonumber, print, format, strupper, math
@@ -106,7 +107,7 @@ end
 local statusFormatter = function(status, size)
 	local iconSize = size or DEFAULT_ICON_SIZE -- default 14 if no size given
 	local statusInfo = (status == 'Offline') and 'offline' or 'deadIcon'
-	return format('%s%s', status, getFormattedIcon(statusInfo, iconSize))
+	return format('|cffD6BFA6%s|r%s', strupper(status), getFormattedIcon(statusInfo, iconSize))
 end
 
 --------------------------------------
@@ -204,6 +205,25 @@ E:AddTag('mh-health:simple:percent', 'UNIT_NAME_UPDATE UNIT_CONNECTION PLAYER_FL
 	else
     local decimalPlaces = tonumber(args) or 0
     local formatDecimal = format('%%.%sf%%%%', decimalPlaces) -- NOTE: lots of escapes for percentage sign
+		return format(formatDecimal, (currentHp/maxHp)*100)
+	end
+end)
+
+-- Use dynamic argument to add decimal places (no % sign, same as above)
+E:AddTagInfo("mh-health:simple:percent-nosign", TAG_CATEGORY_NAME, "Shows max hp at full or percent (with  no % sign) with dynamic # of decimals (dynamic number within {} of tag) - Example: mh-health:simple:percent{2} will show percent to 2 decimal places")
+E:AddTag('mh-health:simple:percent-nosign', 'UNIT_NAME_UPDATE UNIT_CONNECTION PLAYER_FLAGS_CHANGED UNIT_HEALTH PLAYER_FLAGS_CHANGED', function(unit, _, args)
+	local status = statusCheck(unit)
+	if (status) then
+		return statusFormatter(status)
+	end
+	
+  local maxHp = UnitHealthMax(unit)
+	local currentHp = UnitHealth(unit)	
+	if currentHp == maxHp then
+		return E:GetFormattedText('CURRENT', maxHp, currentHp, nil, true)
+	else
+    local decimalPlaces = tonumber(args) or 0
+    local formatDecimal = format('%%.%sf', decimalPlaces)
 		return format(formatDecimal, (currentHp/maxHp)*100)
 	end
 end)
@@ -361,6 +381,23 @@ E:AddTag('mh-deficit:percent-status', 'UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTIO
 	return formatted	
 end)
 
+-- Deficit (percent) with (dynamic decimal places)
+E:AddTagInfo("mh-deficit:percent-status-nosign", TAG_CATEGORY_NAME, "Shows deficit percent with dynamic decimal when less than 100% health + status icon (does not include %)")
+E:AddTag('mh-deficit:percent-status-nosign', 'UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED', function(unit, _, args)
+	local formatted = ''
+	local status = statusCheck(unit)
+	if (status) then
+		formatted = statusFormatter(status)
+	else
+		local decimalPlaces = tonumber(args) or 1
+		local currentHp, maxHp = UnitHealth(unit), UnitHealthMax(unit)
+		local formatDecimal = format('-%%.%sf', decimalPlaces)
+		formatted = (currentHp == maxHp) and '' or format(formatDecimal, 100 - (currentHp/maxHp)*100)
+	end
+
+	return formatted	
+end)
+
 -- Deficit (percent) with no status (dynamic decimal places)
 E:AddTagInfo("mh-deficit:percent-nostatus", TAG_CATEGORY_NAME, "Shows deficit percent with dynamic decimal when less than 100% health (no status)")
 E:AddTag('mh-deficit:percent-nostatus', 'UNIT_HEALTH UNIT_MAXHEALTH', function(unit, _, args)
@@ -368,4 +405,23 @@ E:AddTag('mh-deficit:percent-nostatus', 'UNIT_HEALTH UNIT_MAXHEALTH', function(u
 	local currentHp, maxHp = UnitHealth(unit), UnitHealthMax(unit)
 	local formatDecimal = format('-%%.%sf%%%%', decimalPlaces)
 	return (currentHp == maxHp) and '' or format(formatDecimal, 100 - (currentHp/maxHp)*100)
+end)
+
+-- Updating healthcolor codes (brigher and better contrast)
+local HEALTH_GRADIENT = {
+	['r'] = {[1] = 0.91, [2] = 0.49, [3] = 0.49}, -- #e87d7d (from base: #d92626) 
+	['g'] = {[1] = 0.91, [2] = 0.88, [3] = 0.49}, -- #e8e17d (from base: #d9cd26)
+	['b'] = {[1] = 0.49, [2] = 0.91, [3] = 0.49}, -- #7de87d (from base: #23c723)
+}
+E:AddTagInfo("mh-healthcolor", TAG_CATEGORY_NAME, "Similar color tag to base ElvUI, but with brighter and high contrast gradient")
+E:AddTag('mh-healthcolor', 'UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED', function(unit)
+	local healthColor = {}
+	if UnitIsDeadOrGhost(unit) or not UnitIsConnected(unit) then
+		healthColor = Hex(0.84, 0.75, 0.65) -- #D6BFA6
+	else
+		local r, g, b = ElvUF:ColorGradient(UnitHealth(unit), UnitHealthMax(unit), HEALTH_GRADIENT.r[1], HEALTH_GRADIENT.r[2], HEALTH_GRADIENT.r[3], HEALTH_GRADIENT.g[1], HEALTH_GRADIENT.g[2], HEALTH_GRADIENT.g[3], HEALTH_GRADIENT.b[1], HEALTH_GRADIENT.b[2], HEALTH_GRADIENT.b[3])
+		healthColor = Hex(r, g, b)
+	end
+
+	return healthColor;
 end)
