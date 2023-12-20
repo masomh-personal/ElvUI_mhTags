@@ -9,6 +9,7 @@
 - Added new deficit tags (both number and percentage, with and without status)
 - Added new health gradient variation from ElvUI (brighter and higher contrast)
 - Added new simple percent tag but with no percent sign
+- Made boss classification icon a bit smaller (red skull)
 - Updated TOC accordingly
 
 ## [1.0.1] (2023-12-14)
