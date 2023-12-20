@@ -41,7 +41,7 @@ end
 local iconTable = {
 	['default'] = "|TInterface\\AddOns\\ElvUI_mhTags\\icons\\deadc:%s:%s:%s:%s|t",
 	['deadIcon'] = "|TInterface\\AddOns\\ElvUI_mhTags\\icons\\deadc:%s:%s:%s:%s|t",
-	['bossIcon'] = "|TInterface\\AddOns\\ElvUI_mhTags\\icons\\boss_shield:%s:%s:%s:%s|t",
+	['bossIcon'] = "|TInterface\\AddOns\\ElvUI_mhTags\\icons\\boss_skull:%s:%s:%s:%s|t",
 	['yellowWarning'] = "|TInterface\\AddOns\\ElvUI_mhTags\\icons\\yellow_warning:%s:%s:%s:%s|t",
 	['redWarning'] = "|TInterface\\AddOns\\ElvUI_mhTags\\icons\\red_warning:%s:%s:%s:%s|t",
 	['questionIcon'] = "|TInterface\\AddOns\\ElvUI_mhTags\\icons\\question_mark:%s:%s:%s:%s|t",
@@ -310,7 +310,7 @@ E:AddTag('mh-classification:icon', 'UNIT_NAME_UPDATE UNIT_LEVEL PLAYER_LEVEL_UP'
 	local baseIconSize = tonumber(args) or DEFAULT_ICON_SIZE
 	
 	if (unitType == 'boss') then
-		formattedString = getFormattedIcon('bossIcon', baseIconSize)
+		formattedString = getFormattedIcon('bossIcon', baseIconSize - 1)
 	elseif (unitType == 'eliteplus') then
 		formattedString = getFormattedIcon('yellowBahai', baseIconSize)
 	elseif (unitType == 'elite') then
