@@ -18,6 +18,7 @@ local UnitGetTotalAbsorbs = UnitGetTotalAbsorbs
 local UnitClassification = UnitClassification
 local UnitEffectiveLevel = UnitEffectiveLevel
 local GetCreatureDifficultyColor = GetCreatureDifficultyColor
+local UnitIsAFK = UnitIsAFK
 
 -------------------------------------
 -- HELPERS
@@ -35,22 +36,35 @@ local rgbToHexDecimal = function(r, g, b)
 end
 
 local statusCheck = function(unit)
-	return not UnitIsFeignDeath(unit) and UnitIsDead(unit) and L["Dead"] or UnitIsGhost(unit) and L["Ghost"] or not UnitIsConnected(unit) and L["Offline"]
+	local status = nil
+
+	if UnitIsAFK(unit) then
+		status = L["AFK"]
+	elseif UnitIsDND(unit) then
+		status = L["DND"]
+	elseif (not UnitIsFeignDeath(unit) and UnitIsDead(unit)) then
+		status = L["Dead"]
+	elseif UnitIsGhost(unit) then
+		status = L["Ghost"]
+	elseif (not UnitIsConnected(unit)) then
+		status = L["Offline"]
+	end
+
+	return status
 end
 
 local iconTable = {
 	['default'] = "|TInterface\\AddOns\\ElvUI_mhTags\\icons\\deadc:%s:%s:%s:%s|t",
 	['deadIcon'] = "|TInterface\\AddOns\\ElvUI_mhTags\\icons\\deadc:%s:%s:%s:%s|t",
 	['bossIcon'] = "|TInterface\\AddOns\\ElvUI_mhTags\\icons\\boss_skull:%s:%s:%s:%s|t",
-	['yellowWarning'] = "|TInterface\\AddOns\\ElvUI_mhTags\\icons\\yellow_warning:%s:%s:%s:%s|t",
-	['redWarning'] = "|TInterface\\AddOns\\ElvUI_mhTags\\icons\\red_warning:%s:%s:%s:%s|t",
-	['questionIcon'] = "|TInterface\\AddOns\\ElvUI_mhTags\\icons\\question_mark:%s:%s:%s:%s|t",
+	['yellowWarning'] = "|TInterface\\AddOns\\ElvUI_mhTags\\icons\\yellow_warning1:%s:%s:%s:%s|t",
+	['redWarning'] = "|TInterface\\AddOns\\ElvUI_mhTags\\icons\\red_warning1:%s:%s:%s:%s|t",
+	['ghostIcon'] = "|TInterface\\AddOns\\ElvUI_mhTags\\icons\\ghost:%s:%s:%s:%s|t",
 	['yellowStar'] = "|TInterface\\AddOns\\ElvUI_mhTags\\icons\\yellow_star:%s:%s:%s:%s|t",
 	['silverStar'] = "|TInterface\\AddOns\\ElvUI_mhTags\\icons\\silver_star:%s:%s:%s:%s|t",
 	['yellowBahai'] = "|TInterface\\AddOns\\ElvUI_mhTags\\icons\\bahai_yellow:%s:%s:%s:%s|t",
 	['silverBahai'] = "|TInterface\\AddOns\\ElvUI_mhTags\\icons\\bahai_silver:%s:%s:%s:%s|t",
-	['yellowPlus'] = "|TInterface\\AddOns\\ElvUI_mhTags\\icons\\yellow_plus:%s:%s:%s:%s|t",
-	['offline'] = "|TInterface\\AddOns\\ElvUI_mhTags\\icons\\offline:%s:%s:%s:%s|t",
+	['offlineIcon'] = "|TInterface\\AddOns\\ElvUI_mhTags\\icons\\offline3:%s:%s:%s:%s|t",
 }
 
 local getFormattedIcon = function(name, size, x, y)
@@ -105,9 +119,24 @@ local difficultyLevelFormatter = function(unit, unitLevel)
 end
 
 local statusFormatter = function(status, size)
-	local iconSize = size or DEFAULT_ICON_SIZE -- default 14 if no size given
-	local statusInfo = (status == 'Offline') and 'offline' or 'deadIcon'
-	return format('|cffD6BFA6%s|r%s', strupper(status), getFormattedIcon(statusInfo, iconSize))
+	if not status then return end
+
+	local iconSize = size or DEFAULT_ICON_SIZE
+	local statusIconMap = ''
+	
+	if (status == L['AFK']) then
+		statusIconMap = 'redWarning'
+	elseif (status == L['DND']) then
+		statusIconMap = 'yellowWarning'
+	elseif (status == L['Dead']) then
+		statusIconMap = 'deadIcon'
+	elseif (status == L['Ghost']) then
+		statusIconMap = 'ghostIcon'
+	elseif (status == L['Offline']) then
+		statusIconMap = 'offlineIcon'
+	end
+
+	return format('|cffD6BFA6%s|r%s', strupper(status), getFormattedIcon(statusIconMap, iconSize))
 end
 
 --------------------------------------
@@ -122,8 +151,8 @@ E:AddTag('mh-health:current:percent:left', 'UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONN
 	else
 		local maxHp = UnitHealthMax(unit)
 		local currentHp = UnitHealth(unit)
-		local CurrentPercent = (currentHp/maxHp)*100
-		return format("%.1f%% | %s", CurrentPercent, E:GetFormattedText('CURRENT', currentHp, maxHp, nil, true))
+		local currentPercent = (currentHp/maxHp)*100
+		return format("%.1f%% | %s", currentPercent, E:GetFormattedText('CURRENT', currentHp, maxHp, nil, true))
 	end
 end)
 
@@ -137,8 +166,8 @@ E:AddTag('mh-health:current:percent:right', 'UNIT_HEALTH UNIT_MAXHEALTH UNIT_CON
 	else
 		local maxHp = UnitHealthMax(unit)
 		local currentHp = UnitHealth(unit)
-		local CurrentPercent = (currentHp/maxHp)*100
-		return format("%s | %.1f%%", E:GetFormattedText('CURRENT', currentHp, maxHp, nil, true), CurrentPercent)
+		local currentPercent = (currentHp/maxHp)*100
+		return format("%s | %.1f%%", E:GetFormattedText('CURRENT', currentHp, maxHp, nil, true), currentPercent)
 	end
 end)
 
@@ -154,8 +183,8 @@ E:AddTag('mh-health:current:percent:right-hidefull', 'UNIT_HEALTH UNIT_MAXHEALTH
 		local currentHp = UnitHealth(unit)
 
 		if maxHp ~= currentHp then
-			local CurrentPercent = (currentHp/maxHp)*100
-			return format("%s | %.1f%%", E:GetFormattedText('CURRENT', currentHp, maxHp, nil, true), CurrentPercent)		
+			local currentPercent = (currentHp/maxHp)*100
+			return format("%s | %.1f%%", E:GetFormattedText('CURRENT', currentHp, maxHp, nil, true), currentPercent)		
 		else
 			return E:GetFormattedText('CURRENT', currentHp, maxHp, nil, true)
 		end
@@ -175,15 +204,15 @@ E:AddTag('mh-health:absorb:current:percent:right', 'UNIT_HEALTH UNIT_MAXHEALTH U
 		local currentHp = UnitHealth(unit)		
 
 		if maxHp ~= currentHp then
-			local CurrentPercent = (currentHp/maxHp)*100
-			returnString = format("%s | %.1f%%", E:GetFormattedText('CURRENT', currentHp, maxHp, nil, true), CurrentPercent)		
+			local currentPercent = (currentHp/maxHp)*100
+			returnString = format("%s | %.1f%%", E:GetFormattedText('CURRENT', currentHp, maxHp, nil, true), currentPercent)		
 		else
 			returnString = E:GetFormattedText('CURRENT', currentHp, maxHp, nil, true)
 		end
 
 		local absorbAmount = UnitGetTotalAbsorbs(unit) or 0
 		if absorbAmount ~= 0 then
-			returnString = format("|cffccff33(%s)|r %s", E:ShortValue(absorbAmount), returnString)
+			returnString = format("|cffccff33[%s]|r %s", E:ShortValue(absorbAmount), returnString)
 		end
 
 		return returnString
@@ -226,6 +255,27 @@ E:AddTag('mh-health:simple:percent-nosign', 'UNIT_NAME_UPDATE UNIT_CONNECTION PL
     local formatDecimal = format('%%.%sf', decimalPlaces)
 		return format(formatDecimal, (currentHp/maxHp)*100)
 	end
+end)
+
+-- Use dynamic argument to add decimal places (no % sign, same as above + Hidden at full health)
+E:AddTagInfo("mh-health:simple:percent-nosign-v2", TAG_CATEGORY_NAME, "Hidden at max hp at full or percent (with  no % sign) with dynamic # of decimals (dynamic number within {} of tag) - Example: mh-health:simple:percent{2} will show percent to 2 decimal places")
+E:AddTag('mh-health:simple:percent-nosign-v2', 'UNIT_NAME_UPDATE UNIT_CONNECTION PLAYER_FLAGS_CHANGED UNIT_HEALTH PLAYER_FLAGS_CHANGED', function(unit, _, args)
+	local status = statusCheck(unit)
+	local formatted = ''
+
+	if (status) then
+		formatted = statusFormatter(status)
+	else 
+		local maxHp = UnitHealthMax(unit)
+		local currentHp = UnitHealth(unit)	
+		if currentHp ~= maxHp then
+			local decimalPlaces = tonumber(args) or 0
+			local formatDecimal = format('%%.%sf', decimalPlaces)
+			formatted = format(formatDecimal, (currentHp/maxHp)*100)
+		end
+	end
+
+	return formatted
 end)
 
 -- Use dynamic argument to cap number of characters in name (default: 12) + dead icon if dead/offline (raid)
@@ -409,9 +459,9 @@ end)
 
 -- Updating healthcolor codes (brigher and better contrast)
 local HEALTH_GRADIENT = {
-	['r'] = {[1] = 0.91, [2] = 0.49, [3] = 0.49}, -- #e87d7d (from base: #d92626) 
-	['g'] = {[1] = 0.91, [2] = 0.88, [3] = 0.49}, -- #e8e17d (from base: #d9cd26)
-	['b'] = {[1] = 0.49, [2] = 0.91, [3] = 0.49}, -- #7de87d (from base: #23c723)
+	['r'] = {[1] = 0.93, [2] = 0.57, [3] = 0.57}, -- #ee9090 (RED gradient)
+	['g'] = {[1] = 0.93, [2] = 0.72, [3] = 0.57}, -- #eec890 (YELLOW GRADIENT)
+	['b'] = {[1] = 0.57, [2] = 0.93, [3] = 0.57}, -- #90ee90 (GREEN GRADIENT)
 }
 E:AddTagInfo("mh-healthcolor", TAG_CATEGORY_NAME, "Similar color tag to base ElvUI, but with brighter and high contrast gradient")
 E:AddTag('mh-healthcolor', 'UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED', function(unit)
@@ -424,4 +474,13 @@ E:AddTag('mh-healthcolor', 'UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FL
 	end
 
 	return healthColor;
+end)
+
+-- Deficit (percent) with no status (dynamic decimal places)
+E:AddTagInfo("mh-status", TAG_CATEGORY_NAME, "Simple status tag that shows all the different flags: AFK, DND, OFFLINE, DEAD, or GHOST (with their own icons)")
+E:AddTag('mh-status', 'UNIT_CONNECTION PLAYER_FLAGS_CHANGED', function(unit, _, args)
+	local status = statusCheck(unit)
+	if (status) then
+		return statusFormatter(status)
+	end
 end)
