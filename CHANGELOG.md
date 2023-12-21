@@ -18,7 +18,7 @@
 
 ## [1.0.1] (2023-12-14)
 
-- Updated and cleaned up code across sevearl tags
+- Updated and cleaned up code across several tags
 - Renamed 'mh-dynamic:name:caps-deadicon' to 'mh-dynamic:name:caps-statusicon to properly describe the tag
 - Updated a few tag info entries
 
