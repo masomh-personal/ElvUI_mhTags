@@ -10,6 +10,10 @@
 - Added new health gradient variation from ElvUI (brighter and higher contrast)
 - Added new simple percent tag but with no percent sign
 - Made boss classification icon a bit smaller (red skull)
+- Cleaned up iconTable for only relevant icons and used same naming scheme for all
+- Proper camelCase!
+- Added new simple percent v2 that has no % sign
+- Added new simple status tag that only shows status' if relevant
 - Updated TOC accordingly
 
 ## [1.0.1] (2023-12-14)
