@@ -192,7 +192,7 @@ E:AddTag('mh-health:current:percent:right-hidefull', 'UNIT_HEALTH UNIT_MAXHEALTH
 end)
 
 -- PLAYER frame: to show health in custom format + show absorb amount if applicable
-E:AddTagInfo("mh-health:absorb:current:percent:right", TAG_CATEGORY_NAME, "Hides percent at full health else shows absorb, current, and percent to following example: (<absorb amount>) 100k | 85%")
+E:AddTagInfo("mh-health:absorb:current:percent:right", TAG_CATEGORY_NAME, "Hides percent at full health else shows absorb, current, and percent to following example: (**absorb amount**) 100k | 85%")
 E:AddTag('mh-health:absorb:current:percent:right', 'UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED UNIT_ABSORB_AMOUNT_CHANGED', function(unit)
 	local status = statusCheck(unit)
 	
@@ -212,7 +212,7 @@ E:AddTag('mh-health:absorb:current:percent:right', 'UNIT_HEALTH UNIT_MAXHEALTH U
 
 		local absorbAmount = UnitGetTotalAbsorbs(unit) or 0
 		if absorbAmount ~= 0 then
-			returnString = format("|cffccff33[%s]|r %s", E:ShortValue(absorbAmount), returnString)
+			returnString = format("|cffccff33(%s)|r %s", E:ShortValue(absorbAmount), returnString)
 		end
 
 		return returnString
