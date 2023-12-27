@@ -401,6 +401,7 @@ E:AddTag('mh-difficultycolor:level', 'UNIT_LEVEL PLAYER_LEVEL_UP', function(unit
 	return difficultyLevelFormatter(unit, UnitEffectiveLevel(unit))
 end)
 
+-- Difficulty color + level (hidden functionality dependending on lvl)
 E:AddTagInfo("mh-difficultycolor:level-hide", TAG_CATEGORY_NAME, "Traditional ElvUI difficulty color + level with more modern updates (will always show level and only hide level when you reach max level and unit level is equal to player level)")
 E:AddTag('mh-difficultycolor:level-hide', 'UNIT_LEVEL PLAYER_LEVEL_UP', function(unit)
 	local unitLevel = UnitEffectiveLevel(unit)
