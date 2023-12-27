@@ -26,6 +26,7 @@ local UnitIsAFK = UnitIsAFK
 local TAG_CATEGORY_NAME = "|cff0388fcmh|r|cffccff33Tags|r"
 local MAX_PLAYER_LEVEL = 70 -- XPAC: DF
 local DEFAULT_ICON_SIZE = 14
+local ABSORB_TEXT_COLOR = 'ccff33'
 
 local rgbToHexDecimal = function(r, g, b)
 	local rValue = math.floor(r * 255)
@@ -64,7 +65,7 @@ local iconTable = {
 	['silverStar'] = "|TInterface\\AddOns\\ElvUI_mhTags\\icons\\silver_star:%s:%s:%s:%s|t",
 	['yellowBahai'] = "|TInterface\\AddOns\\ElvUI_mhTags\\icons\\bahai_yellow:%s:%s:%s:%s|t",
 	['silverBahai'] = "|TInterface\\AddOns\\ElvUI_mhTags\\icons\\bahai_silver:%s:%s:%s:%s|t",
-	['offlineIcon'] = "|TInterface\\AddOns\\ElvUI_mhTags\\icons\\offline3:%s:%s:%s:%s|t",
+	['offlineIcon'] = "|TInterface\\AddOns\\ElvUI_mhTags\\icons\\offline2:%s:%s:%s:%s|t",
 }
 
 local getFormattedIcon = function(name, size, x, y)
@@ -212,7 +213,7 @@ E:AddTag('mh-health:absorb:current:percent:right', 'UNIT_HEALTH UNIT_MAXHEALTH U
 
 		local absorbAmount = UnitGetTotalAbsorbs(unit) or 0
 		if absorbAmount ~= 0 then
-			returnString = format("|cffccff33(%s)|r %s", E:ShortValue(absorbAmount), returnString)
+			returnString = format("|cff%s(%s)|r %s", ABSORB_TEXT_COLOR, E:ShortValue(absorbAmount), returnString)
 		end
 
 		return returnString
@@ -221,7 +222,7 @@ end)
 
 -- Use dynamic argument to add decimal places
 E:AddTagInfo("mh-health:simple:percent", TAG_CATEGORY_NAME, "Shows max hp at full or percent with dynamic # of decimals (dynamic number within {} of tag) - Example: mh-health:simple:percent{2} will show percent to 2 decimal places")
-E:AddTag('mh-health:simple:percent', 'UNIT_NAME_UPDATE UNIT_CONNECTION PLAYER_FLAGS_CHANGED UNIT_HEALTH PLAYER_FLAGS_CHANGED', function(unit, _, args)
+E:AddTag('mh-health:simple:percent', 'PLAYER_FLAGS_CHANGED UNIT_CONNECTION UNIT_HEALTH', function(unit, _, args)
 	local status = statusCheck(unit)
 	if (status) then
 		return statusFormatter(status)
@@ -240,7 +241,7 @@ end)
 
 -- Use dynamic argument to add decimal places (no % sign, same as above)
 E:AddTagInfo("mh-health:simple:percent-nosign", TAG_CATEGORY_NAME, "Shows max hp at full or percent (with  no % sign) with dynamic # of decimals (dynamic number within {} of tag) - Example: mh-health:simple:percent{2} will show percent to 2 decimal places")
-E:AddTag('mh-health:simple:percent-nosign', 'UNIT_NAME_UPDATE UNIT_CONNECTION PLAYER_FLAGS_CHANGED UNIT_HEALTH PLAYER_FLAGS_CHANGED', function(unit, _, args)
+E:AddTag('mh-health:simple:percent-nosign', 'PLAYER_FLAGS_CHANGED UNIT_CONNECTION UNIT_HEALTH', function(unit, _, args)
 	local status = statusCheck(unit)
 	if (status) then
 		return statusFormatter(status)
@@ -259,7 +260,7 @@ end)
 
 -- Use dynamic argument to add decimal places (no % sign, same as above + Hidden at full health)
 E:AddTagInfo("mh-health:simple:percent-nosign-v2", TAG_CATEGORY_NAME, "Hidden at max hp at full or percent (with  no % sign) with dynamic # of decimals (dynamic number within {} of tag) - Example: mh-health:simple:percent{2} will show percent to 2 decimal places")
-E:AddTag('mh-health:simple:percent-nosign-v2', 'UNIT_NAME_UPDATE UNIT_CONNECTION PLAYER_FLAGS_CHANGED UNIT_HEALTH PLAYER_FLAGS_CHANGED', function(unit, _, args)
+E:AddTag('mh-health:simple:percent-nosign-v2', 'PLAYER_FLAGS_CHANGED UNIT_NAME_UPDATE UNIT_CONNECTION UNIT_HEALTH UNIT_MAXHEALTH', function(unit, _, args)
 	local status = statusCheck(unit)
 	local formatted = ''
 
@@ -271,6 +272,26 @@ E:AddTag('mh-health:simple:percent-nosign-v2', 'UNIT_NAME_UPDATE UNIT_CONNECTION
 		if currentHp ~= maxHp then
 			local decimalPlaces = tonumber(args) or 0
 			local formatDecimal = format('%%.%sf', decimalPlaces)
+			formatted = format(formatDecimal, (currentHp/maxHp)*100)
+		end
+	end
+
+	return formatted
+end)
+
+E:AddTagInfo("mh-health:simple:percent-v2", TAG_CATEGORY_NAME, "Hidden at max hp at full or percent + % sign with dynamic # of decimals (dynamic number within {} of tag) - Example: mh-health:simple:percent{2} will show percent to 2 decimal places")
+E:AddTag('mh-health:simple:percent-v2', 'PLAYER_FLAGS_CHANGED UNIT_NAME_UPDATE UNIT_CONNECTION UNIT_HEALTH UNIT_MAXHEALTH', function(unit, _, args)
+	local status = statusCheck(unit)
+	local formatted = ''
+
+	if (status) then
+		formatted = statusFormatter(status)
+	else 
+		local maxHp = UnitHealthMax(unit)
+		local currentHp = UnitHealth(unit)	
+		if currentHp ~= maxHp then
+			local decimalPlaces = tonumber(args) or 0
+			local formatDecimal = format('%%.%sf%%%%', decimalPlaces)
 			formatted = format(formatDecimal, (currentHp/maxHp)*100)
 		end
 	end
@@ -482,5 +503,14 @@ E:AddTag('mh-status', 'UNIT_CONNECTION PLAYER_FLAGS_CHANGED', function(unit, _, 
 	local status = statusCheck(unit)
 	if (status) then
 		return statusFormatter(status)
+	end
+end)
+
+-- Simple Absorb tag in paranthesis
+E:AddTagInfo("mh-absorb", TAG_CATEGORY_NAME, "Simple absorb tag in paranthesis (with yellow text color)")
+E:AddTag('mh-absorb', 'UNIT_ABSORB_AMOUNT_CHANGED', function(unit)
+	local absorbAmount = UnitGetTotalAbsorbs(unit) or 0
+	if absorbAmount ~= 0 then
+		return format("|cff%s(%s)|r", ABSORB_TEXT_COLOR, E:ShortValue(absorbAmount))
 	end
 end)
