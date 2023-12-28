@@ -56,14 +56,6 @@ local statusCheck = function(unit)
 	return status
 end
 
-local stringToArray = function(str)
-	local formattedArray = {}
-	for word in string.gmatch(str, '([^,]+)') do
-			table.insert(formattedArray, word)
-	end
-	return formattedArray
-end
-
 local iconTable = {
 	['default'] = "|TInterface\\AddOns\\ElvUI_mhTags\\icons\\deadc:%s:%s:%s:%s|t",
 	['deadIcon'] = "|TInterface\\AddOns\\ElvUI_mhTags\\icons\\deadc:%s:%s:%s:%s|t",
@@ -336,7 +328,6 @@ end)
 -- Use dynamic argument to cap number of characters in name (default: 12) with no status
 E:AddTagInfo("mh-dynamic:name:caps", TAG_CATEGORY_NAME, "Shows unit name in all CAPS with a dynamic # of characters (dynamic number within {} of tag - see examples above)")
 E:AddTag('mh-dynamic:name:caps', 'UNIT_NAME_UPDATE', function(unit, _, args)
-	print('Args: '..args)
 	local name = UnitName(unit) or ''
 	local cname = strupper(name)
 	local length = tonumber(args) or DEFAULT_TEXT_LENGTH
