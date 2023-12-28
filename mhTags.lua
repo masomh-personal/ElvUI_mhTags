@@ -27,6 +27,8 @@ local TAG_CATEGORY_NAME = "|cff0388fcmh|r|cffccff33Tags|r"
 local MAX_PLAYER_LEVEL = 70 -- XPAC: DF
 local DEFAULT_ICON_SIZE = 14
 local ABSORB_TEXT_COLOR = 'ccff33'
+local DEFAULT_TEXT_LENGTH = 16
+local DEFAULT_DECIMAL_PLACE = 0
 
 local rgbToHexDecimal = function(r, g, b)
 	local rValue = math.floor(r * 255)
@@ -52,6 +54,14 @@ local statusCheck = function(unit)
 	end
 
 	return status
+end
+
+local stringToArray = function(str)
+	local formattedArray = {}
+	for word in string.gmatch(str, '([^,]+)') do
+			table.insert(formattedArray, word)
+	end
+	return formattedArray
 end
 
 local iconTable = {
@@ -84,7 +94,9 @@ local classificationType = function(unit)
 	local unitLevel = UnitEffectiveLevel(unit)
 	local classification = UnitClassification(unit)
 	
-	if ((unitLevel == -1) or (classification == 'boss') or (classification == 'worldboss')) then
+	if ((classification == 'rare') or (classification == 'rareelite')) then
+		unitType = classification
+	elseif ((unitLevel == -1) or (classification == 'boss') or (classification == 'worldboss')) then
 		unitType = 'boss'
 	elseif (unitLevel > MAX_PLAYER_LEVEL) then
 		unitType = 'eliteplus'
@@ -233,7 +245,7 @@ E:AddTag('mh-health:simple:percent', 'PLAYER_FLAGS_CHANGED UNIT_CONNECTION UNIT_
 	if currentHp == maxHp then
 		return E:GetFormattedText('CURRENT', maxHp, currentHp, nil, true)
 	else
-    local decimalPlaces = tonumber(args) or 0
+    local decimalPlaces = tonumber(args) or DEFAULT_DECIMAL_PLACE
     local formatDecimal = format('%%.%sf%%%%', decimalPlaces) -- NOTE: lots of escapes for percentage sign
 		return format(formatDecimal, (currentHp/maxHp)*100)
 	end
@@ -270,7 +282,7 @@ E:AddTag('mh-health:simple:percent-nosign-v2', 'PLAYER_FLAGS_CHANGED UNIT_NAME_U
 		local maxHp = UnitHealthMax(unit)
 		local currentHp = UnitHealth(unit)	
 		if currentHp ~= maxHp then
-			local decimalPlaces = tonumber(args) or 0
+			local decimalPlaces = tonumber(args) or DEFAULT_DECIMAL_PLACE
 			local formatDecimal = format('%%.%sf', decimalPlaces)
 			formatted = format(formatDecimal, (currentHp/maxHp)*100)
 		end
@@ -290,7 +302,7 @@ E:AddTag('mh-health:simple:percent-v2', 'PLAYER_FLAGS_CHANGED UNIT_NAME_UPDATE U
 		local maxHp = UnitHealthMax(unit)
 		local currentHp = UnitHealth(unit)	
 		if currentHp ~= maxHp then
-			local decimalPlaces = tonumber(args) or 0
+			local decimalPlaces = tonumber(args) or DEFAULT_DECIMAL_PLACE
 			local formatDecimal = format('%%.%sf%%%%', decimalPlaces)
 			formatted = format(formatDecimal, (currentHp/maxHp)*100)
 		end
@@ -306,7 +318,7 @@ E:AddTag('mh-dynamic:name:caps-statusicon', 'UNIT_NAME_UPDATE UNIT_CONNECTION PL
 	if not name then return end
 
 	local cname = strupper(name)
-	local length = tonumber(args) or 12
+	local length = tonumber(args) or DEFAULT_TEXT_LENGTH
 	local formatted = ''
 
 	-- Adding status icon
@@ -324,9 +336,10 @@ end)
 -- Use dynamic argument to cap number of characters in name (default: 12) with no status
 E:AddTagInfo("mh-dynamic:name:caps", TAG_CATEGORY_NAME, "Shows unit name in all CAPS with a dynamic # of characters (dynamic number within {} of tag - see examples above)")
 E:AddTag('mh-dynamic:name:caps', 'UNIT_NAME_UPDATE', function(unit, _, args)
+	print('Args: '..args)
 	local name = UnitName(unit) or ''
 	local cname = strupper(name)
-	local length = tonumber(args) or 12
+	local length = tonumber(args) or DEFAULT_TEXT_LENGTH
 	local formatted = E:ShortenString(cname, length)
 
 	return formatted
@@ -337,7 +350,7 @@ E:AddTagInfo("mh-player:frame:name:caps-groupnumber", TAG_CATEGORY_NAME, "Shows 
 E:AddTag('mh-player:frame:name:caps-groupnumber', 'UNIT_NAME_UPDATE GROUP_ROSTER_UPDATE', function(unit, _, args)	
 	local name = UnitName(unit) or ''
 	local cname = strupper(name)
-	local length = tonumber(args) or 12
+	local length = tonumber(args) or DEFAULT_TEXT_LENGTH
 	local formatted = E:ShortenString(cname, length)
 
 	-- Added additional checker to add group # you are in only when in raid
@@ -365,7 +378,7 @@ E:AddTag('mh-target:frame:power-percent', 'UNIT_DISPLAYPOWER UNIT_POWER_FREQUENT
 	local currentPower = UnitPower(unit, powerType)
 	local maxPower = UnitPowerMax(unit)
 	if currentPower ~= 0 then
-		local decimalPlaces = tonumber(args) or 0
+		local decimalPlaces = tonumber(args) or DEFAULT_DECIMAL_PLACE
 		local formatDecimal = format('%%.%sf', decimalPlaces)
 		formatted = format(formatDecimal, (currentPower/maxPower)*100)
 	end
