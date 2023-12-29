@@ -1,5 +1,16 @@
 # ElvUI MH Tags
 
+## [1.0.3] (2023-12-29)
+
+- Created static absorb text color variable
+- NEW Tag: simple percent v2 which is hidden at max health
+- NEW Tag: mh-absorb (just absorb text)
+- Code clean-up to remove unnecessary event hooks
+- Updated/cleaned some lua code comments
+- Code clean up and made some local constants
+- Reworked classification helper function to properly handle rare and rareelite classification
+- Updated some static/constant default values to align with UI
+
 ## [1.0.2] (2023-12-19)
 
 - Cleaned up code and reorganized
