@@ -25,9 +25,9 @@ local UnitIsAFK = UnitIsAFK
 -------------------------------------
 local TAG_CATEGORY_NAME = "|cff0388fcmh|r|cffccff33Tags|r"
 local MAX_PLAYER_LEVEL = 70 -- XPAC: DF
-local DEFAULT_ICON_SIZE = 14
+local DEFAULT_ICON_SIZE = 15
 local ABSORB_TEXT_COLOR = 'ccff33'
-local DEFAULT_TEXT_LENGTH = 16
+local DEFAULT_TEXT_LENGTH = 20
 local DEFAULT_DECIMAL_PLACE = 0
 
 local rgbToHexDecimal = function(r, g, b)
