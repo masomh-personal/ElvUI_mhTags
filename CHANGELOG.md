@@ -1,5 +1,9 @@
 # ElvUI MH Tags
 
+## [1.0.4] (2024-1-17)
+
+- TOC update for 10.2.5
+
 ## [1.0.3] (2023-12-29)
 
 - Created static absorb text color variable
