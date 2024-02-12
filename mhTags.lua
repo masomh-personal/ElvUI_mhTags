@@ -25,10 +25,20 @@ local UnitIsAFK = UnitIsAFK
 -------------------------------------
 local TAG_CATEGORY_NAME = "|cff0388fcmh|r|cffccff33Tags|r"
 local MAX_PLAYER_LEVEL = 70 -- XPAC: DF
-local DEFAULT_ICON_SIZE = 15
+local DEFAULT_ICON_SIZE = 14
 local ABSORB_TEXT_COLOR = 'ccff33'
-local DEFAULT_TEXT_LENGTH = 20
+local DEFAULT_TEXT_LENGTH = 28
 local DEFAULT_DECIMAL_PLACE = 0
+
+-- JS.includes() equivalent
+local includes = function(table, value)
+	for _, v in ipairs(table) do
+			if v == value then
+					return true
+			end
+	end
+	return false
+end
 
 local rgbToHexDecimal = function(r, g, b)
 	local rValue = math.floor(r * 255)
@@ -123,7 +133,7 @@ local difficultyLevelFormatter = function(unit, unitLevel)
 	return formattedString
 end
 
-local statusFormatter = function(status, size)
+local statusFormatter = function(status, size, reverse)
 	if not status then return end
 
 	local iconSize = size or DEFAULT_ICON_SIZE
@@ -141,7 +151,58 @@ local statusFormatter = function(status, size)
 		statusIconMap = 'offlineIcon'
 	end
 
-	return format('|cffD6BFA6%s|r%s', strupper(status), getFormattedIcon(statusIconMap, iconSize))
+	if (reverse) then
+		return format('%s|cffD6BFA6%s|r', getFormattedIcon(statusIconMap, iconSize), strupper(status))
+	else 
+		return format('|cffD6BFA6%s|r%s', strupper(status), getFormattedIcon(statusIconMap, iconSize))
+	end
+end
+
+local abbreviate = function(str, reverse, unit)
+	local words = {}
+	local firstLetters = {}
+	local formattedString = str:gsub("'", "") -- remove apostrophes
+	for word in formattedString:gmatch("%w+") do	
+			table.insert(firstLetters, word:sub(1, 1))
+			table.insert(words, word)
+	end
+
+	-- GUARD: if there is only one word in string, return the string
+	if #words == 1 then 
+		return str
+	end
+
+	-- GUARD: if mob is special (boss, rare, etc) just use first name
+	-- TYPES: "worldboss", "rareelite", "elite", "rare", "normal", "trivial", or "minus"
+	if classificationType(unit) == 'boss' then
+		return words[1]
+	end
+
+	local abbreviatedString = ''
+	-- Reverse abbreviation of single words
+	if reverse then
+		-- Example: Cleave Training Dummy => Cleave T. D.
+		for index, value in ipairs(words) do
+			if index == 1 then
+				abbreviatedString = abbreviatedString..value
+			elseif index == 2 then 
+				abbreviatedString = abbreviatedString..' '..firstLetters[index]..'.'
+			else
+				abbreviatedString = abbreviatedString..''..firstLetters[index]..'.'
+			end
+		end
+	else 
+		-- Example: Cleave Training Dummy => C. T. Dummy
+		for index, value in ipairs(words) do
+			if index ~= #words then
+				abbreviatedString = abbreviatedString..''..firstLetters[index]..'.'
+			else 
+				abbreviatedString = abbreviatedString..' '..value
+			end
+		end
+	end
+
+	return abbreviatedString
 end
 
 --------------------------------------
@@ -325,7 +386,7 @@ E:AddTag('mh-dynamic:name:caps-statusicon', 'UNIT_NAME_UPDATE UNIT_CONNECTION PL
 	return formatted
 end)
 
--- Use dynamic argument to cap number of characters in name (default: 12) with no status
+-- Use dynamic argument to cap number of characters in name with no status
 E:AddTagInfo("mh-dynamic:name:caps", TAG_CATEGORY_NAME, "Shows unit name in all CAPS with a dynamic # of characters (dynamic number within {} of tag - see examples above)")
 E:AddTag('mh-dynamic:name:caps', 'UNIT_NAME_UPDATE', function(unit, _, args)
 	local name = UnitName(unit) or ''
@@ -334,6 +395,22 @@ E:AddTag('mh-dynamic:name:caps', 'UNIT_NAME_UPDATE', function(unit, _, args)
 	local formatted = E:ShortenString(cname, length)
 
 	return formatted
+end)
+
+E:AddTagInfo("mh-name:caps:abbrev", TAG_CATEGORY_NAME, "Name abbreviation/shortner - Example: 'Cleave Training Dummy' => 'C.T. Dummy")
+E:AddTag('mh-name:caps:abbrev', 'UNIT_NAME_UPDATE', function(unit, _, args)
+	local name = UnitName(unit)
+	if name then
+		return abbreviate(strupper(name), false, unit)
+	end		
+end)
+
+E:AddTagInfo("mh-name:caps:abbrev-reverse", TAG_CATEGORY_NAME, "Name abbreviation/shortner - Example: 'Cleave Training Dummy' => 'Cleave T.D.")
+E:AddTag('mh-name:caps:abbrev-reverse', 'UNIT_NAME_UPDATE', function(unit, _, args)
+	local name = UnitName(unit)
+	if name then
+		return abbreviate(strupper(name), true, unit)
+	end		
 end)
 
 -- Use dynamic argument to cap number of characters in name (default: 12)
