@@ -3,6 +3,13 @@
 ## [1.0.5] (2024-3-19)
 
 - TOC update for 10.2.6
+- Added helper function that works like JavaScript Array.includes()
+- Added helper function 'abbreviate' to abbreviate longer names in two ways (default/reverse)
+- NEW Tag: mh-name:caps:abbrev (see examples of abbreviations below)
+- Reverse abbreviate example: Cleave Training Dummy => Cleave T. D.
+- Default abbreviate example: Cleave Training Dummy => C. T. Dummy
+- Small edits for status formatter to have a reverse status (icon and text)
+- Small changes for default icon sizes
 
 ## [1.0.4] (2024-1-17)
 
