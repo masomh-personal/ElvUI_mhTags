@@ -1,5 +1,9 @@
 # ElvUI MH Tags
 
+## [1.0.5] (2024-3-19)
+
+- TOC update for 10.2.6
+
 ## [1.0.4] (2024-1-17)
 
 - TOC update for 10.2.5
