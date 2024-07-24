@@ -1,5 +1,13 @@
 # ElvUI MH Tags
 
+## [1.0.7] (July 24th, 2024)
+
+- TOC update for TWW pre patch
+
+## [1.0.6] (2024-5-5)
+
+- TOC update for 10.2.7
+
 ## [1.0.5] (2024-3-19)
 
 - TOC update for 10.2.6

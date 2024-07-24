@@ -1,6 +1,6 @@
 # MH Custom Tags (ElvUI plugin)
 
-ElvUI plugin that creates some useful custom tags to be used across my UI
+ElvUI plugin that creates some useful custom tags to be used across compatible ElvUI profiles
 
 ## Dependencies
 
