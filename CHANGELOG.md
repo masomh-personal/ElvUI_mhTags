@@ -1,5 +1,10 @@
 # ElvUI MH Tags
 
+## [1.0.8] (August 13th, 2024)
+
+- TOC update for TWW pre patch
+- Fixed issue with API updated RE: isAddOnLoaded()
+
 ## [1.0.7] (July 24th, 2024)
 
 - TOC update for TWW pre patch

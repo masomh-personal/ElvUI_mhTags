@@ -1,3 +1,4 @@
+local IsAddOnLoaded = C_AddOns.IsAddOnLoaded
 if not IsAddOnLoaded('ElvUI') then return end
 local E, L = unpack(ElvUI)
 local ElvUF = E.oUF
