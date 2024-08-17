@@ -1,5 +1,10 @@
 # ElvUI MH Tags
 
+## <span style="color:lightblue">[1.0.9] (August 17th, 2024)</span>.
+
+- NEW TAG: mh-status-noicon
+- DEF: Simple status tag that shows all the different flags: AFK, DND, OFFLINE, DEAD, or GHOST (NO icon, text only)
+
 ## [1.0.8] (August 13th, 2024)
 
 - TOC update for TWW pre patch

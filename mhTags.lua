@@ -580,12 +580,20 @@ E:AddTag('mh-healthcolor', 'UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FL
 	return healthColor;
 end)
 
--- Deficit (percent) with no status (dynamic decimal places)
+-- Simple status tag that shows all the different flags: AFK, DND, OFFLINE, DEAD, or GHOST (with their own icons)
 E:AddTagInfo("mh-status", TAG_CATEGORY_NAME, "Simple status tag that shows all the different flags: AFK, DND, OFFLINE, DEAD, or GHOST (with their own icons)")
 E:AddTag('mh-status', 'UNIT_CONNECTION PLAYER_FLAGS_CHANGED', function(unit, _, args)
 	local status = statusCheck(unit)
 	if (status) then
 		return statusFormatter(status)
+	end
+end)
+
+E:AddTagInfo("mh-status-noicon", TAG_CATEGORY_NAME, "Simple status tag that shows all the different flags: AFK, DND, OFFLINE, DEAD, or GHOST (NO icon, text only)")
+E:AddTag('mh-status-noicon', 'UNIT_CONNECTION PLAYER_FLAGS_CHANGED', function(unit, _, args)
+	local status = statusCheck(unit)
+	if (status) then
+		return format('|cffD6BFA6%s|r', strupper(status))
 	end
 end)
 
