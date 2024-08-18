@@ -17,6 +17,7 @@ local tinsert = table.insert
 local UnitIsAFK, UnitIsDND, UnitIsFeignDeath, UnitIsDead, UnitIsGhost, UnitIsConnected = UnitIsAFK, UnitIsDND, UnitIsFeignDeath, UnitIsDead, UnitIsGhost, UnitIsConnected
 local UnitIsPlayer, UnitEffectiveLevel, UnitClassification, GetCreatureDifficultyColor = UnitIsPlayer, UnitEffectiveLevel, UnitClassification, GetCreatureDifficultyColor
 local GetMaxPlayerLevel = GetMaxPlayerLevel
+local tonumber, string_sub = tonumber, string.sub
 
 -------------------------------------
 -- CONSTANTS
@@ -192,20 +193,28 @@ MHCT.abbreviate = function(str, reverse, unit)
 	return abbreviatedString
 end
 
-MHCT.HexToRGB = function(r, g, b)
+-- HELPERS: static color gradient table
+MHCT.RGBToHex = function(r, g, b)
     return format('%02X%02X%02X', r * 255, g * 255, b * 255)
 end
 
--- Precomputed health colors in 1% increments so this is not done on the fly during tag updates
-MHCT.HEALTH_GRADIENT_HEX = {}
--- colors for health percentages from 0% to 100% in 1% increments
-for i = 0, 100 do
-    local healthPercent = i / 100
+MHCT.HexToRGB = function(hex)
+    local r = tonumber(string_sub(hex, 1, 2), 16) / 255
+    local g = tonumber(string_sub(hex, 3, 4), 16) / 255
+    local b = tonumber(string_sub(hex, 5, 6), 16) / 255
+    return {r = r, g = g, b = b}
+end
+
+-- Precomputed health colors in 0.5% increments so this is not done on the fly during tag updates
+MHCT.HEALTH_GRADIENT_RGB = {}
+-- Colors for health percentages from 0% to 100% in 0.5% increments
+for i = 0, 200 do
+    local healthPercent = i / 200
     local r, g, b = ElvUF:ColorGradient(
         healthPercent, 1,
-        0.93, 0.57, 0.57,  -- start color (red)
-        0.93, 0.72, 0.57,  -- mid color (yellow)
-        0.57, 0.93, 0.57   -- end color (green)
+        0.93, 0.57, 0.57,  -- Start color (red)
+        0.93, 0.72, 0.57,  -- Mid color (yellow)
+        0.57, 0.93, 0.57   -- End color (green)
     )
-    MHCT.HEALTH_GRADIENT_HEX[i] = MHCT.HexToRGB(r, g, b)
+    MHCT.HEALTH_GRADIENT_RGB[i * 0.5] = format('|cff%s', MHCT.RGBToHex(r, g, b))
 end

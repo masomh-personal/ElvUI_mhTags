@@ -5,7 +5,7 @@ local E, L = unpack(ElvUI)
 --------------------------------------
 -- LOCALS
 --------------------------------------
-local tonumber, print, format, strupper = tonumber, print, format, strupper
+local tonumber, print, format, strupper, floor = tonumber, print, format, strupper, math.floor
 local UnitName = UnitName
 local GetRaidRosterInfo = GetRaidRosterInfo
 local GetNumGroupMembers = GetNumGroupMembers
@@ -316,12 +316,12 @@ end)
 E:AddTagInfo("mh-healthcolor", MHCT.TAG_CATEGORY_NAME, "Similar color tag to base ElvUI, but with brighter and high contrast gradient")
 E:AddTag('mh-healthcolor', 'UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED', function(unit)
     if UnitIsDeadOrGhost(unit) or not UnitIsConnected(unit) then
-        return 'D6BFA6' -- Precomputed Hex for dead or disconnected units
+    	return '|cffD6BFA6' -- Precomputed Hex for dead or disconnected units
     else
-        -- Calculate the health percentage, rounded to the nearest integer
-        local healthPercent = math.floor((UnitHealth(unit) / UnitHealthMax(unit)) * 100)
-				print(MHCT.HEALTH_GRADIENT_HEX[healthPercent])
-        return MHCT.HEALTH_GRADIENT_HEX[healthPercent] or 'FFFFFF' -- Default to white if something goes wrong
+    	-- Calculate health percentage and round to the nearest 0.5%
+			local healthPercent = (UnitHealth(unit) / UnitHealthMax(unit)) * 100
+			local roundedPercent = floor(healthPercent * 2 + 0.5) / 2
+			local colorCode = MHCT.HEALTH_GRADIENT_RGB[roundedPercent]
     end
 end)
 
