@@ -315,14 +315,16 @@ end)
 
 E:AddTagInfo("mh-healthcolor", MHCT.TAG_CATEGORY_NAME, "Similar color tag to base ElvUI, but with brighter and high contrast gradient")
 E:AddTag('mh-healthcolor', 'UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED', function(unit)
-    if UnitIsDeadOrGhost(unit) or not UnitIsConnected(unit) then
-    	return '|cffD6BFA6' -- Precomputed Hex for dead or disconnected units
-    else
-    	-- Calculate health percentage and round to the nearest 0.5%
+	if UnitIsDeadOrGhost(unit) or not UnitIsConnected(unit) then
+			return '|cffD6BFA6' -- Precomputed Hex for dead or disconnected units
+	else
+			-- Calculate health percentage and round to the nearest 0.5%
 			local healthPercent = (UnitHealth(unit) / UnitHealthMax(unit)) * 100
-			local roundedPercent = floor(healthPercent * 2 + 0.5) / 2
-			local colorCode = MHCT.HEALTH_GRADIENT_RGB[roundedPercent]
-    end
+			local roundedPercent = math.floor(healthPercent * 2 + 0.5) / 2
+			
+			-- Lookup the color in the precomputed table
+			return MHCT.HEALTH_GRADIENT_RGB[roundedPercent] or '|cffFFFFFF' -- Fallback to white if not found
+	end
 end)
 
 E:AddTagInfo("mh-status", MHCT.TAG_CATEGORY_NAME, "Simple status tag that shows all the different flags: AFK, DND, OFFLINE, DEAD, or GHOST (with their own icons)")

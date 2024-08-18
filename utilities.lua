@@ -50,23 +50,33 @@ MHCT.rgbToHexDecimal = function(r, g, b)
 	return format("%02X%02X%02X", rValue, gValue, bValue)
 end
 
-MHCT.statusCheck = function(unit)
-	local status = nil
+MHCT.RGBToHex = function(r, g, b)
+	return format('%02X%02X%02X', r * 255, g * 255, b * 255)
+end
 
+MHCT.HexToRGB = function(hex)
+	local r = tonumber(string_sub(hex, 1, 2), 16) / 255
+	local g = tonumber(string_sub(hex, 3, 4), 16) / 255
+	local b = tonumber(string_sub(hex, 5, 6), 16) / 255
+	return {r = r, g = g, b = b}
+end
+
+MHCT.statusCheck = function(unit)
 	if UnitIsAFK(unit) then
-		status = L["AFK"]
+		return L["AFK"]
 	elseif UnitIsDND(unit) then
-		status = L["DND"]
-	elseif (not UnitIsFeignDeath(unit) and UnitIsDead(unit)) then
-		status = L["Dead"]
+		return L["DND"]
+	elseif not UnitIsFeignDeath(unit) and UnitIsDead(unit) then
+		return L["Dead"]
 	elseif UnitIsGhost(unit) then
-		status = L["Ghost"]
-	elseif (not UnitIsConnected(unit)) then
-		status = L["Offline"]
+		return L["Ghost"]
+	elseif not UnitIsConnected(unit) then
+		return L["Offline"]
 	end
 
-	return status
+	return nil
 end
+
 
 MHCT.iconTable = {
 	['default'] = "|TInterface\\AddOns\\ElvUI_mhTags\\icons\\deadc:%s:%s:%s:%s|t",
@@ -191,18 +201,6 @@ MHCT.abbreviate = function(str, reverse, unit)
 	end
 
 	return abbreviatedString
-end
-
--- HELPERS: static color gradient table
-MHCT.RGBToHex = function(r, g, b)
-    return format('%02X%02X%02X', r * 255, g * 255, b * 255)
-end
-
-MHCT.HexToRGB = function(hex)
-    local r = tonumber(string_sub(hex, 1, 2), 16) / 255
-    local g = tonumber(string_sub(hex, 3, 4), 16) / 255
-    local b = tonumber(string_sub(hex, 5, 6), 16) / 255
-    return {r = r, g = g, b = b}
 end
 
 -- Precomputed health colors in 0.5% increments so this is not done on the fly during tag updates

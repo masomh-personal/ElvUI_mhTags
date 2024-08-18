@@ -1,16 +1,17 @@
 # ElvUI MH Tags
 
-## <span style="color:lightblue">[2.0.0] Major Update (August 18th, 2024)</span>.
+## <span style="color:cyan">[2.0.0] Major Update (August 18th, 2024)</span>.
 
+- Overhauled for TWW
 - Complete revamp of code structure
-- Added separate utility file to handle non tag functions
-- Greatly increased performance of [mh-health-color] tag and created a static lookup table
+- Added separate utility file to handle non tag specific logic
+- Greatly increased performance of `[mh-health-color]` tag and created a static lookup table
 - Refactored lots of functions to return sooner or fail faster
 - Created additional helper functions to follow DRY methodology
 - Cleaned up almost all functions
 - Ensured all global variables were properly localized to help with faster look up
 
-## <span style="color:lightblue">[1.0.9] (August 17th, 2024)</span>.
+## <span style="color:white">[1.0.9] (August 17th, 2024)</span>.
 
 - NEW TAG: mh-status-noicon
 - DEF: Simple status tag that shows all the different flags: AFK, DND, OFFLINE, DEAD, or GHOST (NO icon, text only)
