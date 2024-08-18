@@ -190,4 +190,22 @@ MHCT.abbreviate = function(str, reverse, unit)
 	end
 
 	return abbreviatedString
-end  
+end
+
+MHCT.HexToRGB = function(r, g, b)
+    return format('%02X%02X%02X', r * 255, g * 255, b * 255)
+end
+
+-- Precomputed health colors in 1% increments so this is not done on the fly during tag updates
+MHCT.HEALTH_GRADIENT_HEX = {}
+-- colors for health percentages from 0% to 100% in 1% increments
+for i = 0, 100 do
+    local healthPercent = i / 100
+    local r, g, b = ElvUF:ColorGradient(
+        healthPercent, 1,
+        0.93, 0.57, 0.57,  -- start color (red)
+        0.93, 0.72, 0.57,  -- mid color (yellow)
+        0.57, 0.93, 0.57   -- end color (green)
+    )
+    MHCT.HEALTH_GRADIENT_HEX[i] = MHCT.HexToRGB(r, g, b)
+end
