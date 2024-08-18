@@ -1,0 +1,193 @@
+if not C_AddOns.IsAddOnLoaded('ElvUI') then return end
+local E, L = unpack(ElvUI)
+local ElvUF = E.oUF
+MHCT = {}
+
+-------------------------------------
+-- LOCALS
+-------------------------------------
+local floor = math.floor
+local ipairs = ipairs
+local format = format
+local strupper = strupper
+local gsub = string.gsub
+local gmatch = string.gmatch
+local sub = string.sub
+local tinsert = table.insert
+local UnitIsAFK, UnitIsDND, UnitIsFeignDeath, UnitIsDead, UnitIsGhost, UnitIsConnected = UnitIsAFK, UnitIsDND, UnitIsFeignDeath, UnitIsDead, UnitIsGhost, UnitIsConnected
+local UnitIsPlayer, UnitEffectiveLevel, UnitClassification, GetCreatureDifficultyColor = UnitIsPlayer, UnitEffectiveLevel, UnitClassification, GetCreatureDifficultyColor
+local GetMaxPlayerLevel = GetMaxPlayerLevel
+
+-------------------------------------
+-- CONSTANTS
+-------------------------------------
+MHCT.TAG_CATEGORY_NAME = "|cff0388fcmh|r|cffccff33Tags|r"
+MHCT.MAX_PLAYER_LEVEL = GetMaxPlayerLevel()
+MHCT.DEFAULT_ICON_SIZE = 14
+MHCT.ABSORB_TEXT_COLOR = 'ccff33'
+MHCT.DEFAULT_TEXT_LENGTH = 28
+MHCT.DEFAULT_DECIMAL_PLACE = 0
+
+-------------------------------------
+-- HELPERS
+-------------------------------------
+  -- JS.includes() equivalent
+MHCT.includes = function(table, value)
+	for _, v in ipairs(table) do
+			if v == value then
+					return true
+			end
+	end
+	return false
+end
+
+MHCT.rgbToHexDecimal = function(r, g, b)
+	local rValue = floor(r * 255)
+	local gValue = floor(g * 255)
+	local bValue = floor(b * 255)
+
+	return format("%02X%02X%02X", rValue, gValue, bValue)
+end
+
+MHCT.statusCheck = function(unit)
+	local status = nil
+
+	if UnitIsAFK(unit) then
+		status = L["AFK"]
+	elseif UnitIsDND(unit) then
+		status = L["DND"]
+	elseif (not UnitIsFeignDeath(unit) and UnitIsDead(unit)) then
+		status = L["Dead"]
+	elseif UnitIsGhost(unit) then
+		status = L["Ghost"]
+	elseif (not UnitIsConnected(unit)) then
+		status = L["Offline"]
+	end
+
+	return status
+end
+
+MHCT.iconTable = {
+	['default'] = "|TInterface\\AddOns\\ElvUI_mhTags\\icons\\deadc:%s:%s:%s:%s|t",
+	['deadIcon'] = "|TInterface\\AddOns\\ElvUI_mhTags\\icons\\deadc:%s:%s:%s:%s|t",
+	['bossIcon'] = "|TInterface\\AddOns\\ElvUI_mhTags\\icons\\boss_skull:%s:%s:%s:%s|t",
+	['yellowWarning'] = "|TInterface\\AddOns\\ElvUI_mhTags\\icons\\yellow_warning1:%s:%s:%s:%s|t",
+	['redWarning'] = "|TInterface\\AddOns\\ElvUI_mhTags\\icons\\red_warning1:%s:%s:%s:%s|t",
+	['ghostIcon'] = "|TInterface\\AddOns\\ElvUI_mhTags\\icons\\ghost:%s:%s:%s:%s|t",
+	['yellowStar'] = "|TInterface\\AddOns\\ElvUI_mhTags\\icons\\yellow_star:%s:%s:%s:%s|t",
+	['silverStar'] = "|TInterface\\AddOns\\ElvUI_mhTags\\icons\\silver_star:%s:%s:%s:%s|t",
+	['yellowBahai'] = "|TInterface\\AddOns\\ElvUI_mhTags\\icons\\bahai_yellow:%s:%s:%s:%s|t",
+	['silverBahai'] = "|TInterface\\AddOns\\ElvUI_mhTags\\icons\\bahai_silver:%s:%s:%s:%s|t",
+	['offlineIcon'] = "|TInterface\\AddOns\\ElvUI_mhTags\\icons\\offline2:%s:%s:%s:%s|t",
+}
+
+MHCT.getFormattedIcon = function(name, size, x, y)
+	local iconName = name or 'default'
+	local iconSize = size or MHCT.DEFAULT_ICON_SIZE
+	local xOffSet = x or 0
+	local yOffSet = y or 0
+
+	return format(MHCT.iconTable[iconName], iconSize, iconSize, xOffSet, yOffSet)
+end
+
+MHCT.classificationType = function(unit)	
+	if UnitIsPlayer(unit) then return end
+
+	local unitLevel = UnitEffectiveLevel(unit)
+	local classification = UnitClassification(unit)
+	
+	if classification == 'rare' or classification == 'rareelite' then
+		return classification
+	end
+	
+	if unitLevel == -1 or classification == 'boss' or classification == 'worldboss' then
+		return 'boss'
+	end
+	
+	if unitLevel > MHCT.MAX_PLAYER_LEVEL then
+		return 'eliteplus'
+	end
+	
+	return classification
+end
+
+
+MHCT.difficultyLevelFormatter = function(unit, unitLevel)
+	local unitType = MHCT.classificationType(unit)
+	local crossSymbol = '+'
+	local difficultyColor = GetCreatureDifficultyColor(unitLevel)
+	local hexColor = MHCT.rgbToHexDecimal(difficultyColor.r, difficultyColor.g, difficultyColor.b)
+
+	local formatMap = {
+		boss = function() return format('|cff%s%s|r', '00FFFF', '') end,
+		eliteplus = function() return format('|cff%s%s%s%s|r', hexColor, unitLevel, crossSymbol, crossSymbol) end,
+		elite = function() return format('|cff%s%s%s|r', hexColor, unitLevel, crossSymbol) end,
+		rareelite = function() return format('|cff%s%sR%s|r', hexColor, unitLevel, crossSymbol) end,
+		rare = function() return format('|cff%s%sR|r', hexColor, unitLevel) end,
+		default = function() return format('|cff%s%s|r', hexColor, unitLevel) end
+	}
+
+	return (formatMap[unitType] or formatMap['default'])()
+end
+
+MHCT.statusFormatter = function(status, size, reverse)
+	if not status then return end
+
+	local iconSize = size or MHCT.DEFAULT_ICON_SIZE
+	local statusIconMap = {
+		[L['AFK']] = 'redWarning',
+		[L['DND']] = 'yellowWarning',
+		[L['Dead']] = 'deadIcon',
+		[L['Ghost']] = 'ghostIcon',
+		[L['Offline']] = 'offlineIcon'
+	}
+	local iconName = statusIconMap[status]
+	local formattedStatus = format('|cffD6BFA6%s|r', strupper(status))
+
+	if reverse then
+		return format('%s%s', MHCT.getFormattedIcon(iconName, iconSize), formattedStatus)
+	else 
+		return format('%s%s', formattedStatus, MHCT.getFormattedIcon(iconName, iconSize))
+	end
+end
+
+MHCT.abbreviate = function(str, reverse, unit)
+	local words = {}
+	local firstLetters = {}
+	local formattedString = gsub(str, "'", "") -- remove apostrophes
+	for word in gmatch(formattedString, "%w+") do	
+		tinsert(firstLetters, sub(word, 1, 1))
+		tinsert(words, word)
+	end
+
+	-- GUARD: if there is only one word in string, return the string
+	if #words == 1 then 
+		return str
+	end
+
+	-- GUARD: if mob is special (boss, rare, etc) just use first name
+	if MHCT.classificationType(unit) == 'boss' then
+		return words[1]
+	end
+
+	local abbreviatedString = ''
+	if reverse then
+		for index, value in ipairs(words) do
+			if index == 1 then
+				abbreviatedString = value
+			else
+				abbreviatedString = abbreviatedString..' '..firstLetters[index]..'.'
+			end
+		end
+	else 
+		for index, value in ipairs(words) do
+			if index ~= #words then
+				abbreviatedString = abbreviatedString..''..firstLetters[index]..'.'
+			else 
+				abbreviatedString = abbreviatedString..' '..value
+			end
+		end
+	end
+
+	return abbreviatedString
+end  
