@@ -1,5 +1,11 @@
 # ElvUI MH Tags
 
+## <span style="color:white">[2.0.1] (August 27th, 2024)</span>.
+
+- NEW Tag: `[mh-health:current:percent:left-hidefull]`
+- NEW Tag: `[mh-smartlevel]`
+- BUG: Woopsie, accidentally deleted addon icon
+
 ## <span style="color:cyan">[2.0.0] Major Update (August 18th, 2024)</span>.
 
 - Overhauled for TWW

@@ -81,6 +81,22 @@ E:AddTag('mh-health:current:percent:right-hidefull', 'UNIT_HEALTH UNIT_MAXHEALTH
 	end
 end)
 
+E:AddTagInfo("mh-health:current:percent:left-hidefull", MHCT.TAG_CATEGORY_NAME, "Hides percent at full health else shows at all times similar to following example: 85% |100k")
+	E:AddTag('mh-health:current:percent:left-hidefull', 'UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED', function(unit)
+		local statusFormatted = formatWithStatusCheck(unit)
+		if statusFormatted then return statusFormatted end
+	
+		local maxHp = UnitHealthMax(unit)
+		local currentHp = UnitHealth(unit)
+	
+		if maxHp ~= currentHp then
+			local currentPercent = (currentHp / maxHp) * 100
+			return format("%.1f%% | %s", currentPercent, E:GetFormattedText('CURRENT', currentHp, maxHp, nil, true))
+		else
+			return E:GetFormattedText('CURRENT', currentHp, maxHp, nil, true)
+		end
+	end)
+
 E:AddTagInfo("mh-health:absorb:current:percent:right", MHCT.TAG_CATEGORY_NAME, "Hides percent at full health else shows absorb, current, and percent to following example: (**absorb amount**) 100k | 85%")
 E:AddTag('mh-health:absorb:current:percent:right', 'UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED UNIT_ABSORB_AMOUNT_CHANGED', function(unit)
 	local statusFormatted = formatWithStatusCheck(unit)
@@ -347,3 +363,10 @@ E:AddTag('mh-absorb', 'UNIT_ABSORB_AMOUNT_CHANGED', function(unit)
 		return format("|cff%s(%s)|r", MHCT.ABSORB_TEXT_COLOR, E:ShortValue(absorbAmount))
 	end
 end)
+
+E:AddTagInfo("mh-smartlevel", MHCT.TAG_CATEGORY_NAME, "Simple tag to show level if unit is not MAX level")
+E:AddTag('mh-smartlevel', 'UNIT_LEVEL PLAYER_LEVEL_UP', function(unit)
+	local unitLevel = UnitEffectiveLevel(unit)	
+	return MHCT.MAX_PLAYER_LEVEL == unitLevel and '' or unitLevel
+end)
+
