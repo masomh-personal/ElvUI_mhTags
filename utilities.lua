@@ -16,8 +16,8 @@ local gsub = string.gsub
 local gmatch = string.gmatch
 local sub = string.sub
 local tinsert = table.insert
-local UnitIsAFK, UnitIsDND, UnitIsFeignDeath, UnitIsDead, UnitIsGhost, UnitIsConnected =
-	UnitIsAFK, UnitIsDND, UnitIsFeignDeath, UnitIsDead, UnitIsGhost, UnitIsConnected
+local UnitIsAFK, UnitIsDND, UnitIsFeignDeath, UnitIsDead, UnitIsGhost, UnitIsConnected, UnitHealthMax, UnitHealth =
+	UnitIsAFK, UnitIsDND, UnitIsFeignDeath, UnitIsDead, UnitIsGhost, UnitIsConnected, UnitHealthMax, UnitHealth
 local UnitIsPlayer, UnitEffectiveLevel, UnitClassification, GetCreatureDifficultyColor =
 	UnitIsPlayer, UnitEffectiveLevel, UnitClassification, GetCreatureDifficultyColor
 local GetMaxPlayerLevel = GetMaxPlayerLevel
@@ -249,3 +249,24 @@ MHCT.ICON_MAP = {
 	["rareelite"] = "silverBahai",
 	["rare"] = "silverStar",
 }
+
+MHCT.formatWithStatusCheck = function(unit)
+	local status = MHCT.statusCheck(unit)
+	if status then
+		return MHCT.statusFormatter(status)
+	end
+
+	return nil
+end
+
+MHCT.formatHealthPercent = function(unit, args, showSign)
+	local maxHp = UnitHealthMax(unit)
+	local currentHp = UnitHealth(unit)
+	if currentHp == maxHp then
+		return E:GetFormattedText("CURRENT", maxHp, currentHp, nil, true)
+	else
+		local decimalPlaces = tonumber(args) or 0
+		local formatPattern = showSign and "%%.%sf%%%%" or "%%.%sf"
+		return format(format(formatPattern, decimalPlaces), (currentHp / maxHp) * 100)
+	end
+end

@@ -20,31 +20,10 @@ local IsInRaid = IsInRaid
 local UnitPowerType = UnitPowerType
 
 --------------------------------------
--- HELPER FUNCTIONS
+-- TAGS
+-- NOTE: (from ElvUI) third arg here is added from the user as like [name:health{ff00ff:00ff00}] or [name:health{class:00ff00}]
 --------------------------------------
-local function formatWithStatusCheck(unit)
-	local status = MHCT.statusCheck(unit)
-	if status then
-		return MHCT.statusFormatter(status)
-	end
-	return nil
-end
 
-local function formatHealthPercent(unit, args, showSign)
-	local maxHp = UnitHealthMax(unit)
-	local currentHp = UnitHealth(unit)
-	if currentHp == maxHp then
-		return E:GetFormattedText("CURRENT", maxHp, currentHp, nil, true)
-	else
-		local decimalPlaces = tonumber(args) or 0
-		local formatPattern = showSign and "%%.%sf%%%%" or "%%.%sf"
-		return format(format(formatPattern, decimalPlaces), (currentHp / maxHp) * 100)
-	end
-end
-
---------------------------------------
--- HEALTH RELATED TAGS
---------------------------------------
 E:AddTagInfo(
 	"mh-health:current:percent:left",
 	MHCT.TAG_CATEGORY_NAME,
@@ -54,7 +33,7 @@ E:AddTag(
 	"mh-health:current:percent:left",
 	"UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED",
 	function(unit)
-		local statusFormatted = formatWithStatusCheck(unit)
+		local statusFormatted = MHCT.formatWithStatusCheck(unit)
 		if statusFormatted then
 			return statusFormatted
 		end
@@ -75,7 +54,7 @@ E:AddTag(
 	"mh-health:current:percent:right",
 	"UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED",
 	function(unit)
-		local statusFormatted = formatWithStatusCheck(unit)
+		local statusFormatted = MHCT.formatWithStatusCheck(unit)
 		if statusFormatted then
 			return statusFormatted
 		end
@@ -96,7 +75,7 @@ E:AddTag(
 	"mh-health:current:percent:right-hidefull",
 	"UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED",
 	function(unit)
-		local statusFormatted = formatWithStatusCheck(unit)
+		local statusFormatted = MHCT.formatWithStatusCheck(unit)
 		if statusFormatted then
 			return statusFormatted
 		end
@@ -122,7 +101,7 @@ E:AddTag(
 	"mh-health:current:percent:left-hidefull",
 	"UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED",
 	function(unit)
-		local statusFormatted = formatWithStatusCheck(unit)
+		local statusFormatted = MHCT.formatWithStatusCheck(unit)
 		if statusFormatted then
 			return statusFormatted
 		end
@@ -148,7 +127,7 @@ E:AddTag(
 	"mh-health:absorb:current:percent:right",
 	"UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED UNIT_ABSORB_AMOUNT_CHANGED",
 	function(unit)
-		local statusFormatted = formatWithStatusCheck(unit)
+		local statusFormatted = MHCT.formatWithStatusCheck(unit)
 		if statusFormatted then
 			return statusFormatted
 		end
@@ -174,29 +153,29 @@ E:AddTag(
 E:AddTagInfo(
 	"mh-health:simple:percent",
 	MHCT.TAG_CATEGORY_NAME,
-	"Shows max hp at full or percent with dynamic # of decimals (dynamic number within {} of tag) - Example: mh-health:simple:percent{2} will show percent to 2 decimal places"
+	"Shows max hp at full or percent with dynamic # of decimals (dynamic number within {} of tag) - Example: [mh-health:simple:percent{2}] will show percent to 2 decimal places"
 )
 E:AddTag("mh-health:simple:percent", "PLAYER_FLAGS_CHANGED UNIT_CONNECTION UNIT_HEALTH", function(unit, _, args)
-	local statusFormatted = formatWithStatusCheck(unit)
+	local statusFormatted = MHCT.formatWithStatusCheck(unit)
 	if statusFormatted then
 		return statusFormatted
 	end
 
-	return formatHealthPercent(unit, args, true)
+	return MHCT.formatHealthPercent(unit, args, true)
 end)
 
 E:AddTagInfo(
 	"mh-health:simple:percent-nosign",
 	MHCT.TAG_CATEGORY_NAME,
-	"Shows max hp at full or percent (with no % sign) with dynamic # of decimals (dynamic number within {} of tag) - Example: mh-health:simple:percent{2} will show percent to 2 decimal places"
+	"Shows max hp at full or percent (with no % sign) with dynamic # of decimals (dynamic number within {} of tag) - [Example: mh-health:simple:percent{2}] will show percent to 2 decimal places"
 )
 E:AddTag("mh-health:simple:percent-nosign", "PLAYER_FLAGS_CHANGED UNIT_CONNECTION UNIT_HEALTH", function(unit, _, args)
-	local statusFormatted = formatWithStatusCheck(unit)
+	local statusFormatted = MHCT.formatWithStatusCheck(unit)
 	if statusFormatted then
 		return statusFormatted
 	end
 
-	return formatHealthPercent(unit, args, false)
+	return MHCT.formatHealthPercent(unit, args, false)
 end)
 
 E:AddTagInfo(
@@ -208,7 +187,7 @@ E:AddTag(
 	"mh-health:simple:percent-nosign-v2",
 	"PLAYER_FLAGS_CHANGED UNIT_NAME_UPDATE UNIT_CONNECTION UNIT_HEALTH UNIT_MAXHEALTH",
 	function(unit, _, args)
-		local statusFormatted = formatWithStatusCheck(unit)
+		local statusFormatted = MHCT.formatWithStatusCheck(unit)
 		if statusFormatted then
 			return statusFormatted
 		end
@@ -228,13 +207,13 @@ E:AddTag(
 E:AddTagInfo(
 	"mh-health:simple:percent-v2",
 	MHCT.TAG_CATEGORY_NAME,
-	"Hidden at max hp at full or percent + % sign with dynamic # of decimals (dynamic number within {} of tag) - Example: mh-health:simple:percent{2} will show percent to 2 decimal places"
+	"Hidden at max hp at full or percent + % sign with dynamic # of decimals (dynamic number within {} of tag) - Example: [mh-health:simple:percent{2}] will show percent to 2 decimal places"
 )
 E:AddTag(
 	"mh-health:simple:percent-v2",
 	"PLAYER_FLAGS_CHANGED UNIT_NAME_UPDATE UNIT_CONNECTION UNIT_HEALTH UNIT_MAXHEALTH",
 	function(unit, _, args)
-		local statusFormatted = formatWithStatusCheck(unit)
+		local statusFormatted = MHCT.formatWithStatusCheck(unit)
 		if statusFormatted then
 			return statusFormatted
 		end
@@ -254,7 +233,7 @@ E:AddTag(
 E:AddTagInfo(
 	"mh-dynamic:name:caps-statusicon",
 	MHCT.TAG_CATEGORY_NAME,
-	"Shows unit name in all CAPS with a dynamic # of characters (dynamic number within {} of tag) - Example: mh-dynamic:name:caps-statusicon{20} will show name up to 20 characters"
+	"Shows unit name in all CAPS with a dynamic # of characters (dynamic number within {} of tag) - Example: [mh-dynamic:name:caps-statusicon{20}] will show name up to 20 characters"
 )
 E:AddTag(
 	"mh-dynamic:name:caps-statusicon",
@@ -269,7 +248,7 @@ E:AddTag(
 		local length = tonumber(args) or MHCT.DEFAULT_TEXT_LENGTH
 		local formatted = ""
 
-		local statusFormatted = formatWithStatusCheck(unit)
+		local statusFormatted = MHCT.formatWithStatusCheck(unit)
 		if statusFormatted then
 			formatted = statusFormatted
 		else
@@ -321,12 +300,12 @@ E:AddTagInfo(
 	MHCT.TAG_CATEGORY_NAME,
 	"Name abbreviation/shortener if greater than 25 characters - Example: 'Cleave Training Dummy' => 'C.T. Dummy'"
 )
-E:AddTag("mh-name-caps-abbrev-V2", "UNIT_NAME_UPDATE", function(unit, nameLen)
+E:AddTag("mh-name-caps-abbrev-V2", "UNIT_NAME_UPDATE", function(unit, _, nameLen)
 	local name = UnitName(unit)
 
 	-- If no argument is provided, default to 25
 	local maxLength = tonumber(nameLen) or 25
-	if #name < maxLength then
+	if #name <= maxLength then
 		return strupper(name)
 	else
 		return MHCT.abbreviate(strupper(name), false, unit)
@@ -338,12 +317,12 @@ E:AddTagInfo(
 	MHCT.TAG_CATEGORY_NAME,
 	"Name abbreviation/shortener if greater than 25 characters - Example: 'Cleave Training Dummy' => 'Cleave T.D.'"
 )
-E:AddTag("mh-name-caps-abbrev-reverse-V2", "UNIT_NAME_UPDATE", function(unit, nameLen)
+E:AddTag("mh-name-caps-abbrev-reverse-V2", "UNIT_NAME_UPDATE", function(unit)
 	local name = UnitName(unit)
 
 	-- If no argument is provided, default to 25
 	local maxLength = tonumber(nameLen) or 25
-	if #name < maxLength then
+	if #name <= maxLength then
 		return strupper(name)
 	else
 		return MHCT.abbreviate(strupper(name), true, unit)
@@ -398,31 +377,30 @@ end)
 E:AddTagInfo(
 	"mh-classification:icon",
 	MHCT.TAG_CATEGORY_NAME,
-	"Classification custom blp icons (elite, minibosses, bosses, rares, and rare elites - dynamic number within {} of tag = icon size with default size: 14px)"
+	"Classification custom blp icons (elite, minibosses, bosses, rares, and rare elites)"
 )
 E:AddTag("mh-classification:icon", "UNIT_NAME_UPDATE UNIT_LEVEL PLAYER_LEVEL_UP", function(unit, _, args)
 	local unitType = MHCT.classificationType(unit)
 	local baseIconSize = tonumber(args) or MHCT.DEFAULT_ICON_SIZE
 
 	if unitType and MHCT.ICON_MAP[unitType] then
-		return MHCT.getFormattedIcon(iconMap[unitType], baseIconSize)
+		return MHCT.getFormattedIcon(MHCT.ICON_MAP[unitType], baseIconSize)
 	end
 
 	return ""
 end)
 
--- mh-classification-icon-V2
 E:AddTagInfo(
-	"mh-classification-icon-V2",
+	"mh-classification:icon-V2",
 	MHCT.TAG_CATEGORY_NAME,
-	"Classification custom blp icons (elite, minibosses, bosses, rares, and rare elites) - V2: can pass in iconSize arg by add ':{number}'"
+	"Classification custom blp icons (elite, minibosses, bosses, rares, and rare elites) - NON Dynamic sizing"
 )
-E:AddTag("mh-classification-icon-V2", "UNIT_NAME_UPDATE UNIT_LEVEL PLAYER_LEVEL_UP", function(unit, iconSize)
+E:AddTag("mh-classification:icon-V2", "UNIT_NAME_UPDATE UNIT_LEVEL PLAYER_LEVEL_UP", function(unit)
 	local unitType = MHCT.classificationType(unit)
-	local baseIconSize = tonumber(iconSize) or MHCT.DEFAULT_ICON_SIZE
+	local baseIconSize = MHCT.DEFAULT_ICON_SIZE
 
 	if unitType and MHCT.ICON_MAP[unitType] then
-		return MHCT.getFormattedIcon(iconMap[unitType], baseIconSize)
+		return MHCT.getFormattedIcon(MHCT.ICON_MAP[unitType], baseIconSize)
 	end
 
 	return ""
@@ -459,7 +437,7 @@ E:AddTagInfo(
 	"Shows deficit shortvalue number when less than 100% health and status + icon if dead/offline/ghost"
 )
 E:AddTag("mh-deficit:num-status", "UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED", function(unit)
-	local statusFormatted = formatWithStatusCheck(unit)
+	local statusFormatted = MHCT.formatWithStatusCheck(unit)
 	if statusFormatted then
 		return statusFormatted
 	end
@@ -487,7 +465,7 @@ E:AddTag(
 	"mh-deficit:percent-status",
 	"UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED",
 	function(unit, _, args)
-		local statusFormatted = formatWithStatusCheck(unit)
+		local statusFormatted = MHCT.formatWithStatusCheck(unit)
 		if statusFormatted then
 			return statusFormatted
 		end
@@ -508,7 +486,7 @@ E:AddTag(
 	"mh-deficit:percent-status-nosign",
 	"UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED",
 	function(unit, _, args)
-		local statusFormatted = formatWithStatusCheck(unit)
+		local statusFormatted = MHCT.formatWithStatusCheck(unit)
 		if statusFormatted then
 			return statusFormatted
 		end
@@ -556,7 +534,7 @@ E:AddTagInfo(
 	"Simple status tag that shows all the different flags: AFK, DND, OFFLINE, DEAD, or GHOST (with their own icons)"
 )
 E:AddTag("mh-status", "UNIT_CONNECTION PLAYER_FLAGS_CHANGED", function(unit)
-	return formatWithStatusCheck(unit)
+	return MHCT.formatWithStatusCheck(unit)
 end)
 
 E:AddTagInfo(
