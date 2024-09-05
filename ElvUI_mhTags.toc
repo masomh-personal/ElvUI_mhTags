@@ -2,7 +2,7 @@
 ## Title: |cff1784d1ElvUI|r |cffccff33MH Tags|r
 ## Notes: Custom tags for use across ElvUI
 ## Author: mhDesigns
-## Version: 2.0.1
+## Version: 2.0.2
 ## RequiredDeps: ElvUI
 ## IconTexture: Interface\Addons\ElvUI_mhTags\icons\addon_icon.png
 

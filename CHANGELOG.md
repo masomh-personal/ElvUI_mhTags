@@ -1,5 +1,10 @@
 # ElvUI MH Tags
 
+## <span style="color:white">[2.0.2] (September 5th, 2024)</span>.
+
+- MISC: maintenance and small fixes with wording
+- MISC: added additional comments and structure
+
 ## <span style="color:white">[2.0.1] (August 27th, 2024)</span>.
 
 - NEW Tag: `[mh-health:current:percent:left-hidefull]`
