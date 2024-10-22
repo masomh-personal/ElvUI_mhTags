@@ -1,5 +1,11 @@
 # ElvUI MH Tags
 
+## <span style="color:white">[2.0.3] (October 21st, 2024)</span>.
+
+- MISC: TOC updated for patch 11.0.5
+- MISC: tag categorized by type so can be easily viewed in the ElvUI options: "Available Tags" section
+- MISC: code clean up
+
 ## <span style="color:white">[2.0.2] (September 5th, 2024)</span>.
 
 - MISC: maintenance and small fixes with wording

@@ -26,7 +26,7 @@ local UnitPowerType = UnitPowerType
 
 E:AddTagInfo(
 	"mh-health:current:percent:left",
-	MHCT.TAG_CATEGORY_NAME,
+	MHCT.TAG_CATEGORY_NAME .. " [health]",
 	"Shows current + percent health at all times similar to following example: 85% | 100k"
 )
 E:AddTag(
@@ -47,7 +47,7 @@ E:AddTag(
 
 E:AddTagInfo(
 	"mh-health:current:percent:right",
-	MHCT.TAG_CATEGORY_NAME,
+	MHCT.TAG_CATEGORY_NAME .. " [health]",
 	"Shows current + percent health at all times similar to following example: 100k | 85%"
 )
 E:AddTag(
@@ -68,7 +68,7 @@ E:AddTag(
 
 E:AddTagInfo(
 	"mh-health:current:percent:right-hidefull",
-	MHCT.TAG_CATEGORY_NAME,
+	MHCT.TAG_CATEGORY_NAME .. " [health]",
 	"Hides percent at full health else shows at all times similar to following example: 100k | 85%"
 )
 E:AddTag(
@@ -94,7 +94,7 @@ E:AddTag(
 
 E:AddTagInfo(
 	"mh-health:current:percent:left-hidefull",
-	MHCT.TAG_CATEGORY_NAME,
+	MHCT.TAG_CATEGORY_NAME .. " [health]",
 	"Hides percent at full health else shows at all times similar to following example: 85% |100k"
 )
 E:AddTag(
@@ -120,7 +120,7 @@ E:AddTag(
 
 E:AddTagInfo(
 	"mh-health:absorb:current:percent:right",
-	MHCT.TAG_CATEGORY_NAME,
+	MHCT.TAG_CATEGORY_NAME .. " [health]",
 	"Hides percent at full health else shows absorb, current, and percent to following example: (**absorb amount**) 100k | 85%"
 )
 E:AddTag(
@@ -152,7 +152,7 @@ E:AddTag(
 
 E:AddTagInfo(
 	"mh-health:simple:percent",
-	MHCT.TAG_CATEGORY_NAME,
+	MHCT.TAG_CATEGORY_NAME .. " [health]",
 	"Shows max hp at full or percent with dynamic # of decimals (dynamic number within {} of tag) - Example: [mh-health:simple:percent{2}] will show percent to 2 decimal places"
 )
 E:AddTag("mh-health:simple:percent", "PLAYER_FLAGS_CHANGED UNIT_CONNECTION UNIT_HEALTH", function(unit, _, args)
@@ -166,7 +166,7 @@ end)
 
 E:AddTagInfo(
 	"mh-health:simple:percent-nosign",
-	MHCT.TAG_CATEGORY_NAME,
+	MHCT.TAG_CATEGORY_NAME .. " [health]",
 	"Shows max hp at full or percent (with no % sign) with dynamic # of decimals (dynamic number within {} of tag) - [Example: mh-health:simple:percent{2}] will show percent to 2 decimal places"
 )
 E:AddTag("mh-health:simple:percent-nosign", "PLAYER_FLAGS_CHANGED UNIT_CONNECTION UNIT_HEALTH", function(unit, _, args)
@@ -180,7 +180,7 @@ end)
 
 E:AddTagInfo(
 	"mh-health:simple:percent-nosign-v2",
-	MHCT.TAG_CATEGORY_NAME,
+	MHCT.TAG_CATEGORY_NAME .. " [health]",
 	"Hidden at max hp at full or percent (with no % sign) with dynamic # of decimals (dynamic number within {} of tag) - Example: mh-health:simple:percent{2} will show percent to 2 decimal places"
 )
 E:AddTag(
@@ -206,7 +206,7 @@ E:AddTag(
 
 E:AddTagInfo(
 	"mh-health:simple:percent-v2",
-	MHCT.TAG_CATEGORY_NAME,
+	MHCT.TAG_CATEGORY_NAME .. " [health]",
 	"Hidden at max hp at full or percent + % sign with dynamic # of decimals (dynamic number within {} of tag) - Example: [mh-health:simple:percent{2}] will show percent to 2 decimal places"
 )
 E:AddTag(
@@ -232,7 +232,7 @@ E:AddTag(
 
 E:AddTagInfo(
 	"mh-dynamic:name:caps-statusicon",
-	MHCT.TAG_CATEGORY_NAME,
+	MHCT.TAG_CATEGORY_NAME .. " [name]",
 	"Shows unit name in all CAPS with a dynamic # of characters (dynamic number within {} of tag) - Example: [mh-dynamic:name:caps-statusicon{20}] will show name up to 20 characters"
 )
 E:AddTag(
@@ -261,7 +261,7 @@ E:AddTag(
 
 E:AddTagInfo(
 	"mh-dynamic:name:caps",
-	MHCT.TAG_CATEGORY_NAME,
+	MHCT.TAG_CATEGORY_NAME .. " [name]",
 	"Shows unit name in all CAPS with a dynamic # of characters (dynamic number within {} of tag - see examples above)"
 )
 E:AddTag("mh-dynamic:name:caps", "UNIT_NAME_UPDATE", function(unit, _, args)
@@ -273,7 +273,7 @@ end)
 
 E:AddTagInfo(
 	"mh-name:caps:abbrev",
-	MHCT.TAG_CATEGORY_NAME,
+	MHCT.TAG_CATEGORY_NAME .. " [name]",
 	"Name abbreviation/shortener - Example: 'Cleave Training Dummy' => 'C.T. Dummy'"
 )
 E:AddTag("mh-name:caps:abbrev", "UNIT_NAME_UPDATE", function(unit, _, args)
@@ -285,7 +285,7 @@ end)
 
 E:AddTagInfo(
 	"mh-name:caps:abbrev-reverse",
-	MHCT.TAG_CATEGORY_NAME,
+	MHCT.TAG_CATEGORY_NAME .. " [name]",
 	"Name abbreviation/shortener - Example: 'Cleave Training Dummy' => 'Cleave T.D.'"
 )
 E:AddTag("mh-name:caps:abbrev-reverse", "UNIT_NAME_UPDATE", function(unit, _, args)
@@ -297,7 +297,7 @@ end)
 
 E:AddTagInfo(
 	"mh-name-caps-abbrev-V2",
-	MHCT.TAG_CATEGORY_NAME,
+	MHCT.TAG_CATEGORY_NAME .. " [name]",
 	"Name abbreviation/shortener if greater than 25 characters - Example: 'Cleave Training Dummy' => 'C.T. Dummy'"
 )
 E:AddTag("mh-name-caps-abbrev-V2", "UNIT_NAME_UPDATE", function(unit, _, nameLen)
@@ -314,7 +314,7 @@ end)
 
 E:AddTagInfo(
 	"mh-name-caps-abbrev-reverse-V2",
-	MHCT.TAG_CATEGORY_NAME,
+	MHCT.TAG_CATEGORY_NAME .. " [name]",
 	"Name abbreviation/shortener if greater than 25 characters - Example: 'Cleave Training Dummy' => 'Cleave T.D.'"
 )
 E:AddTag("mh-name-caps-abbrev-reverse-V2", "UNIT_NAME_UPDATE", function(unit)
@@ -331,7 +331,7 @@ end)
 
 E:AddTagInfo(
 	"mh-player:frame:name:caps-groupnumber",
-	MHCT.TAG_CATEGORY_NAME,
+	MHCT.TAG_CATEGORY_NAME .. " [name]",
 	"Shows unit name in all CAPS with a dynamic # of characters + unit group number if in raid (dynamic number within {} of tag - see examples above)"
 )
 E:AddTag("mh-player:frame:name:caps-groupnumber", "UNIT_NAME_UPDATE GROUP_ROSTER_UPDATE", function(unit, _, args)
@@ -358,7 +358,7 @@ end)
 
 E:AddTagInfo(
 	"mh-target:frame:power-percent",
-	MHCT.TAG_CATEGORY_NAME,
+	MHCT.TAG_CATEGORY_NAME .. " [power]",
 	"Simple power percent, no percentage sign with dynamic number of decimals (dynamic number within {} of tag - see examples above)"
 )
 E:AddTag("mh-target:frame:power-percent", "UNIT_DISPLAYPOWER UNIT_POWER_FREQUENT UNIT_MAXPOWER", function(unit, _, args)
@@ -376,7 +376,7 @@ end)
 
 E:AddTagInfo(
 	"mh-classification:icon",
-	MHCT.TAG_CATEGORY_NAME,
+	MHCT.TAG_CATEGORY_NAME .. " [classification]",
 	"Classification custom blp icons (elite, minibosses, bosses, rares, and rare elites)"
 )
 E:AddTag("mh-classification:icon", "UNIT_NAME_UPDATE UNIT_LEVEL PLAYER_LEVEL_UP", function(unit, _, args)
@@ -392,7 +392,7 @@ end)
 
 E:AddTagInfo(
 	"mh-classification:icon-V2",
-	MHCT.TAG_CATEGORY_NAME,
+	MHCT.TAG_CATEGORY_NAME .. " [classification]",
 	"Classification custom blp icons (elite, minibosses, bosses, rares, and rare elites) - NON Dynamic sizing"
 )
 E:AddTag("mh-classification:icon-V2", "UNIT_NAME_UPDATE UNIT_LEVEL PLAYER_LEVEL_UP", function(unit)
@@ -408,7 +408,7 @@ end)
 
 E:AddTagInfo(
 	"mh-difficultycolor:level",
-	MHCT.TAG_CATEGORY_NAME,
+	MHCT.TAG_CATEGORY_NAME .. " [misc]",
 	"Traditional ElvUI difficulty color + level with more modern updates (will always show level)"
 )
 E:AddTag("mh-difficultycolor:level", "UNIT_LEVEL PLAYER_LEVEL_UP", function(unit)
@@ -417,7 +417,7 @@ end)
 
 E:AddTagInfo(
 	"mh-difficultycolor:level-hide",
-	MHCT.TAG_CATEGORY_NAME,
+	MHCT.TAG_CATEGORY_NAME .. " [misc]",
 	"Traditional ElvUI difficulty color + level with more modern updates (will always show level and only hide level when you reach max level and unit level is equal to player level)"
 )
 E:AddTag("mh-difficultycolor:level-hide", "UNIT_LEVEL PLAYER_LEVEL_UP", function(unit)
@@ -433,7 +433,7 @@ end)
 
 E:AddTagInfo(
 	"mh-deficit:num-status",
-	MHCT.TAG_CATEGORY_NAME,
+	MHCT.TAG_CATEGORY_NAME .. " [health]",
 	"Shows deficit shortvalue number when less than 100% health and status + icon if dead/offline/ghost"
 )
 E:AddTag("mh-deficit:num-status", "UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED", function(unit)
@@ -448,7 +448,7 @@ end)
 
 E:AddTagInfo(
 	"mh-deficit:num-nostatus",
-	MHCT.TAG_CATEGORY_NAME,
+	MHCT.TAG_CATEGORY_NAME .. " [health]",
 	"Shows deficit shortvalue number when less than 100% health (no status)"
 )
 E:AddTag("mh-deficit:num-nostatus", "UNIT_HEALTH UNIT_MAXHEALTH", function(unit)
@@ -458,7 +458,7 @@ end)
 
 E:AddTagInfo(
 	"mh-deficit:percent-status",
-	MHCT.TAG_CATEGORY_NAME,
+	MHCT.TAG_CATEGORY_NAME .. " [health]",
 	"Shows deficit percent with dynamic decimal when less than 100% health + status icon"
 )
 E:AddTag(
@@ -479,7 +479,7 @@ E:AddTag(
 
 E:AddTagInfo(
 	"mh-deficit:percent-status-nosign",
-	MHCT.TAG_CATEGORY_NAME,
+	MHCT.TAG_CATEGORY_NAME .. " [health]",
 	"Shows deficit percent with dynamic decimal when less than 100% health + status icon (does not include %)"
 )
 E:AddTag(
@@ -500,7 +500,7 @@ E:AddTag(
 
 E:AddTagInfo(
 	"mh-deficit:percent-nostatus",
-	MHCT.TAG_CATEGORY_NAME,
+	MHCT.TAG_CATEGORY_NAME .. " [health]",
 	"Shows deficit percent with dynamic decimal when less than 100% health (no status)"
 )
 E:AddTag("mh-deficit:percent-nostatus", "UNIT_HEALTH UNIT_MAXHEALTH", function(unit, _, args)
@@ -512,7 +512,7 @@ end)
 
 E:AddTagInfo(
 	"mh-healthcolor",
-	MHCT.TAG_CATEGORY_NAME,
+	MHCT.TAG_CATEGORY_NAME .. " [misc]",
 	"Similar color tag to base ElvUI, but with brighter and high contrast gradient"
 )
 E:AddTag("mh-healthcolor", "UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED", function(unit)
@@ -530,7 +530,7 @@ end)
 
 E:AddTagInfo(
 	"mh-status",
-	MHCT.TAG_CATEGORY_NAME,
+	MHCT.TAG_CATEGORY_NAME .. " [misc]",
 	"Simple status tag that shows all the different flags: AFK, DND, OFFLINE, DEAD, or GHOST (with their own icons)"
 )
 E:AddTag("mh-status", "UNIT_CONNECTION PLAYER_FLAGS_CHANGED", function(unit)
@@ -539,7 +539,7 @@ end)
 
 E:AddTagInfo(
 	"mh-status-noicon",
-	MHCT.TAG_CATEGORY_NAME,
+	MHCT.TAG_CATEGORY_NAME .. " [misc]",
 	"Simple status tag that shows all the different flags: AFK, DND, OFFLINE, DEAD, or GHOST (NO icon, text only)"
 )
 E:AddTag("mh-status-noicon", "UNIT_CONNECTION PLAYER_FLAGS_CHANGED", function(unit)
@@ -549,7 +549,11 @@ E:AddTag("mh-status-noicon", "UNIT_CONNECTION PLAYER_FLAGS_CHANGED", function(un
 	end
 end)
 
-E:AddTagInfo("mh-absorb", MHCT.TAG_CATEGORY_NAME, "Simple absorb tag in parentheses (with yellow text color)")
+E:AddTagInfo(
+	"mh-absorb",
+	MHCT.TAG_CATEGORY_NAME .. " [misc]",
+	"Simple absorb tag in parentheses (with yellow text color)"
+)
 E:AddTag("mh-absorb", "UNIT_ABSORB_AMOUNT_CHANGED", function(unit)
 	local absorbAmount = UnitGetTotalAbsorbs(unit) or 0
 	if absorbAmount ~= 0 then
@@ -559,7 +563,7 @@ end)
 
 E:AddTagInfo(
 	"mh-smartlevel",
-	MHCT.TAG_CATEGORY_NAME,
+	MHCT.TAG_CATEGORY_NAME .. " [misc]",
 	"Simple tag to show all unit levels if player is not max level. If max level, will show level of all non max level units"
 )
 E:AddTag("mh-smartlevel", "UNIT_LEVEL PLAYER_LEVEL_UP", function(unit)
