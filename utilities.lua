@@ -3,7 +3,11 @@ if not C_AddOns.IsAddOnLoaded("ElvUI") then
 end
 local E, L = unpack(ElvUI)
 local ElvUF = E.oUF
-MHCT = {}
+
+-- Create addon private environment (to not pollute Global)
+local _, ns = ...
+ns.MHCT = {}
+local MHCT = ns.MHCT
 
 -------------------------------------
 -- LOCALS

@@ -1,8 +1,12 @@
 if not C_AddOns.IsAddOnLoaded("ElvUI") then
 	return
 end
-local MHCT = MHCT
+
 local E, L = unpack(ElvUI)
+
+-- Get addon private environment (to not pollute Global)
+local _, ns = ...
+local MHCT = ns.MHCT
 
 --------------------------------------
 -- LOCALS
@@ -21,7 +25,6 @@ local UnitPowerType = UnitPowerType
 
 --------------------------------------
 -- TAGS
--- NOTE: (from ElvUI) third arg here is added from the user as like [name:health{ff00ff:00ff00}] or [name:health{class:00ff00}]
 --------------------------------------
 
 E:AddTagInfo(
