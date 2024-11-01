@@ -483,7 +483,7 @@ MHCT.E:AddTagInfo(
 	MHCT.TAG_CATEGORY_NAME .. " [misc]",
 	"Simple status tag that shows all the different flags: AFK, DND, OFFLINE, DEAD, or GHOST (with their own icons)"
 )
-MHCT.E:AddTag("mh-status", "UNIT_CONNECTION PLAYER_FLAGS_CHANGED", function(unit)
+MHCT.E:AddTag("mh-status", "UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED", function(unit)
 	return MHCT.formatWithStatusCheck(unit)
 end)
 
@@ -492,7 +492,7 @@ MHCT.E:AddTagInfo(
 	MHCT.TAG_CATEGORY_NAME .. " [misc]",
 	"Simple status tag that shows all the different flags: AFK, DND, OFFLINE, DEAD, or GHOST (NO icon, text only)"
 )
-MHCT.E:AddTag("mh-status-noicon", "UNIT_CONNECTION PLAYER_FLAGS_CHANGED", function(unit)
+MHCT.E:AddTag("mh-status-noicon", "UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED", function(unit)
 	local status = MHCT.statusCheck(unit)
 	if status then
 		return MHCT.format("|cffD6BFA6%s|r", MHCT.strupper(status))
