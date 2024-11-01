@@ -11,6 +11,7 @@ local MHCT = ns.MHCT
 MHCT.E, MHCT.L = unpack(ElvUI)
 MHCT.ElvUF = MHCT.E.oUF
 
+-- Lua Language Helpers
 MHCT.floor = math.floor
 MHCT.ipairs = ipairs
 MHCT.format = string.format
