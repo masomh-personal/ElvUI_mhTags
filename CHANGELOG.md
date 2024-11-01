@@ -5,6 +5,7 @@
 - Complete refactor of code, cleaned up local variables, and made things a bit more efficient
 - Utilized WOW Addon private namespace object for cleaner variable usage
 - Rechecked every tag to ensure proper events were being used (and not adding event checks we don't need)
+- Separated each category to have it's own file for better modularity
 
 ## <span style="color:white">[2.0.3] (October 21st, 2024)</span>.
 
