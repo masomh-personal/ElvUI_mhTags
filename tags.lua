@@ -357,38 +357,6 @@ MHCT.E:AddTag("mh-player:frame:name:caps-groupnumber", "UNIT_NAME_UPDATE GROUP_R
 end)
 
 MHCT.E:AddTagInfo(
-	"mh-classification:icon",
-	MHCT.TAG_CATEGORY_NAME .. " [classification]",
-	"Classification custom blp icons (elite, minibosses, bosses, rares, and rare elites)"
-)
-MHCT.E:AddTag("mh-classification:icon", "UNIT_NAME_UPDATE UNIT_LEVEL PLAYER_LEVEL_UP", function(unit, _, args)
-	local unitType = MHCT.classificationType(unit)
-	local baseIconSize = MHCT.tonumber(args) or MHCT.DEFAULT_ICON_SIZE
-
-	if unitType and MHCT.ICON_MAP[unitType] then
-		return MHCT.getFormattedIcon(MHCT.ICON_MAP[unitType], baseIconSize)
-	end
-
-	return ""
-end)
-
-MHCT.E:AddTagInfo(
-	"mh-classification:icon-V2",
-	MHCT.TAG_CATEGORY_NAME .. " [classification]",
-	"Classification custom blp icons (elite, minibosses, bosses, rares, and rare elites) - NON Dynamic sizing"
-)
-MHCT.E:AddTag("mh-classification:icon-V2", "UNIT_NAME_UPDATE UNIT_LEVEL PLAYER_LEVEL_UP", function(unit)
-	local unitType = MHCT.classificationType(unit)
-	local baseIconSize = MHCT.DEFAULT_ICON_SIZE
-
-	if unitType and MHCT.ICON_MAP[unitType] then
-		return MHCT.getFormattedIcon(MHCT.ICON_MAP[unitType], baseIconSize)
-	end
-
-	return ""
-end)
-
-MHCT.E:AddTagInfo(
 	"mh-difficultycolor:level",
 	MHCT.TAG_CATEGORY_NAME .. " [misc]",
 	"Traditional ElvUI difficulty color + level with more modern updates (will always show level)"
