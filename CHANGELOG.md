@@ -1,4 +1,10 @@
-# ElvUI MH Tags
+# MH Custom Tags (ElvUI Plugin)
+
+## <span style="color:cyan">[3.0.0] Major Update (October 31st, 2024)</span>.
+
+- Complete refactor of code, cleaned up local variables, and made things a bit more efficient
+- Utilized WOW Addon private namespace object for cleaner variable usage
+- Rechecked every tag to ensure proper events were being used (and not adding event checks we don't need)
 
 ## <span style="color:white">[2.0.3] (October 21st, 2024)</span>.
 
