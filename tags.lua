@@ -6,7 +6,7 @@ local MHCT = ns.MHCT
 --------------------------------------
 MHCT.E:AddTagInfo(
 	"mh-health:current:percent:left",
-	MHCT.TAG_CATEGORY_NAME .. " [health]",
+	MHCT.TAG_CATEGORY_NAME .. " [health-v1]",
 	"Shows current + percent health at all times similar to following example: 85% | 100k"
 )
 MHCT.E:AddTag(
@@ -31,7 +31,7 @@ MHCT.E:AddTag(
 
 MHCT.E:AddTagInfo(
 	"mh-health:current:percent:right",
-	MHCT.TAG_CATEGORY_NAME .. " [health]",
+	MHCT.TAG_CATEGORY_NAME .. " [health-v1]",
 	"Shows current + percent health at all times similar to following example: 100k | 85%"
 )
 MHCT.E:AddTag(
@@ -56,7 +56,7 @@ MHCT.E:AddTag(
 
 MHCT.E:AddTagInfo(
 	"mh-health:current:percent:right-hidefull",
-	MHCT.TAG_CATEGORY_NAME .. " [health]",
+	MHCT.TAG_CATEGORY_NAME .. " [health-v1]",
 	"Hides percent at full health else shows at all times similar to following example: 100k | 85%"
 )
 MHCT.E:AddTag(
@@ -86,7 +86,7 @@ MHCT.E:AddTag(
 
 MHCT.E:AddTagInfo(
 	"mh-health:current:percent:left-hidefull",
-	MHCT.TAG_CATEGORY_NAME .. " [health]",
+	MHCT.TAG_CATEGORY_NAME .. " [health-v1]",
 	"Hides percent at full health else shows at all times similar to following example: 85% |100k"
 )
 MHCT.E:AddTag(
@@ -116,7 +116,7 @@ MHCT.E:AddTag(
 
 MHCT.E:AddTagInfo(
 	"mh-health:absorb:current:percent:right",
-	MHCT.TAG_CATEGORY_NAME .. " [health]",
+	MHCT.TAG_CATEGORY_NAME .. " [health-v1]",
 	"Hides percent at full health else shows absorb, current, and percent to following example: (**absorb amount**) 100k | 85%"
 )
 MHCT.E:AddTag(
@@ -148,7 +148,7 @@ MHCT.E:AddTag(
 
 MHCT.E:AddTagInfo(
 	"mh-health:simple:percent",
-	MHCT.TAG_CATEGORY_NAME .. " [health]",
+	MHCT.TAG_CATEGORY_NAME .. " [health-v1]",
 	"Shows max hp at full or percent with dynamic # of decimals (dynamic number within {} of tag) - Example: [mh-health:simple:percent{2}] will show percent to 2 decimal places"
 )
 MHCT.E:AddTag("mh-health:simple:percent", "PLAYER_FLAGS_CHANGED UNIT_CONNECTION UNIT_HEALTH", function(unit, _, args)
@@ -162,7 +162,7 @@ end)
 
 MHCT.E:AddTagInfo(
 	"mh-health:simple:percent-nosign",
-	MHCT.TAG_CATEGORY_NAME .. " [health]",
+	MHCT.TAG_CATEGORY_NAME .. " [health-v1]",
 	"Shows max hp at full or percent (with no % sign) with dynamic # of decimals (dynamic number within {} of tag) - [Example: mh-health:simple:percent{2}] will show percent to 2 decimal places"
 )
 MHCT.E:AddTag(
@@ -180,7 +180,7 @@ MHCT.E:AddTag(
 
 MHCT.E:AddTagInfo(
 	"mh-health:simple:percent-nosign-v2",
-	MHCT.TAG_CATEGORY_NAME .. " [health]",
+	MHCT.TAG_CATEGORY_NAME .. " [health-v1]",
 	"Hidden at max hp at full or percent (with no % sign) with dynamic # of decimals (dynamic number within {} of tag) - Example: mh-health:simple:percent{2} will show percent to 2 decimal places"
 )
 MHCT.E:AddTag(
@@ -206,7 +206,7 @@ MHCT.E:AddTag(
 
 MHCT.E:AddTagInfo(
 	"mh-health:simple:percent-v2",
-	MHCT.TAG_CATEGORY_NAME .. " [health]",
+	MHCT.TAG_CATEGORY_NAME .. " [health-v1]",
 	"Hidden at max hp at full or percent + % sign with dynamic # of decimals (dynamic number within {} of tag) - Example: [mh-health:simple:percent{2}] will show percent to 2 decimal places"
 )
 MHCT.E:AddTag(
@@ -383,7 +383,7 @@ end)
 
 MHCT.E:AddTagInfo(
 	"mh-deficit:num-status",
-	MHCT.TAG_CATEGORY_NAME .. " [health]",
+	MHCT.TAG_CATEGORY_NAME .. " [health-v1]",
 	"Shows deficit shortvalue number when less than 100% health and status + icon if dead/offline/ghost"
 )
 MHCT.E:AddTag("mh-deficit:num-status", "UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED", function(unit)
@@ -398,7 +398,7 @@ end)
 
 MHCT.E:AddTagInfo(
 	"mh-deficit:num-nostatus",
-	MHCT.TAG_CATEGORY_NAME .. " [health]",
+	MHCT.TAG_CATEGORY_NAME .. " [health-v1]",
 	"Shows deficit shortvalue number when less than 100% health (no status)"
 )
 MHCT.E:AddTag("mh-deficit:num-nostatus", "UNIT_HEALTH UNIT_MAXHEALTH", function(unit)
@@ -408,7 +408,7 @@ end)
 
 MHCT.E:AddTagInfo(
 	"mh-deficit:percent-status",
-	MHCT.TAG_CATEGORY_NAME .. " [health]",
+	MHCT.TAG_CATEGORY_NAME .. " [health-v1]",
 	"Shows deficit percent with dynamic decimal when less than 100% health + status icon"
 )
 MHCT.E:AddTag(
@@ -429,7 +429,7 @@ MHCT.E:AddTag(
 
 MHCT.E:AddTagInfo(
 	"mh-deficit:percent-status-nosign",
-	MHCT.TAG_CATEGORY_NAME .. " [health]",
+	MHCT.TAG_CATEGORY_NAME .. " [health-v1]",
 	"Shows deficit percent with dynamic decimal when less than 100% health + status icon (does not include %)"
 )
 MHCT.E:AddTag(
@@ -450,7 +450,7 @@ MHCT.E:AddTag(
 
 MHCT.E:AddTagInfo(
 	"mh-deficit:percent-nostatus",
-	MHCT.TAG_CATEGORY_NAME .. " [health]",
+	MHCT.TAG_CATEGORY_NAME .. " [health-v1]",
 	"Shows deficit percent with dynamic decimal when less than 100% health (no status)"
 )
 MHCT.E:AddTag("mh-deficit:percent-nostatus", "UNIT_HEALTH UNIT_MAXHEALTH", function(unit, _, args)

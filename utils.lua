@@ -266,6 +266,10 @@ for i = 0, 200 do
 	MHCT.HEALTH_GRADIENT_RGB[i * 0.5] = MHCT.format("|cff%s", MHCT.RGBToHex(r, g, b))
 end
 
+-- TODO: remove!
+-- CHECK THIS AGAIN, does not seem to be working
+GLOBAL_MHCT_GRADIENT_TABLE = MHCT.HEALTH_GRADIENT_RGB
+
 MHCT.ICON_MAP = {
 	["boss"] = "bossIcon",
 	["eliteplus"] = "yellowBahai",
@@ -283,14 +287,19 @@ MHCT.formatWithStatusCheck = function(unit)
 	return nil
 end
 
-MHCT.formatHealthPercent = function(unit, args, showSign)
+MHCT.formatHealthPercent = function(unit, decimalPlaces, showSign)
 	local maxHp = UnitHealthMax(unit)
 	local currentHp = UnitHealth(unit)
 	if currentHp == maxHp then
 		return MHCT.E:GetFormattedText("CURRENT", maxHp, currentHp, nil, true)
 	else
-		local decimalPlaces = tonumber(args) or 0
+		local decimalPlaces = tonumber(decimalPlaces) or 0
 		local formatPattern = showSign and "%%.%sf%%%%" or "%%.%sf"
 		return MHCT.format(MHCT.format(formatPattern, decimalPlaces), (currentHp / maxHp) * 100)
 	end
+end
+
+MHCT.formatHealthDeficit = function(unit)
+	local currentHp, maxHp = MHCT.UnitHealth(unit), MHCT.UnitHealthMax(unit)
+	return (currentHp == maxHp) and "" or MHCT.format("-%s", MHCT.E:ShortValue(maxHp - currentHp))
 end
