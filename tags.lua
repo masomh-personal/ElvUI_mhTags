@@ -471,7 +471,7 @@ MHCT.E:AddTag("mh-healthcolor", "UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAY
 	else
 		-- Calculate health percentage and round to the nearest 0.5%
 		local healthPercent = (MHCT.UnitHealth(unit) / MHCT.UnitHealthMax(unit)) * 100
-		local roundedPercent = MHCT.floor(healthPercent * 2 + 0.5) / 2
+		local roundedPercent = MHCT.floor(healthPercent)
 
 		-- Lookup the color in the precomputed table
 		return MHCT.HEALTH_GRADIENT_RGB[roundedPercent] or "|cffFFFFFF" -- Fallback to white if not found

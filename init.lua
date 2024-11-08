@@ -245,26 +245,60 @@ MHCT.abbreviate = function(str, reverse, unit)
 	return abbreviatedString
 end
 
--- Precomputed health colors in 0.5% increments so this is not done on the fly during tag updates
-MHCT.HEALTH_GRADIENT_RGB = {}
--- Colors for health percentages from 0% to 100% in 0.5% increments
-for i = 0, 200 do
-	local healthPercent = i / 200
-	local r, g, b = MHCT.ElvUF:ColorGradient(
-		healthPercent,
-		1,
-		0.93,
-		0.57,
-		0.57, -- Start color (red)
-		0.93,
-		0.72,
-		0.57, -- Mid color (yellow)
-		0.57,
-		0.93,
-		0.57 -- End color (green)
-	)
-	MHCT.HEALTH_GRADIENT_RGB[i * 0.5] = MHCT.format("|cff%s", MHCT.RGBToHex(r, g, b))
+--[[ 
+	Interpolates between colors in a sequence based on a percentage.
+	@param perc: Percentage (0 to 1) representing the position in the gradient.
+	@return: Interpolated RGB color values.
+]]
+MHCT.getColorGradient = function(perc)
+	-- Static color sequence for gradient: red (low health) -> yellow (mid) -> green (high health)
+	local colors = {
+		0.996,
+		0.32,
+		0.32, -- Start color (red) at 0% health
+		0.98,
+		0.84,
+		0.58, -- Mid color (yellow) at 50% health
+		0.44,
+		0.92,
+		0.44, -- End color (green) at 100% health
+	}
+
+	local num = #colors / 3
+
+	-- Clamp the percentage to ensure it’s within the 0-1 range
+	if perc >= 1 then
+		return colors[(num - 1) * 3 + 1], colors[(num - 1) * 3 + 2], colors[(num - 1) * 3 + 3]
+	elseif perc <= 0 then
+		return colors[1], colors[2], colors[3]
+	end
+
+	-- Determine the segment and interpolate
+	local segment = math.floor(perc * (num - 1))
+	local relperc = (perc * (num - 1)) - segment
+	local r1, g1, b1 = colors[(segment * 3) + 1], colors[(segment * 3) + 2], colors[(segment * 3) + 3]
+	local r2, g2, b2 = colors[(segment * 3) + 4], colors[(segment * 3) + 5], colors[(segment * 3) + 6]
+
+	-- Interpolate between r1,g1,b1 and r2,g2,b2 based on relperc
+	return r1 + (r2 - r1) * relperc, g1 + (g2 - g1) * relperc, b1 + (b2 - b1) * relperc
 end
+
+--[[ 
+	Creates a gradient table with hex color values interpolated at 1.0% intervals.
+	@return: Gradient table with hex color codes mapped from 0 to 100 percent.
+]]
+MHCT.createGradientTable = function()
+	local gradientTable = {}
+	for i = 0, 100 do
+		local percent = i / 100 -- Convert to a percentage (0 to 1)
+		local r, g, b = MHCT.getColorGradient(percent)
+		gradientTable[i] = MHCT.format("|cff%s", MHCT.RGBToHex(r, g, b))
+	end
+	return gradientTable
+end
+
+-- Create the gradient table with 1% increments and store it
+MHCT.HEALTH_GRADIENT_RGB = MHCT.createGradientTable()
 
 -- TODO: remove!
 -- CHECK THIS AGAIN, does not seem to be working
