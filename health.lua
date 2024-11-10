@@ -9,7 +9,9 @@ local THROTTLE_QUARTER_SECOND = 0.25
 local THROTTLE_ONE_SECOND = 1
 local THROTTLE_TWO_SECONDS = 2
 
+-- ===================================================================================
 -- ABSORB + CURRENT + PERCENT HEALTH (no status)
+-- ===================================================================================
 do
 	local dynamicTagName = "mh-health-current-percent"
 
@@ -65,8 +67,10 @@ do
 	end)
 end
 
+-- ===================================================================================
+-- HEALTH PERCENT
+-- ===================================================================================
 do
-	-- PERCENT HEALTH
 	local dynamicTagName = "mh-health-percent:status-1.0"
 	MHCT.E:AddTagInfo(
 		dynamicTagName,
@@ -114,9 +118,36 @@ do
 
 		return MHCT.formatHealthPercent(unit, _, true)
 	end)
+
+	MHCT.E:AddTag(dynamicTagName, THROTTLE_TWO_SECONDS, function(unit)
+		local statusFormatted = MHCT.formatWithStatusCheck(unit)
+		if statusFormatted then
+			return statusFormatted
+		end
+
+		return MHCT.formatHealthPercent(unit, _, true)
+	end)
+
+	dynamicTagName = "mh-health-percent:status-0.25"
+	MHCT.E:AddTagInfo(
+		dynamicTagName,
+		thisCategory,
+		"Shows percent health + any status if applicable @ 0.25 second interval updates"
+	)
+
+	MHCT.E:AddTag(dynamicTagName, THROTTLE_QUARTER_SECOND, function(unit)
+		local statusFormatted = MHCT.formatWithStatusCheck(unit)
+		if statusFormatted then
+			return statusFormatted
+		end
+
+		return MHCT.formatHealthPercent(unit, _, true)
+	end)
 end
 
--- DEFICIT
+-- ===================================================================================
+-- HEALTH DEFICIT
+-- ===================================================================================
 do
 	local dynamicTagName = "mh-health-deficit:status-0.5"
 	MHCT.E:AddTagInfo(
