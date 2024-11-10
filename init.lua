@@ -300,10 +300,6 @@ end
 -- Create the gradient table with 1% increments and store it
 MHCT.HEALTH_GRADIENT_RGB = MHCT.createGradientTable()
 
--- TODO: remove!
--- CHECK THIS AGAIN, does not seem to be working
-GLOBAL_MHCT_GRADIENT_TABLE = MHCT.HEALTH_GRADIENT_RGB
-
 MHCT.ICON_MAP = {
 	["boss"] = "bossIcon",
 	["eliteplus"] = "yellowBahai",

@@ -1,3 +1,6 @@
+-- ===================================================================================
+-- VERSION 2.0 of health related tags. Focusing on efficiency for high CPU Usage (raids, etc)
+-- ===================================================================================
 local _, ns = ...
 local MHCT = ns.MHCT
 
