@@ -3,6 +3,9 @@ local MHCT = ns.MHCT
 
 local thisCategory = MHCT.TAG_CATEGORY_NAME .. " [classification]"
 
+-- ===================================================================================
+-- UNIT CLASSICFICATION (ICONS)
+-- ===================================================================================
 do
 	local dynamicTagName = "mh-classification:icon"
 	MHCT.E:AddTagInfo(

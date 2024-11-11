@@ -9,7 +9,7 @@ do
 	MHCT.E:AddTagInfo(
 		dynamicTagName,
 		thisCategory,
-		"Simple power percent, no percentage sign with dynamic number of decimals (dynamic number within {} of tag - see examples above)"
+		"Simple power percent, no percentage sign with dynamic number of decimals (dynamic number within {} of tag"
 	)
 	MHCT.E:AddTag(dynamicTagName, "UNIT_DISPLAYPOWER UNIT_POWER_FREQUENT UNIT_MAXPOWER", function(unit, _, args)
 		local powerType = MHCT.UnitPowerType(unit)

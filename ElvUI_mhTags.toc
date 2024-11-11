@@ -7,7 +7,9 @@
 ## IconTexture: Interface\Addons\ElvUI_mhTags\icons\addon_icon.png
 
 init.lua
-tags.lua
 power.lua
 classification.lua
-health.lua
+healthV1.lua
+healthV2.lua
+misc.lua
+name.lua
