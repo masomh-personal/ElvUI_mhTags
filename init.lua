@@ -1,31 +1,49 @@
 if not C_AddOns.IsAddOnLoaded("ElvUI") then
 	return
 end
-local E, L = unpack(ElvUI)
-local ElvUF = E.oUF
 
 -- Create addon private environment (to not pollute Global)
 local _, ns = ...
 ns.MHCT = {}
 local MHCT = ns.MHCT
 
--------------------------------------
--- LOCALS
--------------------------------------
-local floor = math.floor
-local ipairs = ipairs
-local format = format
-local strupper = strupper
-local gsub = string.gsub
-local gmatch = string.gmatch
-local sub = string.sub
-local tinsert = table.insert
-local UnitIsAFK, UnitIsDND, UnitIsFeignDeath, UnitIsDead, UnitIsGhost, UnitIsConnected, UnitHealthMax, UnitHealth =
-	UnitIsAFK, UnitIsDND, UnitIsFeignDeath, UnitIsDead, UnitIsGhost, UnitIsConnected, UnitHealthMax, UnitHealth
-local UnitIsPlayer, UnitEffectiveLevel, UnitClassification, GetCreatureDifficultyColor =
-	UnitIsPlayer, UnitEffectiveLevel, UnitClassification, GetCreatureDifficultyColor
-local GetMaxPlayerLevel = GetMaxPlayerLevel
-local tonumber, string_sub = tonumber, string.sub
+-- Initialize core functions in MHCT object
+MHCT.E, MHCT.L = unpack(ElvUI)
+MHCT.ElvUF = MHCT.E.oUF
+
+-- Lua Language Helpers
+MHCT.floor = math.floor
+MHCT.ipairs = ipairs
+MHCT.format = string.format
+MHCT.strupper = strupper
+MHCT.gsub = string.gsub
+MHCT.gmatch = string.gmatch
+MHCT.sub = string.sub
+MHCT.tinsert = table.insert
+MHCT.tonumber = tonumber
+MHCT.print = print
+
+-- WoW API functions
+MHCT.UnitIsAFK = UnitIsAFK
+MHCT.UnitIsDND = UnitIsDND
+MHCT.UnitIsFeignDeath = UnitIsFeignDeath
+MHCT.UnitIsDead = UnitIsDead
+MHCT.UnitIsGhost = UnitIsGhost
+MHCT.UnitIsConnected = UnitIsConnected
+MHCT.UnitHealthMax = UnitHealthMax
+MHCT.UnitHealth = UnitHealth
+MHCT.UnitIsPlayer = UnitIsPlayer
+MHCT.UnitEffectiveLevel = UnitEffectiveLevel
+MHCT.UnitClassification = UnitClassification
+MHCT.GetCreatureDifficultyColor = GetCreatureDifficultyColor
+MHCT.GetMaxPlayerLevel = GetMaxPlayerLevel
+MHCT.UnitName = UnitName
+MHCT.GetRaidRosterInfo = GetRaidRosterInfo
+MHCT.GetNumGroupMembers = GetNumGroupMembers
+MHCT.UnitGetTotalAbsorbs = UnitGetTotalAbsorbs
+MHCT.IsInRaid = IsInRaid
+MHCT.UnitPowerType = UnitPowerType
+MHCT.UnitIsDeadOrGhost = UnitIsDeadOrGhost
 
 -------------------------------------
 -- CONSTANTS
@@ -51,35 +69,37 @@ MHCT.includes = function(table, value)
 end
 
 MHCT.rgbToHexDecimal = function(r, g, b)
-	local rValue = floor(r * 255)
-	local gValue = floor(g * 255)
-	local bValue = floor(b * 255)
+	local rValue = MHCT.floor(r * 255)
+	local gValue = MHCT.floor(g * 255)
+	local bValue = MHCT.floor(b * 255)
 
-	return format("%02X%02X%02X", rValue, gValue, bValue)
+	return MHCT.format("%02X%02X%02X", rValue, gValue, bValue)
 end
 
 MHCT.RGBToHex = function(r, g, b)
-	return format("%02X%02X%02X", r * 255, g * 255, b * 255)
+	return MHCT.format("%02X%02X%02X", r * 255, g * 255, b * 255)
 end
 
 MHCT.HexToRGB = function(hex)
-	local r = tonumber(string_sub(hex, 1, 2), 16) / 255
-	local g = tonumber(string_sub(hex, 3, 4), 16) / 255
-	local b = tonumber(string_sub(hex, 5, 6), 16) / 255
+	local r = tonumber(MHCT.sub(hex, 1, 2), 16) / 255
+	local g = tonumber(MHCT.sub(hex, 3, 4), 16) / 255
+	local b = tonumber(MHCT.sub(hex, 5, 6), 16) / 255
 	return { r = r, g = g, b = b }
 end
 
+print(MHCT.HexToRGB("FFFFFF"))
+
 MHCT.statusCheck = function(unit)
 	if UnitIsAFK(unit) then
-		return L["AFK"]
+		return MHCT.L["AFK"]
 	elseif UnitIsDND(unit) then
-		return L["DND"]
+		return MHCT.L["DND"]
 	elseif not UnitIsFeignDeath(unit) and UnitIsDead(unit) then
-		return L["Dead"]
+		return MHCT.L["Dead"]
 	elseif UnitIsGhost(unit) then
-		return L["Ghost"]
+		return MHCT.L["Ghost"]
 	elseif not UnitIsConnected(unit) then
-		return L["Offline"]
+		return MHCT.L["Offline"]
 	end
 
 	return nil
@@ -105,7 +125,7 @@ MHCT.getFormattedIcon = function(name, size, x, y)
 	local xOffSet = x or 0
 	local yOffSet = y or 0
 
-	return format(MHCT.iconTable[iconName], iconSize, iconSize, xOffSet, yOffSet)
+	return MHCT.format(MHCT.iconTable[iconName], iconSize, iconSize, xOffSet, yOffSet)
 end
 
 MHCT.classificationType = function(unit)
@@ -139,22 +159,22 @@ MHCT.difficultyLevelFormatter = function(unit, unitLevel)
 
 	local formatMap = {
 		boss = function()
-			return format("|cff%s%s|r", "00FFFF", "")
+			return MHCT.format("|cff%s%s|r", "00FFFF", "")
 		end,
 		eliteplus = function()
-			return format("|cff%s%s%s%s|r", hexColor, unitLevel, crossSymbol, crossSymbol)
+			return MHCT.format("|cff%s%s%s%s|r", hexColor, unitLevel, crossSymbol, crossSymbol)
 		end,
 		elite = function()
-			return format("|cff%s%s%s|r", hexColor, unitLevel, crossSymbol)
+			return MHCT.format("|cff%s%s%s|r", hexColor, unitLevel, crossSymbol)
 		end,
 		rareelite = function()
-			return format("|cff%s%sR%s|r", hexColor, unitLevel, crossSymbol)
+			return MHCT.format("|cff%s%sR%s|r", hexColor, unitLevel, crossSymbol)
 		end,
 		rare = function()
-			return format("|cff%s%sR|r", hexColor, unitLevel)
+			return MHCT.format("|cff%s%sR|r", hexColor, unitLevel)
 		end,
 		default = function()
-			return format("|cff%s%s|r", hexColor, unitLevel)
+			return MHCT.format("|cff%s%s|r", hexColor, unitLevel)
 		end,
 	}
 
@@ -168,19 +188,19 @@ MHCT.statusFormatter = function(status, size, reverse)
 
 	local iconSize = size or MHCT.DEFAULT_ICON_SIZE
 	local statusIconMap = {
-		[L["AFK"]] = "redWarning",
-		[L["DND"]] = "yellowWarning",
-		[L["Dead"]] = "deadIcon",
-		[L["Ghost"]] = "ghostIcon",
-		[L["Offline"]] = "offlineIcon",
+		[MHCT.L["AFK"]] = "redWarning",
+		[MHCT.L["DND"]] = "yellowWarning",
+		[MHCT.L["Dead"]] = "deadIcon",
+		[MHCT.L["Ghost"]] = "ghostIcon",
+		[MHCT.L["Offline"]] = "offlineIcon",
 	}
 	local iconName = statusIconMap[status]
-	local formattedStatus = format("|cffD6BFA6%s|r", strupper(status))
+	local formattedStatus = MHCT.format("|cffD6BFA6%s|r", MHCT.strupper(status))
 
 	if reverse then
-		return format("%s%s", MHCT.getFormattedIcon(iconName, iconSize), formattedStatus)
+		return MHCT.format("%s%s", MHCT.getFormattedIcon(iconName, iconSize), formattedStatus)
 	else
-		return format("%s%s", formattedStatus, MHCT.getFormattedIcon(iconName, iconSize))
+		return MHCT.format("%s%s", formattedStatus, MHCT.getFormattedIcon(iconName, iconSize))
 	end
 end
 
@@ -189,7 +209,7 @@ MHCT.abbreviate = function(str, reverse, unit)
 	local firstLetters = {}
 	local formattedString = gsub(str, "'", "") -- remove apostrophes
 	for word in gmatch(formattedString, "%w+") do
-		tinsert(firstLetters, sub(word, 1, 1))
+		tinsert(firstLetters, MHCT.sub(word, 1, 1))
 		tinsert(words, word)
 	end
 
@@ -225,26 +245,60 @@ MHCT.abbreviate = function(str, reverse, unit)
 	return abbreviatedString
 end
 
--- Precomputed health colors in 0.5% increments so this is not done on the fly during tag updates
-MHCT.HEALTH_GRADIENT_RGB = {}
--- Colors for health percentages from 0% to 100% in 0.5% increments
-for i = 0, 200 do
-	local healthPercent = i / 200
-	local r, g, b = ElvUF:ColorGradient(
-		healthPercent,
-		1,
-		0.93,
-		0.57,
-		0.57, -- Start color (red)
-		0.93,
-		0.72,
-		0.57, -- Mid color (yellow)
-		0.57,
-		0.93,
-		0.57 -- End color (green)
-	)
-	MHCT.HEALTH_GRADIENT_RGB[i * 0.5] = format("|cff%s", MHCT.RGBToHex(r, g, b))
+--[[ 
+	Interpolates between colors in a sequence based on a percentage.
+	@param perc: Percentage (0 to 1) representing the position in the gradient.
+	@return: Interpolated RGB color values.
+]]
+MHCT.getColorGradient = function(perc)
+	-- Static color sequence for gradient: red (low health) -> yellow (mid) -> green (high health)
+	local colors = {
+		0.996,
+		0.32,
+		0.32, -- Start color (red) at 0% health
+		0.98,
+		0.84,
+		0.58, -- Mid color (yellow) at 50% health
+		0.44,
+		0.92,
+		0.44, -- End color (green) at 100% health
+	}
+
+	local num = #colors / 3
+
+	-- Clamp the percentage to ensure it’s within the 0-1 range
+	if perc >= 1 then
+		return colors[(num - 1) * 3 + 1], colors[(num - 1) * 3 + 2], colors[(num - 1) * 3 + 3]
+	elseif perc <= 0 then
+		return colors[1], colors[2], colors[3]
+	end
+
+	-- Determine the segment and interpolate
+	local segment = math.floor(perc * (num - 1))
+	local relperc = (perc * (num - 1)) - segment
+	local r1, g1, b1 = colors[(segment * 3) + 1], colors[(segment * 3) + 2], colors[(segment * 3) + 3]
+	local r2, g2, b2 = colors[(segment * 3) + 4], colors[(segment * 3) + 5], colors[(segment * 3) + 6]
+
+	-- Interpolate between r1,g1,b1 and r2,g2,b2 based on relperc
+	return r1 + (r2 - r1) * relperc, g1 + (g2 - g1) * relperc, b1 + (b2 - b1) * relperc
 end
+
+--[[ 
+	Creates a gradient table with hex color values interpolated at 1.0% intervals.
+	@return: Gradient table with hex color codes mapped from 0 to 100 percent.
+]]
+MHCT.createGradientTable = function()
+	local gradientTable = {}
+	for i = 0, 100 do
+		local percent = i / 100 -- Convert to a percentage (0 to 1)
+		local r, g, b = MHCT.getColorGradient(percent)
+		gradientTable[i] = MHCT.format("|cff%s", MHCT.RGBToHex(r, g, b))
+	end
+	return gradientTable
+end
+
+-- Create the gradient table with 1% increments and store it
+MHCT.HEALTH_GRADIENT_RGB = MHCT.createGradientTable()
 
 MHCT.ICON_MAP = {
 	["boss"] = "bossIcon",
@@ -263,14 +317,19 @@ MHCT.formatWithStatusCheck = function(unit)
 	return nil
 end
 
-MHCT.formatHealthPercent = function(unit, args, showSign)
+MHCT.formatHealthPercent = function(unit, decimalPlaces, showSign)
 	local maxHp = UnitHealthMax(unit)
 	local currentHp = UnitHealth(unit)
 	if currentHp == maxHp then
-		return E:GetFormattedText("CURRENT", maxHp, currentHp, nil, true)
+		return MHCT.E:GetFormattedText("CURRENT", maxHp, currentHp, nil, true)
 	else
-		local decimalPlaces = tonumber(args) or 0
+		local decimalPlaces = tonumber(decimalPlaces) or 0
 		local formatPattern = showSign and "%%.%sf%%%%" or "%%.%sf"
-		return format(format(formatPattern, decimalPlaces), (currentHp / maxHp) * 100)
+		return MHCT.format(MHCT.format(formatPattern, decimalPlaces), (currentHp / maxHp) * 100)
 	end
+end
+
+MHCT.formatHealthDeficit = function(unit)
+	local currentHp, maxHp = MHCT.UnitHealth(unit), MHCT.UnitHealthMax(unit)
+	return (currentHp == maxHp) and "" or MHCT.format("-%s", MHCT.E:ShortValue(maxHp - currentHp))
 end

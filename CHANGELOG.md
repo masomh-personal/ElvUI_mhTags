@@ -1,4 +1,12 @@
-# ElvUI MH Tags
+# MH Custom Tags (ElvUI Plugin)
+
+## <span style="color:cyan">[3.0.0] Major Update (November 11th, 2024)</span>.
+
+- Complete refactor of code, cleaned up local variables, and made things a bit more efficient
+- Utilized WOW Addon private namespace object for cleaner variable usage
+- Rechecked every tag to ensure proper events were being used (and not adding event checks we don't need)
+- Separated each category to have it's own file for better modularity
+- **ADDED**: many new health related tags in `[health-v2]` category that focus on efficiency and second interval updates instead of using blizzard health related events. This has helped with CPU usage in raids/parties
 
 ## <span style="color:white">[2.0.3] (October 21st, 2024)</span>.
 
