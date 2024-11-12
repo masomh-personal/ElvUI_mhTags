@@ -4,7 +4,7 @@ local MHCT = ns.MHCT
 local thisCategory = MHCT.TAG_CATEGORY_NAME .. " [name]"
 
 -- ===================================================================================
--- LEVEL
+-- NAME RELATED TAGS
 -- ===================================================================================
 do
 	MHCT.E:AddTagInfo(
