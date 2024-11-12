@@ -22,7 +22,7 @@ do
 	MHCT.E:AddTagInfo(
 		dynamicTagName,
 		thisCategory,
-		"Hides percent at full health else shows absorb, current, and percent to following example: (**absorb amount**) 100k | 85%"
+		"Hides percent at full health else shows absorb, current, and percent to following example: (**absorb amount**) 100k | 85% (NO STATUS)"
 	)
 
 	MHCT.E:AddTag(dynamicTagName, "UNIT_HEALTH UNIT_MAXHEALTH", function(unit)
@@ -48,7 +48,7 @@ do
 	MHCT.E:AddTagInfo(
 		dynamicTagName,
 		thisCategory,
-		"Hides percent at full health else shows absorb, current, and percent to following example: (**absorb amount**) 85% | 100k"
+		"Hides percent at full health else shows absorb, current, and percent to following example: (**absorb amount**) 85% | 100k (NOT STATUS)"
 	)
 
 	MHCT.E:AddTag(dynamicTagName, "UNIT_HEALTH UNIT_MAXHEALTH", function(unit)
