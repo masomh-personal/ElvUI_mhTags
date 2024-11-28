@@ -87,8 +87,6 @@ MHCT.HexToRGB = function(hex)
 	return { r = r, g = g, b = b }
 end
 
-print(MHCT.HexToRGB("FFFFFF"))
-
 MHCT.statusCheck = function(unit)
 	if UnitIsAFK(unit) then
 		return MHCT.L["AFK"]

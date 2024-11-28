@@ -1,5 +1,9 @@
 # MH Custom Tags (ElvUI Plugin)
 
+## <span style="color:white">[3.0.1] Minor code clean up (November 27th, 2024)</span>.
+
+- MISC: Woopsie! I forgot to remove print statement in `init.lua`
+
 ## <span style="color:cyan">[3.0.0] Major Update (November 11th, 2024)</span>.
 
 - Complete refactor of code, cleaned up local variables, and made things a bit more efficient
