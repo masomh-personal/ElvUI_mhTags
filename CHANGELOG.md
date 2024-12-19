@@ -1,5 +1,11 @@
 # MH Custom Tags (ElvUI Plugin)
 
+## <span style="color:white">[3.0.2] TOC/Patch Update 11.0.7 (December 17th, 2024)</span>.
+
+- MAINTENANCE: Updated CL and TOC for 11.0.7
+- MISC: Rearranged and cleaned up folder structure to make root addon folder less crowded
+- MISC: Code cleanup of level tag to denote rares, boss rares, elite rares, etc.
+
 ## <span style="color:white">[3.0.1] Minor code clean up (November 27th, 2024)</span>.
 
 - MISC: Woopsie! I forgot to remove print statement in `init.lua`

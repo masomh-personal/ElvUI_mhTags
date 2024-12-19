@@ -151,22 +151,32 @@ end
 
 MHCT.difficultyLevelFormatter = function(unit, unitLevel)
 	local unitType = MHCT.classificationType(unit)
-	local crossSymbol = "+"
+	local eliteSymbol = "+"
+	local elitePlusSymbol = "◆"
+	local bossSymbol = "??"
+	local bossColor = "fc495e" -- light red
+	local rareColor = "fc49f3" -- light magenta
 	local difficultyColor = GetCreatureDifficultyColor(unitLevel)
-	local hexColor = MHCT.rgbToHexDecimal(difficultyColor.r, difficultyColor.g, difficultyColor.b)
+	local hexColor = (unitType == "rare" or unitType == "rareelite") and rareColor
+		or MHCT.rgbToHexDecimal(difficultyColor.r, difficultyColor.g, difficultyColor.b)
 
 	local formatMap = {
 		boss = function()
-			return MHCT.format("|cff%s%s|r", "00FFFF", "")
+			return MHCT.format("|cff%s%s|r", bossColor, bossSymbol)
 		end,
 		eliteplus = function()
-			return MHCT.format("|cff%s%s%s%s|r", hexColor, unitLevel, crossSymbol, crossSymbol)
+			return MHCT.format("|cff%s%s%s|r", hexColor, unitLevel, elitePlusSymbol)
 		end,
 		elite = function()
-			return MHCT.format("|cff%s%s%s|r", hexColor, unitLevel, crossSymbol)
+			return MHCT.format("|cff%s%s%s|r", hexColor, unitLevel, eliteSymbol)
 		end,
 		rareelite = function()
-			return MHCT.format("|cff%s%sR%s|r", hexColor, unitLevel, crossSymbol)
+			local isRareBoss = unitLevel < 0
+			if isRareBoss then
+				return MHCT.format("|cff%s%sR|r", hexColor, bossSymbol)
+			else
+				return MHCT.format("|cff%s%sR%s|r", hexColor, unitLevel, eliteSymbol)
+			end
 		end,
 		rare = function()
 			return MHCT.format("|cff%s%sR|r", hexColor, unitLevel)
