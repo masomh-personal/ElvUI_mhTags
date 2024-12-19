@@ -1,4 +1,4 @@
-## Interface: 110005
+## Interface: 110007
 ## Title: |cff1784d1ElvUI|r |cffccff33MH Tags|r
 ## Notes: Custom tags for use across ElvUI
 ## Author: mhDesigns
@@ -7,9 +7,9 @@
 ## IconTexture: Interface\Addons\ElvUI_mhTags\icons\addon_icon.png
 
 init.lua
-power.lua
-classification.lua
-healthV1.lua
-healthV2.lua
-misc.lua
-name.lua
+categories/power.lua
+categories/classification.lua
+categories/healthV1.lua
+categories/healthV2.lua
+categories/misc.lua
+categories/name.lua
