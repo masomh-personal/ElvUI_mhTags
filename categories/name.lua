@@ -97,8 +97,8 @@ do
 	MHCT.E:AddTag("mh-name-caps-abbrev-reverse-V2", "UNIT_NAME_UPDATE", function(unit, _, nameLen)
 		local name = MHCT.UnitName(unit)
 
-		-- If no argument is provided, default to 25
-		local maxLength = MHCT.tonumber(nameLen) or 25
+		-- If no argument is provided, default to 23
+		local maxLength = MHCT.tonumber(nameLen) or 22
 		if #name <= maxLength then
 			return MHCT.strupper(name)
 		else
