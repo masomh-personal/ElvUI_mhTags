@@ -1,5 +1,5 @@
 -- ===================================================================================
--- VERSION 3.0 of health related tags. Focusing on efficiency for high CPU Usage (raids, etc)
+-- VERSION 2.0 of health related tags. Focusing on efficiency for high CPU Usage (raids, etc)
 -- ===================================================================================
 local _, ns = ...
 local MHCT = ns.MHCT
@@ -8,20 +8,13 @@ local MHCT = ns.MHCT
 local UnitHealthMax = MHCT.UnitHealthMax
 local UnitHealth = MHCT.UnitHealth
 local UnitGetTotalAbsorbs = MHCT.UnitGetTotalAbsorbs
-local UnitIsDeadOrGhost = MHCT.UnitIsDeadOrGhost
-local UnitIsConnected = MHCT.UnitIsConnected
-local UnitIsFeignDeath = MHCT.UnitIsFeignDeath
-local UnitIsDead = MHCT.UnitIsDead
-local UnitIsGhost = MHCT.UnitIsGhost
-local UnitIsAFK = MHCT.UnitIsAFK
-local UnitIsDND = MHCT.UnitIsDND
 
 -- Localize Lua functions from MHCT
 local format = MHCT.format
 local floor = MHCT.floor
 local tonumber = MHCT.tonumber
 
--- Set the category name for all v2 health tags
+-- Set the category name for all v3 health tags
 local thisCategory = MHCT.TAG_CATEGORY_NAME .. " [health-v2]"
 
 -- THROTTLE constants (seconds) **Does not work on nameplates**
@@ -33,79 +26,159 @@ local THROTTLE = {
 }
 
 -- ===================================================================================
--- STRING BUILDER - Optimized for frequent health tag updates
+-- HELPER FUNCTIONS - Efficient direct string formatting
 -- ===================================================================================
 
--- Localize table functions for performance
-local tconcat = table.concat
+-- Efficiently format health text with direct string concatenation
+local function formatHealthText(unit, isPercentFirst)
+	local maxHp = UnitHealthMax(unit)
+	local currentHp = UnitHealth(unit)
 
--- Create a reusable string builder to avoid excessive string concatenations
--- We pre-allocate these tables to avoid table creation overhead during updates
-local healthTextBuilder = {
-	parts = {},
-	count = 0,
-}
+	-- Early return for full health with no absorbs (most common case)
+	local absorbAmount = UnitGetTotalAbsorbs(unit) or 0
+	if currentHp == maxHp and absorbAmount == 0 then
+		return MHCT.E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
+	end
 
--- Reset the builder for reuse
-local function resetBuilder(builder)
-	builder.count = 0
-	return builder
+	-- Get formatted current health
+	local currentText = MHCT.E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
+
+	-- Format with absorb info if present
+	local absorbText = ""
+	if absorbAmount > 0 then
+		absorbText = format("|cff%s(%s)|r ", MHCT.ABSORB_TEXT_COLOR, MHCT.E:ShortValue(absorbAmount))
+	end
+
+	-- Add percent text if not at full health
+	if currentHp < maxHp then
+		local percentText = format("%.1f%%", (currentHp / maxHp) * 100)
+
+		if isPercentFirst then
+			return absorbText .. percentText .. " | " .. currentText
+		else
+			return absorbText .. currentText .. " | " .. percentText
+		end
+	end
+
+	-- Just return current health for full health
+	return absorbText .. currentText
 end
 
--- Add a string part to the builder
-local function addToBuilder(builder, str)
-	builder.count = builder.count + 1
-	builder.parts[builder.count] = str
-	return builder
+-- Format health percent with status check
+local function formatHealthPercentWithStatus(unit, decimalPlaces)
+	-- First check for status
+	local statusFormatted = MHCT.formatWithStatusCheck(unit)
+	if statusFormatted then
+		return statusFormatted
+	end
+
+	local maxHp = UnitHealthMax(unit)
+	local currentHp = UnitHealth(unit)
+
+	-- Handle full health
+	if currentHp == maxHp then
+		-- Full health, just return formatted current health
+		return MHCT.E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
+	end
+
+	-- Calculate percentage with configured decimal places
+	local decimals = tonumber(decimalPlaces) or 1
+	local formatStr = format("%%.%sf%%%%", decimals)
+	return format(formatStr, (currentHp / maxHp) * 100)
 end
 
--- Build the final string
-local function buildString(builder)
-	return tconcat(builder.parts, "", 1, builder.count)
+-- Format health deficit with status check
+local function formatHealthDeficitWithStatus(unit)
+	-- First check for status
+	local statusFormatted = MHCT.formatWithStatusCheck(unit)
+	if statusFormatted then
+		return statusFormatted
+	end
+
+	local currentHp = UnitHealth(unit)
+	local maxHp = UnitHealthMax(unit)
+
+	-- Only show deficit if not at full health
+	if currentHp < maxHp then
+		return format("-%s", MHCT.E:ShortValue(maxHp - currentHp))
+	end
+
+	return ""
 end
 
--- Helper function to efficiently format health text using the string builder
-local function buildHealthText(unit, isPercentFirst)
-	local builder = resetBuilder(healthTextBuilder)
+-- Format health for hide-percent-at-full-health mode
+local function formatHealthHideFullPercent(unit, isPercentFirst)
+	-- Check for status first
+	local statusFormatted = MHCT.formatWithStatusCheck(unit)
+	if statusFormatted then
+		return statusFormatted
+	end
+
 	local maxHp = UnitHealthMax(unit)
 	local currentHp = UnitHealth(unit)
 
 	-- Get formatted current health
 	local currentText = MHCT.E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
 
+	-- If health is full, just return current health value
+	if currentHp == maxHp then
+		return currentText
+	end
+
+	-- Calculate percentage since health isn't full
+	local percentText = format("%.1f%%", (currentHp / maxHp) * 100)
+
+	-- Format in requested order
+	if isPercentFirst then
+		return percentText .. " | " .. currentText
+	else
+		return currentText .. " | " .. percentText
+	end
+end
+
+-- Format health with low health coloring
+local function formatHealthWithLowHealthColor(unit, isPercentFirst, threshold)
+	local maxHp = UnitHealthMax(unit)
+	local currentHp = UnitHealth(unit)
+	local healthPercent = (currentHp / maxHp) * 100
+
+	-- Check if health is below threshold
+	local lowHealthThreshold = threshold or 20 -- Default to 20%
+	local isLowHealth = healthPercent <= lowHealthThreshold
+
+	-- Get formatted current health
+	local currentText = MHCT.E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
+
+	-- Handle absorb information if present
+	local absorbText = ""
+	local absorbAmount = UnitGetTotalAbsorbs(unit) or 0
+	if absorbAmount > 0 then
+		absorbText = format("|cff%s(%s)|r ", MHCT.ABSORB_TEXT_COLOR, MHCT.E:ShortValue(absorbAmount))
+	end
+
 	-- Calculate percentage if not at full health
 	local percentText
 	if currentHp < maxHp then
-		percentText = format("%.1f%%", (currentHp / maxHp) * 100)
-	end
-
-	-- Handle absorb information if present
-	local absorbAmount = UnitGetTotalAbsorbs(unit) or 0
-	if absorbAmount > 0 then
-		addToBuilder(builder, "|cff")
-		addToBuilder(builder, MHCT.ABSORB_TEXT_COLOR)
-		addToBuilder(builder, "(")
-		addToBuilder(builder, MHCT.E:ShortValue(absorbAmount))
-		addToBuilder(builder, ")|r ")
-	end
-
-	-- Add current and percent based on order preference
-	if percentText then
-		if isPercentFirst then
-			addToBuilder(builder, percentText)
-			addToBuilder(builder, " | ")
-			addToBuilder(builder, currentText)
-		else
-			addToBuilder(builder, currentText)
-			addToBuilder(builder, " | ")
-			addToBuilder(builder, percentText)
-		end
+		percentText = format("%.1f%%", healthPercent)
 	else
-		-- Just current health if at full health
-		addToBuilder(builder, currentText)
+		return absorbText .. currentText -- Just return current health at full health
 	end
 
-	return buildString(builder)
+	-- Format with color if health is low
+	local result
+	if isPercentFirst then
+		result = percentText .. " | " .. currentText
+	else
+		result = currentText .. " | " .. percentText
+	end
+
+	-- Apply color for low health
+	if isLowHealth then
+		local colorCode = MHCT.HEALTH_GRADIENT_RGB[floor(healthPercent)] or "|cffFF0000"
+		return absorbText .. colorCode .. result .. "|r"
+	else
+		return absorbText .. result
+	end
 end
 
 -- ===================================================================================
@@ -119,7 +192,7 @@ do
 		"Shows health as: 100k | 85% with absorbs if applicable (NO STATUS)"
 	)
 	MHCT.E:AddTag("mh-health-current-percent", "UNIT_HEALTH UNIT_MAXHEALTH UNIT_ABSORB_AMOUNT_CHANGED", function(unit)
-		return buildHealthText(unit, false) -- false = current first
+		return formatHealthText(unit, false) -- false = current first
 	end)
 
 	-- PERCENT | CURRENT (reversed version)
@@ -129,7 +202,7 @@ do
 		"Shows health as: 85% | 100k with absorbs if applicable (NO STATUS)"
 	)
 	MHCT.E:AddTag("mh-health-percent-current", "UNIT_HEALTH UNIT_MAXHEALTH UNIT_ABSORB_AMOUNT_CHANGED", function(unit)
-		return buildHealthText(unit, true) -- true = percent first
+		return formatHealthText(unit, true) -- true = percent first
 	end)
 end
 
@@ -137,33 +210,6 @@ end
 -- HEALTH PERCENT WITH STATUS - Multiple update frequencies
 -- ===================================================================================
 do
-	-- Common function for all health percent status tags using string builder
-	local function healthPercentWithStatus(unit, decimalPlaces)
-		-- First check for status
-		local statusFormatted = MHCT.formatWithStatusCheck(unit)
-		if statusFormatted then
-			return statusFormatted
-		end
-
-		local builder = resetBuilder(healthTextBuilder)
-		local maxHp = UnitHealthMax(unit)
-		local currentHp = UnitHealth(unit)
-
-		-- Handle full health
-		if currentHp == maxHp then
-			-- Full health, just return formatted current health
-			return MHCT.E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
-		end
-
-		-- Calculate percentage with configured decimal places
-		local decimals = tonumber(decimalPlaces) or 1
-		local formatStr = format("%%.%sf%%%%", decimals)
-		local percentText = format(formatStr, (currentHp / maxHp) * 100)
-
-		addToBuilder(builder, percentText)
-		return buildString(builder)
-	end
-
 	-- Define the tags with different throttle rates
 	local healthPercentTags = {
 		{
@@ -192,7 +238,7 @@ do
 	for _, config in ipairs(healthPercentTags) do
 		MHCT.E:AddTagInfo(config.name, thisCategory, config.desc)
 		MHCT.E:AddTag(config.name, config.throttle, function(unit, _, args)
-			return healthPercentWithStatus(unit, args)
+			return formatHealthPercentWithStatus(unit, args)
 		end)
 	end
 
@@ -206,7 +252,7 @@ do
 	-- Register configurable versions for each throttle rate
 	for _, throttleValue in pairs(THROTTLE) do
 		MHCT.E:AddTag("mh-health-percent:status-configurable", throttleValue, function(unit, _, args)
-			return healthPercentWithStatus(unit, args)
+			return formatHealthPercentWithStatus(unit, args)
 		end)
 	end
 end
@@ -215,27 +261,6 @@ end
 -- HEALTH DEFICIT WITH STATUS - Multiple update frequencies
 -- ===================================================================================
 do
-	-- Common function for all health deficit status tags using string builder
-	local function healthDeficitWithStatus(unit)
-		-- First check for status
-		local statusFormatted = MHCT.formatWithStatusCheck(unit)
-		if statusFormatted then
-			return statusFormatted
-		end
-
-		local builder = resetBuilder(healthTextBuilder)
-		local currentHp = UnitHealth(unit)
-		local maxHp = UnitHealthMax(unit)
-
-		-- Only show deficit if not at full health
-		if currentHp < maxHp then
-			addToBuilder(builder, "-")
-			addToBuilder(builder, MHCT.E:ShortValue(maxHp - currentHp))
-		end
-
-		return buildString(builder)
-	end
-
 	-- Define the tags with different throttle rates
 	local healthDeficitTags = {
 		{
@@ -264,7 +289,7 @@ do
 	for _, config in ipairs(healthDeficitTags) do
 		MHCT.E:AddTagInfo(config.name, thisCategory, config.desc)
 		MHCT.E:AddTag(config.name, config.throttle, function(unit)
-			return healthDeficitWithStatus(unit)
+			return formatHealthDeficitWithStatus(unit)
 		end)
 	end
 
@@ -291,16 +316,15 @@ do
 				return statusFormatted
 			end
 
-			-- Minimal deficit (no minus sign) using string builder
-			local builder = resetBuilder(healthTextBuilder)
+			-- Minimal deficit (no minus sign)
 			local currentHp = UnitHealth(unit)
 			local maxHp = UnitHealthMax(unit)
 
 			if currentHp < maxHp then
-				addToBuilder(builder, MHCT.E:ShortValue(maxHp - currentHp))
+				return MHCT.E:ShortValue(maxHp - currentHp)
 			end
 
-			return buildString(builder)
+			return ""
 		end)
 	end
 end
@@ -309,47 +333,6 @@ end
 -- HIDE PERCENT AT FULL HEALTH TAGS - Shows percent only when health isn't full
 -- ===================================================================================
 do
-	-- Helper function that builds health text with configurable order
-	-- Hides percentage when health is full
-	local function buildHealthTextHideFullPercent(unit, isPercentFirst)
-		-- Check for status first
-		local statusFormatted = MHCT.formatWithStatusCheck(unit)
-		if statusFormatted then
-			return statusFormatted
-		end
-
-		local maxHp = UnitHealthMax(unit)
-		local currentHp = UnitHealth(unit)
-
-		-- Use string builder for efficiency
-		local builder = resetBuilder(healthTextBuilder)
-
-		-- Get formatted current health
-		local currentText = MHCT.E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
-
-		-- If health is full, just return current health value
-		if currentHp == maxHp then
-			addToBuilder(builder, currentText)
-			return buildString(builder)
-		end
-
-		-- Calculate percentage since health isn't full
-		local percentText = format("%.1f%%", (currentHp / maxHp) * 100)
-
-		-- Build the string in requested order
-		if isPercentFirst then
-			addToBuilder(builder, percentText)
-			addToBuilder(builder, " | ")
-			addToBuilder(builder, currentText)
-		else
-			addToBuilder(builder, currentText)
-			addToBuilder(builder, " | ")
-			addToBuilder(builder, percentText)
-		end
-
-		return buildString(builder)
-	end
-
 	-- Register the "current | percent" version (same as original)
 	MHCT.E:AddTagInfo(
 		"mh-health-current-percent-hidefull",
@@ -360,7 +343,7 @@ do
 		"mh-health-current-percent-hidefull",
 		"UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED",
 		function(unit)
-			return buildHealthTextHideFullPercent(unit, false) -- false = current first
+			return formatHealthHideFullPercent(unit, false) -- false = current first
 		end
 	)
 
@@ -374,11 +357,10 @@ do
 		"mh-health-percent-current-hidefull",
 		"UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED",
 		function(unit)
-			return buildHealthTextHideFullPercent(unit, true) -- true = percent first
+			return formatHealthHideFullPercent(unit, true) -- true = percent first
 		end
 	)
 
-	--------------------------------------------------------------------
 	-- BACKWARDS compatibility, register the V1 tag names as aliases
 	MHCT.E:AddTagInfo(
 		"mh-health:current:percent:right-hidefull",
@@ -389,7 +371,7 @@ do
 		"mh-health:current:percent:right-hidefull",
 		"UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED",
 		function(unit)
-			return buildHealthTextHideFullPercent(unit, false)
+			return formatHealthHideFullPercent(unit, false)
 		end
 	)
 
@@ -402,74 +384,15 @@ do
 		"mh-health:current:percent:left-hidefull",
 		"UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED",
 		function(unit)
-			return buildHealthTextHideFullPercent(unit, true)
+			return formatHealthHideFullPercent(unit, true)
 		end
 	)
 end
 
 -- ===================================================================================
--- LOW HEALTH COLORED VERSION - Using existing buildHealthText function
+-- LOW HEALTH COLORED VERSION - Direct string concatenation
 -- ===================================================================================
 do
-	-- Enhanced version of buildHealthText that supports low health coloring
-	local function buildHealthTextWithLowHealthColor(unit, isPercentFirst, threshold)
-		local builder = resetBuilder(healthTextBuilder)
-		local maxHp = UnitHealthMax(unit)
-		local currentHp = UnitHealth(unit)
-		local healthPercent = (currentHp / maxHp) * 100
-
-		-- Check if health is below threshold
-		local lowHealthThreshold = threshold or 20 -- Default to 20%
-		local isLowHealth = healthPercent <= lowHealthThreshold
-
-		-- Get formatted current health
-		local currentText = MHCT.E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
-
-		-- Calculate percentage if not at full health
-		local percentText
-		if currentHp < maxHp then
-			percentText = format("%.1f%%", healthPercent)
-		end
-
-		-- Handle absorb information if present
-		local absorbAmount = UnitGetTotalAbsorbs(unit) or 0
-		if absorbAmount > 0 then
-			addToBuilder(builder, "|cff")
-			addToBuilder(builder, MHCT.ABSORB_TEXT_COLOR)
-			addToBuilder(builder, "(")
-			addToBuilder(builder, MHCT.E:ShortValue(absorbAmount))
-			addToBuilder(builder, ")|r ")
-		end
-
-		-- Apply low health color if needed
-		if isLowHealth then
-			addToBuilder(builder, MHCT.HEALTH_GRADIENT_RGB[floor(healthPercent)] or "|cffFF0000")
-		end
-
-		-- Add current and percent based on order preference
-		if percentText then
-			if isPercentFirst then
-				addToBuilder(builder, percentText)
-				addToBuilder(builder, " | ")
-				addToBuilder(builder, currentText)
-			else
-				addToBuilder(builder, currentText)
-				addToBuilder(builder, " | ")
-				addToBuilder(builder, percentText)
-			end
-		else
-			-- Just current health if at full health
-			addToBuilder(builder, currentText)
-		end
-
-		-- Close color tag if we opened one
-		if isLowHealth then
-			addToBuilder(builder, "|r")
-		end
-
-		return buildString(builder)
-	end
-
 	-- Register the "current | percent" version with low health coloring
 	MHCT.E:AddTagInfo(
 		"mh-health-current-percent:low-health-colored",
@@ -481,7 +404,7 @@ do
 		"UNIT_HEALTH UNIT_MAXHEALTH UNIT_ABSORB_AMOUNT_CHANGED",
 		function(unit, _, args)
 			local threshold = tonumber(args) or 20 -- Default to 20%, override with tag args
-			return buildHealthTextWithLowHealthColor(unit, false, threshold) -- false = current first
+			return formatHealthWithLowHealthColor(unit, false, threshold) -- false = current first
 		end
 	)
 
@@ -496,7 +419,7 @@ do
 		"UNIT_HEALTH UNIT_MAXHEALTH UNIT_ABSORB_AMOUNT_CHANGED",
 		function(unit, _, args)
 			local threshold = tonumber(args) or 20 -- Default to 20%, override with tag args
-			return buildHealthTextWithLowHealthColor(unit, true, threshold) -- true = percent first
+			return formatHealthWithLowHealthColor(unit, true, threshold) -- true = percent first
 		end
 	)
 end
