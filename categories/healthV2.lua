@@ -4,17 +4,24 @@
 local _, ns = ...
 local MHCT = ns.MHCT
 
--- Localize functions from MHCT for performance
-local UnitHealthMax = MHCT.UnitHealthMax
-local UnitHealth = MHCT.UnitHealth
-local UnitGetTotalAbsorbs = MHCT.UnitGetTotalAbsorbs
+-- Get ElvUI references directly
+local E, L = unpack(ElvUI)
+-- Don't localize these as standalone functions - they're methods of E
+-- local GetFormattedText = E.GetFormattedText  -- INCORRECT
+-- local ShortValue = E.ShortValue             -- INCORRECT
 
--- Localize Lua functions from MHCT
-local format = MHCT.format
-local floor = MHCT.floor
-local tonumber = MHCT.tonumber
+-- Localize WoW API functions directly
+local UnitHealthMax = UnitHealthMax
+local UnitHealth = UnitHealth
+local UnitGetTotalAbsorbs = UnitGetTotalAbsorbs
 
--- Set the category name for all v3 health tags
+-- Localize Lua functions directly
+local format = string.format
+local floor = math.floor
+local tonumber = tonumber
+local ipairs = ipairs
+
+-- Set the category name for all v2 health tags
 local thisCategory = MHCT.TAG_CATEGORY_NAME .. " [health-v2]"
 
 -- THROTTLE constants (seconds) **Does not work on nameplates**
@@ -37,16 +44,16 @@ local function formatHealthText(unit, isPercentFirst)
 	-- Early return for full health with no absorbs (most common case)
 	local absorbAmount = UnitGetTotalAbsorbs(unit) or 0
 	if currentHp == maxHp and absorbAmount == 0 then
-		return MHCT.E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
+		return E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
 	end
 
 	-- Get formatted current health
-	local currentText = MHCT.E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
+	local currentText = E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
 
 	-- Format with absorb info if present
 	local absorbText = ""
 	if absorbAmount > 0 then
-		absorbText = format("|cff%s(%s)|r ", MHCT.ABSORB_TEXT_COLOR, MHCT.E:ShortValue(absorbAmount))
+		absorbText = format("|cff%s(%s)|r ", MHCT.ABSORB_TEXT_COLOR, E:ShortValue(absorbAmount))
 	end
 
 	-- Add percent text if not at full health
@@ -78,7 +85,7 @@ local function formatHealthPercentWithStatus(unit, decimalPlaces)
 	-- Handle full health
 	if currentHp == maxHp then
 		-- Full health, just return formatted current health
-		return MHCT.E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
+		return E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
 	end
 
 	-- Calculate percentage with configured decimal places
@@ -100,7 +107,7 @@ local function formatHealthDeficitWithStatus(unit)
 
 	-- Only show deficit if not at full health
 	if currentHp < maxHp then
-		return format("-%s", MHCT.E:ShortValue(maxHp - currentHp))
+		return format("-%s", E:ShortValue(maxHp - currentHp))
 	end
 
 	return ""
@@ -118,7 +125,7 @@ local function formatHealthHideFullPercent(unit, isPercentFirst)
 	local currentHp = UnitHealth(unit)
 
 	-- Get formatted current health
-	local currentText = MHCT.E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
+	local currentText = E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
 
 	-- If health is full, just return current health value
 	if currentHp == maxHp then
@@ -147,13 +154,13 @@ local function formatHealthWithLowHealthColor(unit, isPercentFirst, threshold)
 	local isLowHealth = healthPercent <= lowHealthThreshold
 
 	-- Get formatted current health
-	local currentText = MHCT.E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
+	local currentText = E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
 
 	-- Handle absorb information if present
 	local absorbText = ""
 	local absorbAmount = UnitGetTotalAbsorbs(unit) or 0
 	if absorbAmount > 0 then
-		absorbText = format("|cff%s(%s)|r ", MHCT.ABSORB_TEXT_COLOR, MHCT.E:ShortValue(absorbAmount))
+		absorbText = format("|cff%s(%s)|r ", MHCT.ABSORB_TEXT_COLOR, E:ShortValue(absorbAmount))
 	end
 
 	-- Calculate percentage if not at full health
@@ -179,31 +186,6 @@ local function formatHealthWithLowHealthColor(unit, isPercentFirst, threshold)
 	else
 		return absorbText .. result
 	end
-end
-
--- ===================================================================================
--- ABSORB + CURRENT + PERCENT HEALTH (no status)
--- ===================================================================================
-do
-	-- CURRENT | PERCENT (original version)
-	MHCT.E:AddTagInfo(
-		"mh-health-current-percent",
-		thisCategory,
-		"Shows health as: 100k | 85% with absorbs if applicable (NO STATUS)"
-	)
-	MHCT.E:AddTag("mh-health-current-percent", "UNIT_HEALTH UNIT_MAXHEALTH UNIT_ABSORB_AMOUNT_CHANGED", function(unit)
-		return formatHealthText(unit, false) -- false = current first
-	end)
-
-	-- PERCENT | CURRENT (reversed version)
-	MHCT.E:AddTagInfo(
-		"mh-health-percent-current",
-		thisCategory,
-		"Shows health as: 85% | 100k with absorbs if applicable (NO STATUS)"
-	)
-	MHCT.E:AddTag("mh-health-percent-current", "UNIT_HEALTH UNIT_MAXHEALTH UNIT_ABSORB_AMOUNT_CHANGED", function(unit)
-		return formatHealthText(unit, true) -- true = percent first
-	end)
 end
 
 -- ===================================================================================
@@ -236,14 +218,14 @@ do
 
 	-- Register all the tags using the configuration table
 	for _, config in ipairs(healthPercentTags) do
-		MHCT.E:AddTagInfo(config.name, thisCategory, config.desc)
-		MHCT.E:AddTag(config.name, config.throttle, function(unit, _, args)
+		E:AddTagInfo(config.name, thisCategory, config.desc)
+		E:AddTag(config.name, config.throttle, function(unit, _, args)
 			return formatHealthPercentWithStatus(unit, args)
 		end)
 	end
 
 	-- Add a configurable version that lets users specify decimals
-	MHCT.E:AddTagInfo(
+	E:AddTagInfo(
 		"mh-health-percent:status-configurable",
 		thisCategory,
 		"Health percent with status and configurable decimal places - Example: [mh-health-percent:status-configurable{2}:1.0] for 2 decimal places at 1s update interval"
@@ -251,7 +233,7 @@ do
 
 	-- Register configurable versions for each throttle rate
 	for _, throttleValue in pairs(THROTTLE) do
-		MHCT.E:AddTag("mh-health-percent:status-configurable", throttleValue, function(unit, _, args)
+		E:AddTag("mh-health-percent:status-configurable", throttleValue, function(unit, _, args)
 			return formatHealthPercentWithStatus(unit, args)
 		end)
 	end
@@ -287,14 +269,14 @@ do
 
 	-- Register all the tags using the configuration table
 	for _, config in ipairs(healthDeficitTags) do
-		MHCT.E:AddTagInfo(config.name, thisCategory, config.desc)
-		MHCT.E:AddTag(config.name, config.throttle, function(unit)
+		E:AddTagInfo(config.name, thisCategory, config.desc)
+		E:AddTag(config.name, config.throttle, function(unit)
 			return formatHealthDeficitWithStatus(unit)
 		end)
 	end
 
 	-- Add a minimal version that doesn't show the minus sign (just the value)
-	MHCT.E:AddTagInfo(
+	E:AddTagInfo(
 		"mh-health-deficit:status-minimal",
 		thisCategory,
 		"Minimal health deficit display - no minus sign, just the missing health value"
@@ -303,13 +285,13 @@ do
 	-- Register minimal versions for each throttle rate
 	for _, config in ipairs(healthDeficitTags) do
 		local minimalName = config.name:gsub(":status%-", ":minimal%-")
-		MHCT.E:AddTagInfo(
+		E:AddTagInfo(
 			minimalName,
 			thisCategory,
 			"Minimal " .. config.desc:gsub("Health deficit with status", "health deficit")
 		)
 
-		MHCT.E:AddTag(minimalName, config.throttle, function(unit)
+		E:AddTag(minimalName, config.throttle, function(unit)
 			-- Check status first
 			local statusFormatted = MHCT.formatWithStatusCheck(unit)
 			if statusFormatted then
@@ -321,7 +303,7 @@ do
 			local maxHp = UnitHealthMax(unit)
 
 			if currentHp < maxHp then
-				return MHCT.E:ShortValue(maxHp - currentHp)
+				return ShortValue(maxHp - currentHp)
 			end
 
 			return ""
@@ -334,12 +316,12 @@ end
 -- ===================================================================================
 do
 	-- Register the "current | percent" version (same as original)
-	MHCT.E:AddTagInfo(
+	E:AddTagInfo(
 		"mh-health-current-percent-hidefull",
 		thisCategory,
 		"Shows health as: 100k | 85% but hides percent at full health"
 	)
-	MHCT.E:AddTag(
+	E:AddTag(
 		"mh-health-current-percent-hidefull",
 		"UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED",
 		function(unit)
@@ -348,12 +330,12 @@ do
 	)
 
 	-- Register the "percent | current" version
-	MHCT.E:AddTagInfo(
+	E:AddTagInfo(
 		"mh-health-percent-current-hidefull",
 		thisCategory,
 		"Shows health as: 85% | 100k but hides percent at full health"
 	)
-	MHCT.E:AddTag(
+	E:AddTag(
 		"mh-health-percent-current-hidefull",
 		"UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED",
 		function(unit)
@@ -362,12 +344,12 @@ do
 	)
 
 	-- BACKWARDS compatibility, register the V1 tag names as aliases
-	MHCT.E:AddTagInfo(
+	E:AddTagInfo(
 		"mh-health:current:percent:right-hidefull",
 		thisCategory,
 		"Alias for mh-health-current-percent-hidefull (V3 version)"
 	)
-	MHCT.E:AddTag(
+	E:AddTag(
 		"mh-health:current:percent:right-hidefull",
 		"UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED",
 		function(unit)
@@ -375,12 +357,12 @@ do
 		end
 	)
 
-	MHCT.E:AddTagInfo(
+	E:AddTagInfo(
 		"mh-health:current:percent:left-hidefull",
 		thisCategory,
 		"Alias for mh-health-percent-current-hidefull (V3 version)"
 	)
-	MHCT.E:AddTag(
+	E:AddTag(
 		"mh-health:current:percent:left-hidefull",
 		"UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED",
 		function(unit)
@@ -394,12 +376,12 @@ end
 -- ===================================================================================
 do
 	-- Register the "current | percent" version with low health coloring
-	MHCT.E:AddTagInfo(
+	E:AddTagInfo(
 		"mh-health-current-percent:low-health-colored",
 		thisCategory,
 		"Shows health as: 100k | 85% with color gradient for health below 20% (NO STATUS)"
 	)
-	MHCT.E:AddTag(
+	E:AddTag(
 		"mh-health-current-percent:low-health-colored",
 		"UNIT_HEALTH UNIT_MAXHEALTH UNIT_ABSORB_AMOUNT_CHANGED",
 		function(unit, _, args)
@@ -409,12 +391,12 @@ do
 	)
 
 	-- Register the "percent | current" version with low health coloring
-	MHCT.E:AddTagInfo(
+	E:AddTagInfo(
 		"mh-health-percent-current:low-health-colored",
 		thisCategory,
 		"Shows health as: 85% | 100k with color gradient for health below 20% (NO STATUS)"
 	)
-	MHCT.E:AddTag(
+	E:AddTag(
 		"mh-health-percent-current:low-health-colored",
 		"UNIT_HEALTH UNIT_MAXHEALTH UNIT_ABSORB_AMOUNT_CHANGED",
 		function(unit, _, args)
@@ -423,7 +405,7 @@ do
 		end
 	)
 end
---[[
+
 -- ===================================================================================
 -- MEMORY LEAK TESTING - Add to the end of your health tag file
 -- ===================================================================================
@@ -549,4 +531,3 @@ do
 		end
 	end)
 end
-]]
