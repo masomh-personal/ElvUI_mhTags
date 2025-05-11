@@ -304,3 +304,105 @@ do
 		end)
 	end
 end
+
+-- ===================================================================================
+-- HIDE PERCENT AT FULL HEALTH TAGS - Shows percent only when health isn't full
+-- ===================================================================================
+do
+	-- Helper function that builds health text with configurable order
+	-- Hides percentage when health is full
+	local function buildHealthTextHideFullPercent(unit, isPercentFirst)
+		-- Check for status first
+		local statusFormatted = MHCT.formatWithStatusCheck(unit)
+		if statusFormatted then
+			return statusFormatted
+		end
+
+		local maxHp = UnitHealthMax(unit)
+		local currentHp = UnitHealth(unit)
+
+		-- Use string builder for efficiency
+		local builder = resetBuilder(healthTextBuilder)
+
+		-- Get formatted current health
+		local currentText = MHCT.E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
+
+		-- If health is full, just return current health value
+		if currentHp == maxHp then
+			addToBuilder(builder, currentText)
+			return buildString(builder)
+		end
+
+		-- Calculate percentage since health isn't full
+		local percentText = format("%.1f%%", (currentHp / maxHp) * 100)
+
+		-- Build the string in requested order
+		if isPercentFirst then
+			addToBuilder(builder, percentText)
+			addToBuilder(builder, " | ")
+			addToBuilder(builder, currentText)
+		else
+			addToBuilder(builder, currentText)
+			addToBuilder(builder, " | ")
+			addToBuilder(builder, percentText)
+		end
+
+		return buildString(builder)
+	end
+
+	-- Register the "current | percent" version (same as original)
+	MHCT.E:AddTagInfo(
+		"mh-health-current-percent-hidefull",
+		thisCategory,
+		"Shows health as: 100k | 85% but hides percent at full health"
+	)
+	MHCT.E:AddTag(
+		"mh-health-current-percent-hidefull",
+		"UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED",
+		function(unit)
+			return buildHealthTextHideFullPercent(unit, false) -- false = current first
+		end
+	)
+
+	-- Register the "percent | current" version
+	MHCT.E:AddTagInfo(
+		"mh-health-percent-current-hidefull",
+		thisCategory,
+		"Shows health as: 85% | 100k but hides percent at full health"
+	)
+	MHCT.E:AddTag(
+		"mh-health-percent-current-hidefull",
+		"UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED",
+		function(unit)
+			return buildHealthTextHideFullPercent(unit, true) -- true = percent first
+		end
+	)
+
+	--------------------------------------------------------------------
+	-- BACKWARDS compatibility, register the V1 tag names as aliases
+	MHCT.E:AddTagInfo(
+		"mh-health:current:percent:right-hidefull",
+		thisCategory,
+		"Alias for mh-health-current-percent-hidefull (V3 version)"
+	)
+	MHCT.E:AddTag(
+		"mh-health:current:percent:right-hidefull",
+		"UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED",
+		function(unit)
+			return buildHealthTextHideFullPercent(unit, false)
+		end
+	)
+
+	MHCT.E:AddTagInfo(
+		"mh-health:current:percent:left-hidefull",
+		thisCategory,
+		"Alias for mh-health-percent-current-hidefull (V3 version)"
+	)
+	MHCT.E:AddTag(
+		"mh-health:current:percent:left-hidefull",
+		"UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED",
+		function(unit)
+			return buildHealthTextHideFullPercent(unit, true)
+		end
+	)
+end

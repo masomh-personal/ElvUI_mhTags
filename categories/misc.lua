@@ -95,7 +95,7 @@ do
 		"Similar color tag to base ElvUI, but with brighter and high contrast gradient"
 	)
 	MHCT.E:AddTag("mh-healthcolor", "UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED", function(unit)
-		if UnitIsDeadOrGhost(unit) or not MHCT.UnitIsConnected(unit) then
+		if MHCT.UnitIsDeadOrGhost(unit) or not MHCT.UnitIsConnected(unit) then
 			return "|cffD6BFA6" -- Precomputed Hex for dead or disconnected units
 		else
 			-- Calculate health percentage and round to the nearest 0.5%
