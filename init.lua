@@ -88,15 +88,15 @@ MHCT.HexToRGB = function(hex)
 end
 
 MHCT.statusCheck = function(unit)
-	if UnitIsAFK(unit) then
+	if MHCT.UnitIsAFK(unit) then
 		return MHCT.L["AFK"]
-	elseif UnitIsDND(unit) then
+	elseif MHCT.UnitIsDND(unit) then
 		return MHCT.L["DND"]
-	elseif not UnitIsFeignDeath(unit) and UnitIsDead(unit) then
+	elseif not MHCT.UnitIsFeignDeath(unit) and MHCT.UnitIsDead(unit) then
 		return MHCT.L["Dead"]
-	elseif UnitIsGhost(unit) then
+	elseif MHCT.UnitIsGhost(unit) then
 		return MHCT.L["Ghost"]
-	elseif not UnitIsConnected(unit) then
+	elseif not MHCT.UnitIsConnected(unit) then
 		return MHCT.L["Offline"]
 	end
 
