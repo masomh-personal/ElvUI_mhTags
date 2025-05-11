@@ -1,19 +1,53 @@
 -- ===================================================================================
--- VERSION 1.0 of health related tags
+-- VERSION 1.0 of health related tags - Optimized for efficiency
 -- ===================================================================================
 local _, ns = ...
 local MHCT = ns.MHCT
+
+-- Get ElvUI references directly
+local E, L = unpack(ElvUI)
+
+-- Localize Lua functions
+local format = string.format
+local tonumber = tonumber
+
+-- Localize WoW API functions
+local UnitHealthMax = UnitHealthMax
+local UnitHealth = UnitHealth
+local UnitGetTotalAbsorbs = UnitGetTotalAbsorbs
+
+-- Local constants
+local thisCategory = MHCT.TAG_CATEGORY_NAME .. " [health-v1]"
+local DEFAULT_DECIMAL_PLACE = MHCT.DEFAULT_DECIMAL_PLACE
+local ABSORB_TEXT_COLOR = MHCT.ABSORB_TEXT_COLOR
+
+-- FORMAT_PATTERNS table for cached decimal formats
+local FORMAT_PATTERNS = {
+	DECIMAL_WITH_PERCENT = {}, -- Stores patterns like "%.0f%%", "%.1f%%", etc.
+	DECIMAL_WITHOUT_PERCENT = {}, -- Stores patterns like "%.0f", "%.1f", etc.
+	DEFICIT_WITH_PERCENT = {}, -- Stores patterns like "-%.0f%%", "-%.1f%%", etc.
+	DEFICIT_WITHOUT_PERCENT = {}, -- Stores patterns like "-%.0f", "-%.1f", etc.
+}
+
+-- Initialize patterns for common decimal place counts
+for i = 0, 3 do
+	FORMAT_PATTERNS.DECIMAL_WITH_PERCENT[i] = format("%%.%sf%%%%", i)
+	FORMAT_PATTERNS.DECIMAL_WITHOUT_PERCENT[i] = format("%%.%sf", i)
+	FORMAT_PATTERNS.DEFICIT_WITH_PERCENT[i] = format("-%%.%sf%%%%", i)
+	FORMAT_PATTERNS.DEFICIT_WITHOUT_PERCENT[i] = format("-%%.%sf", i)
+end
 
 -- ===================================================================================
 -- HEALTH RELATED TAGS
 -- ===================================================================================
 do
-	MHCT.E:AddTagInfo(
+	-- Current + Percent (Percent first)
+	E:AddTagInfo(
 		"mh-health:current:percent:left",
-		MHCT.TAG_CATEGORY_NAME .. " [health-v1]",
+		thisCategory,
 		"Shows current + percent health at all times similar to following example: 85% | 100k"
 	)
-	MHCT.E:AddTag(
+	E:AddTag(
 		"mh-health:current:percent:left",
 		"UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED",
 		function(unit)
@@ -22,23 +56,20 @@ do
 				return statusFormatted
 			end
 
-			local maxHp = MHCT.UnitHealthMax(unit)
-			local currentHp = MHCT.UnitHealth(unit)
+			local maxHp = UnitHealthMax(unit)
+			local currentHp = UnitHealth(unit)
 			local currentPercent = (currentHp / maxHp) * 100
-			return MHCT.format(
-				"%.1f%% | %s",
-				currentPercent,
-				MHCT.E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
-			)
+			return format("%.1f%% | %s", currentPercent, E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true))
 		end
 	)
 
-	MHCT.E:AddTagInfo(
+	-- Current + Percent (Current first)
+	E:AddTagInfo(
 		"mh-health:current:percent:right",
-		MHCT.TAG_CATEGORY_NAME .. " [health-v1]",
+		thisCategory,
 		"Shows current + percent health at all times similar to following example: 100k | 85%"
 	)
-	MHCT.E:AddTag(
+	E:AddTag(
 		"mh-health:current:percent:right",
 		"UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED",
 		function(unit)
@@ -47,23 +78,20 @@ do
 				return statusFormatted
 			end
 
-			local maxHp = MHCT.UnitHealthMax(unit)
-			local currentHp = MHCT.UnitHealth(unit)
+			local maxHp = UnitHealthMax(unit)
+			local currentHp = UnitHealth(unit)
 			local currentPercent = (currentHp / maxHp) * 100
-			return MHCT.format(
-				"%s | %.1f%%",
-				MHCT.E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true),
-				currentPercent
-			)
+			return format("%s | %.1f%%", E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true), currentPercent)
 		end
 	)
 
-	MHCT.E:AddTagInfo(
+	-- Current + Percent (Current first, hide percent at full)
+	E:AddTagInfo(
 		"mh-health:current:percent:right-hidefull",
-		MHCT.TAG_CATEGORY_NAME .. " [health-v1]",
+		thisCategory,
 		"Hides percent at full health else shows at all times similar to following example: 100k | 85%"
 	)
-	MHCT.E:AddTag(
+	E:AddTag(
 		"mh-health:current:percent:right-hidefull",
 		"UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED",
 		function(unit)
@@ -72,28 +100,25 @@ do
 				return statusFormatted
 			end
 
-			local maxHp = MHCT.UnitHealthMax(unit)
-			local currentHp = MHCT.UnitHealth(unit)
+			local maxHp = UnitHealthMax(unit)
+			local currentHp = UnitHealth(unit)
 
 			if maxHp ~= currentHp then
 				local currentPercent = (currentHp / maxHp) * 100
-				return MHCT.format(
-					"%s | %.1f%%",
-					MHCT.E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true),
-					currentPercent
-				)
+				return format("%s | %.1f%%", E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true), currentPercent)
 			else
-				return MHCT.E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
+				return E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
 			end
 		end
 	)
 
-	MHCT.E:AddTagInfo(
+	-- Current + Percent (Percent first, hide percent at full)
+	E:AddTagInfo(
 		"mh-health:current:percent:left-hidefull",
-		MHCT.TAG_CATEGORY_NAME .. " [health-v1]",
+		thisCategory,
 		"Hides percent at full health else shows at all times similar to following example: 85% |100k"
 	)
-	MHCT.E:AddTag(
+	E:AddTag(
 		"mh-health:current:percent:left-hidefull",
 		"UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED",
 		function(unit)
@@ -102,28 +127,25 @@ do
 				return statusFormatted
 			end
 
-			local maxHp = MHCT.UnitHealthMax(unit)
-			local currentHp = MHCT.UnitHealth(unit)
+			local maxHp = UnitHealthMax(unit)
+			local currentHp = UnitHealth(unit)
 
 			if maxHp ~= currentHp then
 				local currentPercent = (currentHp / maxHp) * 100
-				return MHCT.format(
-					"%.1f%% | %s",
-					currentPercent,
-					MHCT.E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
-				)
+				return format("%.1f%% | %s", currentPercent, E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true))
 			else
-				return MHCT.E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
+				return E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
 			end
 		end
 	)
 
-	MHCT.E:AddTagInfo(
+	-- Absorb + Current + Percent
+	E:AddTagInfo(
 		"mh-health:absorb:current:percent:right",
-		MHCT.TAG_CATEGORY_NAME .. " [health-v1]",
+		thisCategory,
 		"Hides percent at full health else shows absorb, current, and percent to following example: (**absorb amount**) 100k | 85%"
 	)
-	MHCT.E:AddTag(
+	E:AddTag(
 		"mh-health:absorb:current:percent:right",
 		"UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED UNIT_ABSORB_AMOUNT_CHANGED",
 		function(unit)
@@ -132,53 +154,46 @@ do
 				return statusFormatted
 			end
 
-			local maxHp = MHCT.UnitHealthMax(unit)
-			local currentHp = MHCT.UnitHealth(unit)
-			local returnString = MHCT.E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
+			local maxHp = UnitHealthMax(unit)
+			local currentHp = UnitHealth(unit)
+			local returnString = E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
 
 			if maxHp ~= currentHp then
 				local currentPercent = (currentHp / maxHp) * 100
-				returnString = MHCT.format("%s | %.1f%%", returnString, currentPercent)
+				returnString = format("%s | %.1f%%", returnString, currentPercent)
 			end
 
-			local absorbAmount = MHCT.UnitGetTotalAbsorbs(unit) or 0
+			local absorbAmount = UnitGetTotalAbsorbs(unit) or 0
 			if absorbAmount ~= 0 then
-				return MHCT.format(
-					"|cff%s(%s)|r %s",
-					MHCT.ABSORB_TEXT_COLOR,
-					MHCT.E:ShortValue(absorbAmount),
-					returnString
-				)
+				return format("|cff%s(%s)|r %s", ABSORB_TEXT_COLOR, E:ShortValue(absorbAmount), returnString)
 			end
 
 			return returnString
 		end
 	)
 
-	MHCT.E:AddTagInfo(
+	-- Simple Percent with status
+	E:AddTagInfo(
 		"mh-health:simple:percent",
-		MHCT.TAG_CATEGORY_NAME .. " [health-v1]",
+		thisCategory,
 		"Shows max hp at full or percent with dynamic # of decimals (dynamic number within {} of tag) - Example: [mh-health:simple:percent{2}] will show percent to 2 decimal places"
 	)
-	MHCT.E:AddTag(
-		"mh-health:simple:percent",
-		"PLAYER_FLAGS_CHANGED UNIT_CONNECTION UNIT_HEALTH",
-		function(unit, _, args)
-			local statusFormatted = MHCT.formatWithStatusCheck(unit)
-			if statusFormatted then
-				return statusFormatted
-			end
-
-			return MHCT.formatHealthPercent(unit, args, true)
+	E:AddTag("mh-health:simple:percent", "PLAYER_FLAGS_CHANGED UNIT_CONNECTION UNIT_HEALTH", function(unit, _, args)
+		local statusFormatted = MHCT.formatWithStatusCheck(unit)
+		if statusFormatted then
+			return statusFormatted
 		end
-	)
 
-	MHCT.E:AddTagInfo(
+		return MHCT.formatHealthPercent(unit, args, true)
+	end)
+
+	-- Simple Percent with status (no % sign)
+	E:AddTagInfo(
 		"mh-health:simple:percent-nosign",
-		MHCT.TAG_CATEGORY_NAME .. " [health-v1]",
+		thisCategory,
 		"Shows max hp at full or percent (with no % sign) with dynamic # of decimals (dynamic number within {} of tag) - [Example: mh-health:simple:percent{2}] will show percent to 2 decimal places"
 	)
-	MHCT.E:AddTag(
+	E:AddTag(
 		"mh-health:simple:percent-nosign",
 		"PLAYER_FLAGS_CHANGED UNIT_CONNECTION UNIT_HEALTH",
 		function(unit, _, args)
@@ -191,12 +206,13 @@ do
 		end
 	)
 
-	MHCT.E:AddTagInfo(
+	-- Simple Percent v2 (hidden at full, no % sign)
+	E:AddTagInfo(
 		"mh-health:simple:percent-nosign-v2",
-		MHCT.TAG_CATEGORY_NAME .. " [health-v1]",
+		thisCategory,
 		"Hidden at max hp at full or percent (with no % sign) with dynamic # of decimals (dynamic number within {} of tag) - Example: mh-health:simple:percent{2} will show percent to 2 decimal places"
 	)
-	MHCT.E:AddTag(
+	E:AddTag(
 		"mh-health:simple:percent-nosign-v2",
 		"PLAYER_FLAGS_CHANGED UNIT_NAME_UPDATE UNIT_CONNECTION UNIT_HEALTH UNIT_MAXHEALTH",
 		function(unit, _, args)
@@ -205,24 +221,29 @@ do
 				return statusFormatted
 			end
 
-			local maxHp = MHCT.UnitHealthMax(unit)
-			local currentHp = MHCT.UnitHealth(unit)
+			local maxHp = UnitHealthMax(unit)
+			local currentHp = UnitHealth(unit)
 			if currentHp ~= maxHp then
-				local decimalPlaces = MHCT.tonumber(args) or MHCT.DEFAULT_DECIMAL_PLACE
-				local formatDecimal = MHCT.format("%%.%sf", decimalPlaces)
-				return MHCT.format(formatDecimal, (currentHp / maxHp) * 100)
+				local decimalPlaces = tonumber(args) or DEFAULT_DECIMAL_PLACE
+
+				-- Use cached format pattern if available
+				local formatPattern = FORMAT_PATTERNS.DECIMAL_WITHOUT_PERCENT[decimalPlaces]
+					or format("%%.%sf", decimalPlaces)
+
+				return format(formatPattern, (currentHp / maxHp) * 100)
 			end
 
 			return ""
 		end
 	)
 
-	MHCT.E:AddTagInfo(
+	-- Simple Percent v2 (hidden at full, with % sign)
+	E:AddTagInfo(
 		"mh-health:simple:percent-v2",
-		MHCT.TAG_CATEGORY_NAME .. " [health-v1]",
+		thisCategory,
 		"Hidden at max hp at full or percent + % sign with dynamic # of decimals (dynamic number within {} of tag) - Example: [mh-health:simple:percent{2}] will show percent to 2 decimal places"
 	)
-	MHCT.E:AddTag(
+	E:AddTag(
 		"mh-health:simple:percent-v2",
 		"PLAYER_FLAGS_CHANGED UNIT_NAME_UPDATE UNIT_CONNECTION UNIT_HEALTH UNIT_MAXHEALTH",
 		function(unit, _, args)
@@ -231,53 +252,56 @@ do
 				return statusFormatted
 			end
 
-			local maxHp = MHCT.UnitHealthMax(unit)
-			local currentHp = MHCT.UnitHealth(unit)
+			local maxHp = UnitHealthMax(unit)
+			local currentHp = UnitHealth(unit)
 			if currentHp ~= maxHp then
-				local decimalPlaces = MHCT.tonumber(args) or MHCT.DEFAULT_DECIMAL_PLACE
-				local formatDecimal = MHCT.format("%%.%sf%%%%", decimalPlaces)
-				return MHCT.format(formatDecimal, (currentHp / maxHp) * 100)
+				local decimalPlaces = tonumber(args) or DEFAULT_DECIMAL_PLACE
+
+				-- Use cached format pattern if available
+				local formatPattern = FORMAT_PATTERNS.DECIMAL_WITH_PERCENT[decimalPlaces]
+					or format("%%.%sf%%%%", decimalPlaces)
+
+				return format(formatPattern, (currentHp / maxHp) * 100)
 			end
 
 			return ""
 		end
 	)
 
-	MHCT.E:AddTagInfo(
+	-- Deficit with status
+	E:AddTagInfo(
 		"mh-deficit:num-status",
-		MHCT.TAG_CATEGORY_NAME .. " [health-v1]",
+		thisCategory,
 		"Shows deficit shortvalue number when less than 100% health and status + icon if dead/offline/ghost"
 	)
-	MHCT.E:AddTag(
-		"mh-deficit:num-status",
-		"UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED",
-		function(unit)
-			local statusFormatted = MHCT.formatWithStatusCheck(unit)
-			if statusFormatted then
-				return statusFormatted
-			end
-
-			local currentHp, maxHp = MHCT.UnitHealth(unit), MHCT.UnitHealthMax(unit)
-			return (currentHp == maxHp) and "" or MHCT.format("-%s", MHCT.E:ShortValue(maxHp - currentHp))
+	E:AddTag("mh-deficit:num-status", "UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED", function(unit)
+		local statusFormatted = MHCT.formatWithStatusCheck(unit)
+		if statusFormatted then
+			return statusFormatted
 		end
-	)
 
-	MHCT.E:AddTagInfo(
-		"mh-deficit:num-nostatus",
-		MHCT.TAG_CATEGORY_NAME .. " [health-v1]",
-		"Shows deficit shortvalue number when less than 100% health (no status)"
-	)
-	MHCT.E:AddTag("mh-deficit:num-nostatus", "UNIT_HEALTH UNIT_MAXHEALTH", function(unit)
-		local currentHp, maxHp = MHCT.UnitHealth(unit), MHCT.UnitHealthMax(unit)
-		return (currentHp == maxHp) and "" or MHCT.format("-%s", MHCT.E:ShortValue(maxHp - currentHp))
+		local currentHp, maxHp = UnitHealth(unit), UnitHealthMax(unit)
+		return (currentHp == maxHp) and "" or format("-%s", E:ShortValue(maxHp - currentHp))
 	end)
 
-	MHCT.E:AddTagInfo(
+	-- Deficit without status
+	E:AddTagInfo(
+		"mh-deficit:num-nostatus",
+		thisCategory,
+		"Shows deficit shortvalue number when less than 100% health (no status)"
+	)
+	E:AddTag("mh-deficit:num-nostatus", "UNIT_HEALTH UNIT_MAXHEALTH", function(unit)
+		local currentHp, maxHp = UnitHealth(unit), UnitHealthMax(unit)
+		return (currentHp == maxHp) and "" or format("-%s", E:ShortValue(maxHp - currentHp))
+	end)
+
+	-- Deficit percent with status
+	E:AddTagInfo(
 		"mh-deficit:percent-status",
-		MHCT.TAG_CATEGORY_NAME .. " [health-v1]",
+		thisCategory,
 		"Shows deficit percent with dynamic decimal when less than 100% health + status icon"
 	)
-	MHCT.E:AddTag(
+	E:AddTag(
 		"mh-deficit:percent-status",
 		"UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED",
 		function(unit, _, args)
@@ -286,19 +310,28 @@ do
 				return statusFormatted
 			end
 
-			local decimalPlaces = MHCT.tonumber(args) or 1
-			local currentHp, maxHp = MHCT.UnitHealth(unit), MHCT.UnitHealthMax(unit)
-			local formatDecimal = MHCT.format("-%%.%sf%%%%", decimalPlaces)
-			return (currentHp == maxHp) and "" or MHCT.format(formatDecimal, 100 - (currentHp / maxHp) * 100)
+			local decimalPlaces = tonumber(args) or 1
+			local currentHp, maxHp = UnitHealth(unit), UnitHealthMax(unit)
+
+			if currentHp == maxHp then
+				return ""
+			end
+
+			-- Use cached format pattern if available
+			local formatPattern = FORMAT_PATTERNS.DEFICIT_WITH_PERCENT[decimalPlaces]
+				or format("-%%.%sf%%%%", decimalPlaces)
+
+			return format(formatPattern, 100 - (currentHp / maxHp) * 100)
 		end
 	)
 
-	MHCT.E:AddTagInfo(
+	-- Deficit percent with status (no % sign)
+	E:AddTagInfo(
 		"mh-deficit:percent-status-nosign",
-		MHCT.TAG_CATEGORY_NAME .. " [health-v1]",
+		thisCategory,
 		"Shows deficit percent with dynamic decimal when less than 100% health + status icon (does not include %)"
 	)
-	MHCT.E:AddTag(
+	E:AddTag(
 		"mh-deficit:percent-status-nosign",
 		"UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED",
 		function(unit, _, args)
@@ -307,22 +340,39 @@ do
 				return statusFormatted
 			end
 
-			local decimalPlaces = MHCT.tonumber(args) or 1
-			local currentHp, maxHp = MHCT.UnitHealth(unit), MHCT.UnitHealthMax(unit)
-			local formatDecimal = MHCT.format("-%%.%sf", decimalPlaces)
-			return (currentHp == maxHp) and "" or MHCT.format(formatDecimal, 100 - (currentHp / maxHp) * 100)
+			local decimalPlaces = tonumber(args) or 1
+			local currentHp, maxHp = UnitHealth(unit), UnitHealthMax(unit)
+
+			if currentHp == maxHp then
+				return ""
+			end
+
+			-- Use cached format pattern if available
+			local formatPattern = FORMAT_PATTERNS.DEFICIT_WITHOUT_PERCENT[decimalPlaces]
+				or format("-%%.%sf", decimalPlaces)
+
+			return format(formatPattern, 100 - (currentHp / maxHp) * 100)
 		end
 	)
 
-	MHCT.E:AddTagInfo(
+	-- Deficit percent without status
+	E:AddTagInfo(
 		"mh-deficit:percent-nostatus",
-		MHCT.TAG_CATEGORY_NAME .. " [health-v1]",
+		thisCategory,
 		"Shows deficit percent with dynamic decimal when less than 100% health (no status)"
 	)
-	MHCT.E:AddTag("mh-deficit:percent-nostatus", "UNIT_HEALTH UNIT_MAXHEALTH", function(unit, _, args)
-		local decimalPlaces = MHCT.tonumber(args) or 1
-		local currentHp, maxHp = MHCT.UnitHealth(unit), MHCT.UnitHealthMax(unit)
-		local formatDecimal = MHCT.format("-%%.%sf%%%%", decimalPlaces)
-		return (currentHp == maxHp) and "" or MHCT.format(formatDecimal, 100 - (currentHp / maxHp) * 100)
+	E:AddTag("mh-deficit:percent-nostatus", "UNIT_HEALTH UNIT_MAXHEALTH", function(unit, _, args)
+		local decimalPlaces = tonumber(args) or 1
+		local currentHp, maxHp = UnitHealth(unit), UnitHealthMax(unit)
+
+		if currentHp == maxHp then
+			return ""
+		end
+
+		-- Use cached format pattern if available
+		local formatPattern = FORMAT_PATTERNS.DEFICIT_WITH_PERCENT[decimalPlaces]
+			or format("-%%.%sf%%%%", decimalPlaces)
+
+		return format(formatPattern, 100 - (currentHp / maxHp) * 100)
 	end)
 end
