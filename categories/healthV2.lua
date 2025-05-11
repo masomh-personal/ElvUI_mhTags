@@ -21,8 +21,8 @@ local format = MHCT.format
 local floor = MHCT.floor
 local tonumber = MHCT.tonumber
 
--- Set the category name for all v3 health tags
-local thisCategory = MHCT.TAG_CATEGORY_NAME .. " [health-v3]"
+-- Set the category name for all v2 health tags
+local thisCategory = MHCT.TAG_CATEGORY_NAME .. " [health-v2]"
 
 -- THROTTLE constants (seconds) **Does not work on nameplates**
 local THROTTLE = {
@@ -403,6 +403,100 @@ do
 		"UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED",
 		function(unit)
 			return buildHealthTextHideFullPercent(unit, true)
+		end
+	)
+end
+
+-- ===================================================================================
+-- LOW HEALTH COLORED VERSION - Using existing buildHealthText function
+-- ===================================================================================
+do
+	-- Enhanced version of buildHealthText that supports low health coloring
+	local function buildHealthTextWithLowHealthColor(unit, isPercentFirst, threshold)
+		local builder = resetBuilder(healthTextBuilder)
+		local maxHp = UnitHealthMax(unit)
+		local currentHp = UnitHealth(unit)
+		local healthPercent = (currentHp / maxHp) * 100
+
+		-- Check if health is below threshold
+		local lowHealthThreshold = threshold or 20 -- Default to 20%
+		local isLowHealth = healthPercent <= lowHealthThreshold
+
+		-- Get formatted current health
+		local currentText = MHCT.E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
+
+		-- Calculate percentage if not at full health
+		local percentText
+		if currentHp < maxHp then
+			percentText = format("%.1f%%", healthPercent)
+		end
+
+		-- Handle absorb information if present
+		local absorbAmount = UnitGetTotalAbsorbs(unit) or 0
+		if absorbAmount > 0 then
+			addToBuilder(builder, "|cff")
+			addToBuilder(builder, MHCT.ABSORB_TEXT_COLOR)
+			addToBuilder(builder, "(")
+			addToBuilder(builder, MHCT.E:ShortValue(absorbAmount))
+			addToBuilder(builder, ")|r ")
+		end
+
+		-- Apply low health color if needed
+		if isLowHealth then
+			addToBuilder(builder, MHCT.HEALTH_GRADIENT_RGB[floor(healthPercent)] or "|cffFF0000")
+		end
+
+		-- Add current and percent based on order preference
+		if percentText then
+			if isPercentFirst then
+				addToBuilder(builder, percentText)
+				addToBuilder(builder, " | ")
+				addToBuilder(builder, currentText)
+			else
+				addToBuilder(builder, currentText)
+				addToBuilder(builder, " | ")
+				addToBuilder(builder, percentText)
+			end
+		else
+			-- Just current health if at full health
+			addToBuilder(builder, currentText)
+		end
+
+		-- Close color tag if we opened one
+		if isLowHealth then
+			addToBuilder(builder, "|r")
+		end
+
+		return buildString(builder)
+	end
+
+	-- Register the "current | percent" version with low health coloring
+	MHCT.E:AddTagInfo(
+		"mh-health-current-percent:low-health-colored",
+		thisCategory,
+		"Shows health as: 100k | 85% with color gradient for health below 20% (NO STATUS)"
+	)
+	MHCT.E:AddTag(
+		"mh-health-current-percent:low-health-colored",
+		"UNIT_HEALTH UNIT_MAXHEALTH UNIT_ABSORB_AMOUNT_CHANGED",
+		function(unit, _, args)
+			local threshold = tonumber(args) or 20 -- Default to 20%, override with tag args
+			return buildHealthTextWithLowHealthColor(unit, false, threshold) -- false = current first
+		end
+	)
+
+	-- Register the "percent | current" version with low health coloring
+	MHCT.E:AddTagInfo(
+		"mh-health-percent-current:low-health-colored",
+		thisCategory,
+		"Shows health as: 85% | 100k with color gradient for health below 20% (NO STATUS)"
+	)
+	MHCT.E:AddTag(
+		"mh-health-percent-current:low-health-colored",
+		"UNIT_HEALTH UNIT_MAXHEALTH UNIT_ABSORB_AMOUNT_CHANGED",
+		function(unit, _, args)
+			local threshold = tonumber(args) or 20 -- Default to 20%, override with tag args
+			return buildHealthTextWithLowHealthColor(unit, true, threshold) -- true = percent first
 		end
 	)
 end
