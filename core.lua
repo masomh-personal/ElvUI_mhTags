@@ -42,7 +42,6 @@ local GetMaxPlayerLevel = GetMaxPlayerLevel()
 
 -- ElvUI references - treated like any other API
 local E, L = unpack(ElvUI)
-local ElvUF = E.oUF
 local ShortValue = E.ShortValue
 local GetFormattedText = E.GetFormattedText
 
