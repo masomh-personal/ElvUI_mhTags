@@ -39,13 +39,6 @@ local UnitEffectiveLevel = UnitEffectiveLevel
 local UnitClassification = UnitClassification
 local GetCreatureDifficultyColor = GetCreatureDifficultyColor
 local GetMaxPlayerLevel = GetMaxPlayerLevel()
-local UnitName = UnitName
-local GetRaidRosterInfo = GetRaidRosterInfo
-local GetNumGroupMembers = GetNumGroupMembers
-local UnitGetTotalAbsorbs = UnitGetTotalAbsorbs
-local IsInRaid = IsInRaid
-local UnitPowerType = UnitPowerType
-local UnitIsDeadOrGhost = UnitIsDeadOrGhost
 
 -- ElvUI references - treated like any other API
 local E, L = unpack(ElvUI)
