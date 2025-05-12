@@ -4,12 +4,12 @@
 local _, ns = ...
 local MHCT = ns.MHCT
 
--- Get ElvUI references directly
-local E, L = unpack(ElvUI)
-
 -- Localize Lua functions
 local format = string.format
 local tonumber = tonumber
+
+-- Get ElvUI references directly
+local E = unpack(ElvUI)
 
 -- Localize WoW API functions
 local UnitName = UnitName
@@ -19,87 +19,89 @@ local GetNumGroupMembers = GetNumGroupMembers
 local GetRaidRosterInfo = GetRaidRosterInfo
 
 -- Local constants
-local thisCategory = MHCT.TAG_CATEGORY_NAME .. " [name]"
+local NAME_SUBCATEGORY = "name"
 local DEFAULT_TEXT_LENGTH = MHCT.DEFAULT_TEXT_LENGTH
 
 -- ===================================================================================
 -- NAME RELATED TAGS
 -- ===================================================================================
-do
-	-- Name in CAPS with configurable length
-	E:AddTagInfo(
-		"mh-dynamic:name:caps",
-		thisCategory,
-		"Shows unit name in all CAPS with a dynamic # of characters (dynamic number within {} of tag"
-	)
-	E:AddTag("mh-dynamic:name:caps", "UNIT_NAME_UPDATE", function(unit, _, args)
+
+-- Name in CAPS with configurable length
+MHCT.registerTag(
+	"mh-dynamic:name:caps",
+	NAME_SUBCATEGORY,
+	"Shows unit name in all CAPS with a dynamic # of characters (dynamic number within {} of tag",
+	"UNIT_NAME_UPDATE",
+	function(unit, _, args)
 		local name = UnitName(unit) or ""
 		local cname = strupper(name)
 		local length = tonumber(args) or DEFAULT_TEXT_LENGTH
 		return E:ShortenString(cname, length)
-	end)
+	end
+)
 
-	-- Name abbreviation - C.T. Dummy format
-	E:AddTagInfo(
-		"mh-name:caps:abbrev",
-		thisCategory,
-		"Name abbreviation/shortener - Example: 'Cleave Training Dummy' => 'C.T. Dummy'"
-	)
-	E:AddTag("mh-name:caps:abbrev", "UNIT_NAME_UPDATE", function(unit)
+-- Name abbreviation - C.T. Dummy format
+MHCT.registerTag(
+	"mh-name:caps:abbrev",
+	NAME_SUBCATEGORY,
+	"Name abbreviation/shortener - Example: 'Cleave Training Dummy' => 'C.T. Dummy'",
+	"UNIT_NAME_UPDATE",
+	function(unit)
 		local name = UnitName(unit)
 		if name then
 			return MHCT.abbreviate(strupper(name), false, unit)
 		end
-	end)
+		return ""
+	end
+)
 
-	-- Name abbreviation reversed - Cleave T.D. format
-	E:AddTagInfo(
-		"mh-name:caps:abbrev-reverse",
-		thisCategory,
-		"Name abbreviation/shortener - Example: 'Cleave Training Dummy' => 'Cleave T.D.'"
-	)
-	E:AddTag("mh-name:caps:abbrev-reverse", "UNIT_NAME_UPDATE", function(unit)
+-- Name abbreviation reversed - Cleave T.D. format
+MHCT.registerTag(
+	"mh-name:caps:abbrev-reverse",
+	NAME_SUBCATEGORY,
+	"Name abbreviation/shortener - Example: 'Cleave Training Dummy' => 'Cleave T.D.'",
+	"UNIT_NAME_UPDATE",
+	function(unit)
 		local name = UnitName(unit)
 		if name then
 			return MHCT.abbreviate(strupper(name), true, unit)
 		end
-	end)
+		return ""
+	end
+)
 
-	-- Name with status icon
-	E:AddTagInfo(
-		"mh-dynamic:name:caps-statusicon",
-		thisCategory,
-		"Shows unit name in all CAPS with a dynamic # of characters (dynamic number within {} of tag) - Example: [mh-dynamic:name:caps-statusicon{20}] will show name up to 20 characters"
-	)
-	E:AddTag(
-		"mh-dynamic:name:caps-statusicon",
-		"UNIT_NAME_UPDATE UNIT_CONNECTION PLAYER_FLAGS_CHANGED UNIT_HEALTH INSTANCE_ENCOUNTER_ENGAGE_UNIT",
-		function(unit, _, args)
-			local name = UnitName(unit) or ""
-			if not name then
-				return ""
-			end
-
-			local cname = strupper(name)
-			local length = tonumber(args) or DEFAULT_TEXT_LENGTH
-
-			-- Check for status first
-			local statusFormatted = MHCT.formatWithStatusCheck(unit)
-			if statusFormatted then
-				return statusFormatted
-			end
-
-			return E:ShortenString(cname, length)
+-- Name with status icon
+MHCT.registerTag(
+	"mh-dynamic:name:caps-statusicon",
+	NAME_SUBCATEGORY,
+	"Shows unit name in all CAPS with a dynamic # of characters (dynamic number within {} of tag) - Example: [mh-dynamic:name:caps-statusicon{20}] will show name up to 20 characters",
+	"UNIT_NAME_UPDATE UNIT_CONNECTION PLAYER_FLAGS_CHANGED UNIT_HEALTH INSTANCE_ENCOUNTER_ENGAGE_UNIT",
+	function(unit, _, args)
+		local name = UnitName(unit) or ""
+		if not name then
+			return ""
 		end
-	)
 
-	-- V2 Name abbrev - only abbreviate if over length limit
-	E:AddTagInfo(
-		"mh-name-caps-abbrev-V2",
-		thisCategory,
-		"Name abbreviation/shortener if greater than 25 characters - Example: 'Cleave Training Dummy' => 'C.T. Dummy'"
-	)
-	E:AddTag("mh-name-caps-abbrev-V2", "UNIT_NAME_UPDATE", function(unit, _, nameLen)
+		local cname = strupper(name)
+		local length = tonumber(args) or DEFAULT_TEXT_LENGTH
+
+		-- Check for status first
+		local statusFormatted = MHCT.formatWithStatusCheck(unit)
+		if statusFormatted then
+			return statusFormatted
+		end
+
+		return E:ShortenString(cname, length)
+	end
+)
+
+-- V2 Name abbrev - only abbreviate if over length limit
+MHCT.registerTag(
+	"mh-name-caps-abbrev-V2",
+	NAME_SUBCATEGORY,
+	"Name abbreviation/shortener if greater than 25 characters - Example: 'Cleave Training Dummy' => 'C.T. Dummy'",
+	"UNIT_NAME_UPDATE",
+	function(unit, _, nameLen)
 		local name = UnitName(unit)
 		if not name then
 			return ""
@@ -112,15 +114,16 @@ do
 		else
 			return MHCT.abbreviate(strupper(name), false, unit)
 		end
-	end)
+	end
+)
 
-	-- V2 Name abbrev reversed
-	E:AddTagInfo(
-		"mh-name-caps-abbrev-reverse-V2",
-		thisCategory,
-		"Name abbreviation/shortener if greater than 25 characters - Example: 'Cleave Training Dummy' => 'Cleave T.D.'"
-	)
-	E:AddTag("mh-name-caps-abbrev-reverse-V2", "UNIT_NAME_UPDATE", function(unit, _, nameLen)
+-- V2 Name abbrev reversed
+MHCT.registerTag(
+	"mh-name-caps-abbrev-reverse-V2",
+	NAME_SUBCATEGORY,
+	"Name abbreviation/shortener if greater than 25 characters - Example: 'Cleave Training Dummy' => 'Cleave T.D.'",
+	"UNIT_NAME_UPDATE",
+	function(unit, _, nameLen)
 		local name = UnitName(unit)
 		if not name then
 			return ""
@@ -133,15 +136,16 @@ do
 		else
 			return MHCT.abbreviate(strupper(name), true, unit)
 		end
-	end)
+	end
+)
 
-	-- Player frame name with group number
-	E:AddTagInfo(
-		"mh-player:frame:name:caps-groupnumber",
-		thisCategory,
-		"Shows unit name in all CAPS with a dynamic # of characters + unit group number if in raid (dynamic number within {} of tag)"
-	)
-	E:AddTag("mh-player:frame:name:caps-groupnumber", "UNIT_NAME_UPDATE GROUP_ROSTER_UPDATE", function(unit, _, args)
+-- Player frame name with group number
+MHCT.registerTag(
+	"mh-player:frame:name:caps-groupnumber",
+	NAME_SUBCATEGORY,
+	"Shows unit name in all CAPS with a dynamic # of characters + unit group number if in raid (dynamic number within {} of tag)",
+	"UNIT_NAME_UPDATE GROUP_ROSTER_UPDATE",
+	function(unit, _, args)
 		local name = UnitName(unit) or ""
 		local cname = strupper(name)
 		local length = tonumber(args) or DEFAULT_TEXT_LENGTH
@@ -161,5 +165,5 @@ do
 		end
 
 		return formatted
-	end)
-end
+	end
+)
