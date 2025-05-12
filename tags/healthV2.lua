@@ -5,32 +5,22 @@ local _, ns = ...
 local MHCT = ns.MHCT
 
 -- Get ElvUI references directly
-local E, L = unpack(ElvUI)
--- Don't localize these as standalone functions - they're methods of E
--- local GetFormattedText = E.GetFormattedText  -- INCORRECT
--- local ShortValue = E.ShortValue             -- INCORRECT
+local E = unpack(ElvUI)
 
 -- Localize WoW API functions directly
 local UnitHealthMax = UnitHealthMax
 local UnitHealth = UnitHealth
 local UnitGetTotalAbsorbs = UnitGetTotalAbsorbs
+local UnitIsDeadOrGhost = UnitIsDeadOrGhost
+local UnitIsConnected = UnitIsConnected
 
 -- Localize Lua functions directly
 local format = string.format
 local floor = math.floor
 local tonumber = tonumber
-local ipairs = ipairs
 
 -- Set the category name for all v2 health tags
-local thisCategory = MHCT.TAG_CATEGORY_NAME .. " [health-v2]"
-
--- THROTTLE constants (seconds) **Does not work on nameplates**
-local THROTTLE = {
-	QUARTER = 0.25,
-	HALF = 0.5,
-	ONE = 1.0,
-	TWO = 2.0,
-}
+local HEALTH_V2_SUBCATEGORY = "health-v2"
 
 -- ===================================================================================
 -- HELPER FUNCTIONS - Efficient direct string formatting
@@ -108,6 +98,25 @@ local function formatHealthDeficitWithStatus(unit)
 	-- Only show deficit if not at full health
 	if currentHp < maxHp then
 		return format("-%s", E:ShortValue(maxHp - currentHp))
+	end
+
+	return ""
+end
+
+-- Format minimal health deficit (no minus sign)
+local function formatMinimalHealthDeficit(unit)
+	-- Check status first
+	local statusFormatted = MHCT.formatWithStatusCheck(unit)
+	if statusFormatted then
+		return statusFormatted
+	end
+
+	-- Minimal deficit (no minus sign)
+	local currentHp = UnitHealth(unit)
+	local maxHp = UnitHealthMax(unit)
+
+	if currentHp < maxHp then
+		return E:ShortValue(maxHp - currentHp)
 	end
 
 	return ""
@@ -191,229 +200,272 @@ end
 -- ===================================================================================
 -- HEALTH PERCENT WITH STATUS - Multiple update frequencies
 -- ===================================================================================
-do
-	-- Define the tags with different throttle rates
-	local healthPercentTags = {
-		{
-			name = "mh-health-percent:status-0.25",
-			throttle = THROTTLE.QUARTER,
-			desc = "Health percent with status @ 0.25s update interval",
-		},
-		{
-			name = "mh-health-percent:status-0.5",
-			throttle = THROTTLE.HALF,
-			desc = "Health percent with status @ 0.5s update interval",
-		},
-		{
-			name = "mh-health-percent:status-1.0",
-			throttle = THROTTLE.ONE,
-			desc = "Health percent with status @ 1.0s update interval",
-		},
-		{
-			name = "mh-health-percent:status-2.0",
-			throttle = THROTTLE.TWO,
-			desc = "Health percent with status @ 2.0s update interval",
-		},
-	}
 
-	-- Register all the tags using the configuration table
-	for _, config in ipairs(healthPercentTags) do
-		E:AddTagInfo(config.name, thisCategory, config.desc)
-		E:AddTag(config.name, config.throttle, function(unit, _, args)
-			return formatHealthPercentWithStatus(unit, args)
-		end)
+-- Health percent with status tags (various update rates)
+MHCT.registerThrottledTag(
+	"mh-health-percent:status-0.25",
+	HEALTH_V2_SUBCATEGORY,
+	"Health percent with status @ 0.25s update interval",
+	MHCT.THROTTLES.QUARTER,
+	function(unit, _, args)
+		return formatHealthPercentWithStatus(unit, args)
 	end
+)
 
-	-- Add a configurable version that lets users specify decimals
-	E:AddTagInfo(
-		"mh-health-percent:status-configurable",
-		thisCategory,
-		"Health percent with status and configurable decimal places - Example: [mh-health-percent:status-configurable{2}:1.0] for 2 decimal places at 1s update interval"
-	)
-
-	-- Register configurable versions for each throttle rate
-	for _, throttleValue in pairs(THROTTLE) do
-		E:AddTag("mh-health-percent:status-configurable", throttleValue, function(unit, _, args)
-			return formatHealthPercentWithStatus(unit, args)
-		end)
+MHCT.registerThrottledTag(
+	"mh-health-percent:status-0.5",
+	HEALTH_V2_SUBCATEGORY,
+	"Health percent with status @ 0.5s update interval",
+	MHCT.THROTTLES.HALF,
+	function(unit, _, args)
+		return formatHealthPercentWithStatus(unit, args)
 	end
-end
+)
+
+MHCT.registerThrottledTag(
+	"mh-health-percent:status-1.0",
+	HEALTH_V2_SUBCATEGORY,
+	"Health percent with status @ 1.0s update interval",
+	MHCT.THROTTLES.ONE,
+	function(unit, _, args)
+		return formatHealthPercentWithStatus(unit, args)
+	end
+)
+
+MHCT.registerThrottledTag(
+	"mh-health-percent:status-2.0",
+	HEALTH_V2_SUBCATEGORY,
+	"Health percent with status @ 2.0s update interval",
+	MHCT.THROTTLES.TWO,
+	function(unit, _, args)
+		return formatHealthPercentWithStatus(unit, args)
+	end
+)
+
+-- Configurable health percent (custom decimals with multi-throttle support)
+MHCT.registerMultiThrottledTag(
+	"mh-health-percent:status-configurable",
+	HEALTH_V2_SUBCATEGORY,
+	"Health percent with status and configurable decimal places, updating every %throttle% seconds",
+	MHCT.THROTTLE_SETS.STANDARD,
+	function(unit, _, args)
+		return formatHealthPercentWithStatus(unit, args)
+	end
+)
 
 -- ===================================================================================
 -- HEALTH DEFICIT WITH STATUS - Multiple update frequencies
 -- ===================================================================================
-do
-	-- Define the tags with different throttle rates
-	local healthDeficitTags = {
-		{
-			name = "mh-health-deficit:status-0.25",
-			throttle = THROTTLE.QUARTER,
-			desc = "Health deficit with status @ 0.25s update interval",
-		},
-		{
-			name = "mh-health-deficit:status-0.5",
-			throttle = THROTTLE.HALF,
-			desc = "Health deficit with status @ 0.5s update interval",
-		},
-		{
-			name = "mh-health-deficit:status-1.0",
-			throttle = THROTTLE.ONE,
-			desc = "Health deficit with status @ 1.0s update interval",
-		},
-		{
-			name = "mh-health-deficit:status-2.0",
-			throttle = THROTTLE.TWO,
-			desc = "Health deficit with status @ 2.0s update interval",
-		},
-	}
 
-	-- Register all the tags using the configuration table
-	for _, config in ipairs(healthDeficitTags) do
-		E:AddTagInfo(config.name, thisCategory, config.desc)
-		E:AddTag(config.name, config.throttle, function(unit)
-			return formatHealthDeficitWithStatus(unit)
-		end)
+-- Health deficit with status tags (various update rates)
+MHCT.registerThrottledTag(
+	"mh-health-deficit:status-0.25",
+	HEALTH_V2_SUBCATEGORY,
+	"Health deficit with status @ 0.25s update interval",
+	MHCT.THROTTLES.QUARTER,
+	function(unit)
+		return formatHealthDeficitWithStatus(unit)
 	end
+)
 
-	-- Add a minimal version that doesn't show the minus sign (just the value)
-	E:AddTagInfo(
-		"mh-health-deficit:status-minimal",
-		thisCategory,
-		"Minimal health deficit display - no minus sign, just the missing health value"
-	)
-
-	-- Register minimal versions for each throttle rate
-	for _, config in ipairs(healthDeficitTags) do
-		local minimalName = config.name:gsub(":status%-", ":minimal%-")
-		E:AddTagInfo(
-			minimalName,
-			thisCategory,
-			"Minimal " .. config.desc:gsub("Health deficit with status", "health deficit")
-		)
-
-		E:AddTag(minimalName, config.throttle, function(unit)
-			-- Check status first
-			local statusFormatted = MHCT.formatWithStatusCheck(unit)
-			if statusFormatted then
-				return statusFormatted
-			end
-
-			-- Minimal deficit (no minus sign)
-			local currentHp = UnitHealth(unit)
-			local maxHp = UnitHealthMax(unit)
-
-			if currentHp < maxHp then
-				return E:ShortValue(maxHp - currentHp)
-			end
-
-			return ""
-		end)
+MHCT.registerThrottledTag(
+	"mh-health-deficit:status-0.5",
+	HEALTH_V2_SUBCATEGORY,
+	"Health deficit with status @ 0.5s update interval",
+	MHCT.THROTTLES.HALF,
+	function(unit)
+		return formatHealthDeficitWithStatus(unit)
 	end
-end
+)
+
+MHCT.registerThrottledTag(
+	"mh-health-deficit:status-1.0",
+	HEALTH_V2_SUBCATEGORY,
+	"Health deficit with status @ 1.0s update interval",
+	MHCT.THROTTLES.ONE,
+	function(unit)
+		return formatHealthDeficitWithStatus(unit)
+	end
+)
+
+MHCT.registerThrottledTag(
+	"mh-health-deficit:status-2.0",
+	HEALTH_V2_SUBCATEGORY,
+	"Health deficit with status @ 2.0s update interval",
+	MHCT.THROTTLES.TWO,
+	function(unit)
+		return formatHealthDeficitWithStatus(unit)
+	end
+)
+
+-- Minimal health deficit tags (no minus sign, various update rates)
+MHCT.registerThrottledTag(
+	"mh-health-deficit:minimal-0.25",
+	HEALTH_V2_SUBCATEGORY,
+	"Minimal health deficit display @ 0.25s update interval - no minus sign",
+	MHCT.THROTTLES.QUARTER,
+	function(unit)
+		return formatMinimalHealthDeficit(unit)
+	end
+)
+
+MHCT.registerThrottledTag(
+	"mh-health-deficit:minimal-0.5",
+	HEALTH_V2_SUBCATEGORY,
+	"Minimal health deficit display @ 0.5s update interval - no minus sign",
+	MHCT.THROTTLES.HALF,
+	function(unit)
+		return formatMinimalHealthDeficit(unit)
+	end
+)
+
+MHCT.registerThrottledTag(
+	"mh-health-deficit:minimal-1.0",
+	HEALTH_V2_SUBCATEGORY,
+	"Minimal health deficit display @ 1.0s update interval - no minus sign",
+	MHCT.THROTTLES.ONE,
+	function(unit)
+		return formatMinimalHealthDeficit(unit)
+	end
+)
+
+MHCT.registerThrottledTag(
+	"mh-health-deficit:minimal-2.0",
+	HEALTH_V2_SUBCATEGORY,
+	"Minimal health deficit display @ 2.0s update interval - no minus sign",
+	MHCT.THROTTLES.TWO,
+	function(unit)
+		return formatMinimalHealthDeficit(unit)
+	end
+)
 
 -- ===================================================================================
 -- HIDE PERCENT AT FULL HEALTH TAGS - Shows percent only when health isn't full
 -- ===================================================================================
-do
-	-- Register the "current | percent" version (same as original)
-	E:AddTagInfo(
-		"mh-health-current-percent-hidefull",
-		thisCategory,
-		"Shows health as: 100k | 85% but hides percent at full health"
-	)
-	E:AddTag(
-		"mh-health-current-percent-hidefull",
-		"UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED",
-		function(unit)
-			return formatHealthHideFullPercent(unit, false) -- false = current first
-		end
-	)
 
-	-- Register the "percent | current" version
-	E:AddTagInfo(
-		"mh-health-percent-current-hidefull",
-		thisCategory,
-		"Shows health as: 85% | 100k but hides percent at full health"
-	)
-	E:AddTag(
-		"mh-health-percent-current-hidefull",
-		"UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED",
-		function(unit)
-			return formatHealthHideFullPercent(unit, true) -- true = percent first
-		end
-	)
+-- Current | Percent (hides percent at full)
+MHCT.registerTag(
+	"mh-health-current-percent-hidefull",
+	HEALTH_V2_SUBCATEGORY,
+	"Shows health as: 100k | 85% but hides percent at full health",
+	"UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED",
+	function(unit)
+		return formatHealthHideFullPercent(unit, false) -- false = current first
+	end
+)
 
-	-- BACKWARDS compatibility, register the V1 tag names as aliases
-	E:AddTagInfo(
-		"mh-health:current:percent:right-hidefull",
-		thisCategory,
-		"Alias for mh-health-current-percent-hidefull (V3 version)"
-	)
-	E:AddTag(
-		"mh-health:current:percent:right-hidefull",
-		"UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED",
-		function(unit)
-			return formatHealthHideFullPercent(unit, false)
-		end
-	)
+-- Percent | Current (hides percent at full)
+MHCT.registerTag(
+	"mh-health-percent-current-hidefull",
+	HEALTH_V2_SUBCATEGORY,
+	"Shows health as: 85% | 100k but hides percent at full health",
+	"UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED",
+	function(unit)
+		return formatHealthHideFullPercent(unit, true) -- true = percent first
+	end
+)
 
-	E:AddTagInfo(
-		"mh-health:current:percent:left-hidefull",
-		thisCategory,
-		"Alias for mh-health-percent-current-hidefull (V3 version)"
-	)
-	E:AddTag(
-		"mh-health:current:percent:left-hidefull",
-		"UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED",
-		function(unit)
-			return formatHealthHideFullPercent(unit, true)
-		end
-	)
-end
+-- BACKWARDS compatibility aliases
+MHCT.registerTag(
+	"mh-health:current:percent:right-hidefull",
+	HEALTH_V2_SUBCATEGORY,
+	"Alias for mh-health-current-percent-hidefull (V3 version)",
+	"UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED",
+	function(unit)
+		return formatHealthHideFullPercent(unit, false)
+	end
+)
+
+MHCT.registerTag(
+	"mh-health:current:percent:left-hidefull",
+	HEALTH_V2_SUBCATEGORY,
+	"Alias for mh-health-percent-current-hidefull (V3 version)",
+	"UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED",
+	function(unit)
+		return formatHealthHideFullPercent(unit, true)
+	end
+)
+
+-- Add throttled versions of hide-full tags
+MHCT.registerMultiThrottledTag(
+	"mh-health-current-percent-hidefull",
+	HEALTH_V2_SUBCATEGORY,
+	"Shows health as: 100k | 85% (hides percent at full), updating every %throttle% seconds",
+	MHCT.THROTTLE_SETS.STANDARD,
+	function(unit)
+		return formatHealthHideFullPercent(unit, false)
+	end
+)
+
+MHCT.registerMultiThrottledTag(
+	"mh-health-percent-current-hidefull",
+	HEALTH_V2_SUBCATEGORY,
+	"Shows health as: 85% | 100k (hides percent at full), updating every %throttle% seconds",
+	MHCT.THROTTLE_SETS.STANDARD,
+	function(unit)
+		return formatHealthHideFullPercent(unit, true)
+	end
+)
 
 -- ===================================================================================
 -- LOW HEALTH COLORED VERSION - Direct string concatenation
 -- ===================================================================================
-do
-	-- Register the "current | percent" version with low health coloring
-	E:AddTagInfo(
-		"mh-health-current-percent:low-health-colored",
-		thisCategory,
-		"Shows health as: 100k | 85% with color gradient for health below 20% (NO STATUS)"
-	)
-	E:AddTag(
-		"mh-health-current-percent:low-health-colored",
-		"UNIT_HEALTH UNIT_MAXHEALTH UNIT_ABSORB_AMOUNT_CHANGED",
-		function(unit, _, args)
-			local threshold = tonumber(args) or 20 -- Default to 20%, override with tag args
-			return formatHealthWithLowHealthColor(unit, false, threshold) -- false = current first
-		end
-	)
 
-	-- Register the "percent | current" version with low health coloring
-	E:AddTagInfo(
-		"mh-health-percent-current:low-health-colored",
-		thisCategory,
-		"Shows health as: 85% | 100k with color gradient for health below 20% (NO STATUS)"
-	)
-	E:AddTag(
-		"mh-health-percent-current:low-health-colored",
-		"UNIT_HEALTH UNIT_MAXHEALTH UNIT_ABSORB_AMOUNT_CHANGED",
-		function(unit, _, args)
-			local threshold = tonumber(args) or 20 -- Default to 20%, override with tag args
-			return formatHealthWithLowHealthColor(unit, true, threshold) -- true = percent first
-		end
-	)
-end
+-- Current | Percent with low health coloring
+MHCT.registerTag(
+	"mh-health-current-percent:low-health-colored",
+	HEALTH_V2_SUBCATEGORY,
+	"Shows health as: 100k | 85% with color gradient for health below 20% (NO STATUS)",
+	"UNIT_HEALTH UNIT_MAXHEALTH UNIT_ABSORB_AMOUNT_CHANGED",
+	function(unit, _, args)
+		local threshold = tonumber(args) or 20 -- Default to 20%, override with tag args
+		return formatHealthWithLowHealthColor(unit, false, threshold) -- false = current first
+	end
+)
+
+-- Percent | Current with low health coloring
+MHCT.registerTag(
+	"mh-health-percent-current:low-health-colored",
+	HEALTH_V2_SUBCATEGORY,
+	"Shows health as: 85% | 100k with color gradient for health below 20% (NO STATUS)",
+	"UNIT_HEALTH UNIT_MAXHEALTH UNIT_ABSORB_AMOUNT_CHANGED",
+	function(unit, _, args)
+		local threshold = tonumber(args) or 20 -- Default to 20%, override with tag args
+		return formatHealthWithLowHealthColor(unit, true, threshold) -- true = percent first
+	end
+)
+
+-- Low health colored versions with throttling
+MHCT.registerMultiThrottledTag(
+	"mh-health-current-percent:low-health-colored",
+	HEALTH_V2_SUBCATEGORY,
+	"Shows health with color at low health (current | percent), updating every %throttle% seconds",
+	MHCT.THROTTLE_SETS.STANDARD,
+	function(unit, _, args)
+		local threshold = tonumber(args) or 20
+		return formatHealthWithLowHealthColor(unit, false, threshold)
+	end
+)
+
+MHCT.registerMultiThrottledTag(
+	"mh-health-percent-current:low-health-colored",
+	HEALTH_V2_SUBCATEGORY,
+	"Shows health with color at low health (percent | current), updating every %throttle% seconds",
+	MHCT.THROTTLE_SETS.STANDARD,
+	function(unit, _, args)
+		local threshold = tonumber(args) or 20
+		return formatHealthWithLowHealthColor(unit, true, threshold)
+	end
+)
 
 -- ===================================================================================
 -- HEALTH COLOR TAGS
 -- ===================================================================================
 
--- Health color gradient tag
+-- Health color gradient tag (using your already refactored version)
 MHCT.registerTag(
 	"mh-healthcolor",
-	thisCategory,
+	HEALTH_V2_SUBCATEGORY,
 	"Similar color tag to base ElvUI, but with brighter and high contrast gradient",
 	"UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED",
 	function(unit)
