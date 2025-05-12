@@ -449,3 +449,104 @@ MHCT.formatHealthDeficit = function(unit)
 
 	return format("-%s", ShortValue(maxHp - currentHp))
 end
+
+-- Standard tag registration helper
+MHCT.registerTag = function(name, subCategory, description, events, func)
+	-- Create the full category name with the provided subcategory
+	local fullCategory = MHCT.TAG_CATEGORY_NAME .. " [" .. subCategory .. "]"
+
+	-- Register the tag info and the tag itself in one clean function
+	E:AddTagInfo(name, fullCategory, description)
+	E:AddTag(name, events, func)
+
+	-- Return the name for potential chaining or reference
+	return name
+end
+
+-- Throttled tag registration helper
+MHCT.registerThrottledTag = function(name, subCategory, description, throttle, func)
+	-- Create the full category name with the provided subcategory
+	local fullCategory = MHCT.TAG_CATEGORY_NAME .. " [" .. subCategory .. "]"
+
+	-- Register the tag info and the throttled tag
+	E:AddTagInfo(name, fullCategory, description)
+	E:AddTag(name, throttle, func)
+
+	-- Return the name for potential chaining or reference
+	return name
+end
+
+-- Enhanced multi-throttled tag registration
+MHCT.registerMultiThrottledTag = function(namePattern, subCategory, descPattern, throttles, func)
+	local results = {}
+
+	-- Allow passing a predefined set by name
+	if type(throttles) == "string" and MHCT.THROTTLE_SETS[throttles] then
+		throttles = MHCT.THROTTLE_SETS[throttles]
+	-- Default to standard throttle set if not specified
+	elseif not throttles then
+		throttles = MHCT.THROTTLE_SETS.STANDARD
+	end
+
+	for _, throttleInfo in ipairs(throttles) do
+		local throttleValue = throttleInfo.value
+		local throttleSuffix = throttleInfo.suffix or tostring(throttleValue)
+
+		-- Generate the tag name with the throttle suffix
+		local tagName = namePattern .. throttleSuffix
+
+		-- Generate the description with the throttle information
+		local desc = descPattern:gsub("%%throttle%%", throttleSuffix:gsub("^-", ""))
+
+		-- Register the tag with this throttle value
+		MHCT.registerThrottledTag(tagName, subCategory, desc, throttleValue, func)
+
+		-- Store the result
+		table.insert(results, tagName)
+	end
+
+	return results -- Return all registered tag names
+end
+
+-- Define standard throttle rates that can be used throughout the addon
+MHCT.THROTTLES = {
+	INSTANT = 0, -- Update every frame (use sparingly!)
+	QUARTER = 0.25, -- Update 4 times per second
+	HALF = 0.5, -- Update twice per second
+	ONE = 1.0, -- Update once per second
+	TWO = 2.0, -- Update every 2 seconds
+	FIVE = 5.0, -- Update every 5 seconds (for very low priority)
+}
+
+-- Throttle configurations for batch registration
+MHCT.THROTTLE_CONFIGS = {
+	{ value = MHCT.THROTTLES.QUARTER, suffix = "-0.25" },
+	{ value = MHCT.THROTTLES.HALF, suffix = "-0.5" },
+	{ value = MHCT.THROTTLES.ONE, suffix = "-1.0" },
+	{ value = MHCT.THROTTLES.TWO, suffix = "-2.0" },
+}
+
+-- Common throttle sets for different use cases
+MHCT.THROTTLE_SETS = {
+	-- Standard set (0.25, 0.5, 1.0, 2.0)
+	STANDARD = {
+		{ value = MHCT.THROTTLES.QUARTER, suffix = "-0.25" },
+		{ value = MHCT.THROTTLES.HALF, suffix = "-0.5" },
+		{ value = MHCT.THROTTLES.ONE, suffix = "-1.0" },
+		{ value = MHCT.THROTTLES.TWO, suffix = "-2.0" },
+	},
+
+	-- Fast set (0, 0.25, 0.5)
+	FAST = {
+		{ value = MHCT.THROTTLES.INSTANT, suffix = "-instant" },
+		{ value = MHCT.THROTTLES.QUARTER, suffix = "-0.25" },
+		{ value = MHCT.THROTTLES.HALF, suffix = "-0.5" },
+	},
+
+	-- Slow set (1.0, 2.0, 5.0)
+	SLOW = {
+		{ value = MHCT.THROTTLES.ONE, suffix = "-1.0" },
+		{ value = MHCT.THROTTLES.TWO, suffix = "-2.0" },
+		{ value = MHCT.THROTTLES.FIVE, suffix = "-5.0" },
+	},
+}
