@@ -4,37 +4,33 @@
 local _, ns = ...
 local MHCT = ns.MHCT
 
--- Get ElvUI references directly
-local E, L = unpack(ElvUI)
-
 -- Localize Lua functions
 local format = string.format
-local floor = math.floor
 
 -- Localize WoW API functions
 local UnitEffectiveLevel = UnitEffectiveLevel
 local UnitGetTotalAbsorbs = UnitGetTotalAbsorbs
-local UnitIsDeadOrGhost = UnitIsDeadOrGhost
-local UnitIsConnected = UnitIsConnected
-local UnitHealth = UnitHealth
-local UnitHealthMax = UnitHealthMax
 local strupper = strupper
 
+-- ElvUI reference (for ShortValue)
+local E = unpack(ElvUI)
+
 -- Local constants
-local thisCategory = MHCT.TAG_CATEGORY_NAME .. " [misc]"
+local MISC_SUBCATEGORY = "misc"
 local MAX_PLAYER_LEVEL = MHCT.MAX_PLAYER_LEVEL
 local ABSORB_TEXT_COLOR = MHCT.ABSORB_TEXT_COLOR
 
 -- ===================================================================================
--- LEVEL
+-- LEVEL TAGS
 -- ===================================================================================
-do
-	E:AddTagInfo(
-		"mh-smartlevel",
-		thisCategory,
-		"Simple tag to show all unit levels if player is not max level. If max level, will show level of all non max level units"
-	)
-	E:AddTag("mh-smartlevel", "UNIT_LEVEL PLAYER_LEVEL_UP", function(unit)
+
+-- Smart level tag - only shows non-max levels when player is max level
+MHCT.registerTag(
+	"mh-smartlevel",
+	MISC_SUBCATEGORY,
+	"Simple tag to show all unit levels if player is not max level. If max level, will show level of all non max level units",
+	"UNIT_LEVEL PLAYER_LEVEL_UP",
+	function(unit)
 		local unitLevel = UnitEffectiveLevel(unit)
 		local playerLevel = UnitEffectiveLevel("player")
 
@@ -45,31 +41,42 @@ do
 			-- else only show unit level if unit is NOT max level
 			return MAX_PLAYER_LEVEL == unitLevel and "" or unitLevel
 		end
-	end)
+	end
+)
 
-	E:AddTagInfo("mh-absorb", thisCategory, "Simple absorb tag in parentheses (with yellow text color)")
-	E:AddTag("mh-absorb", "UNIT_ABSORB_AMOUNT_CHANGED", function(unit)
+-- Absorb amount tag
+MHCT.registerTag(
+	"mh-absorb",
+	MISC_SUBCATEGORY,
+	"Simple absorb tag in parentheses (with yellow text color)",
+	"UNIT_ABSORB_AMOUNT_CHANGED",
+	function(unit)
 		local absorbAmount = UnitGetTotalAbsorbs(unit) or 0
 		if absorbAmount ~= 0 then
 			return format("|cff%s(%s)|r", ABSORB_TEXT_COLOR, E:ShortValue(absorbAmount))
 		end
-	end)
+		return ""
+	end
+)
 
-	E:AddTagInfo(
-		"mh-difficultycolor:level",
-		thisCategory,
-		"Traditional ElvUI difficulty color + level with more modern updates (will always show level)"
-	)
-	E:AddTag("mh-difficultycolor:level", "UNIT_LEVEL PLAYER_LEVEL_UP", function(unit)
+-- Difficulty colored level tag
+MHCT.registerTag(
+	"mh-difficultycolor:level",
+	MISC_SUBCATEGORY,
+	"Traditional ElvUI difficulty color + level with more modern updates (will always show level)",
+	"UNIT_LEVEL PLAYER_LEVEL_UP",
+	function(unit)
 		return MHCT.difficultyLevelFormatter(unit, UnitEffectiveLevel(unit))
-	end)
+	end
+)
 
-	E:AddTagInfo(
-		"mh-difficultycolor:level-hide",
-		thisCategory,
-		"Traditional ElvUI difficulty color + level with more modern updates (will always show level and only hide level when you reach max level and unit level is equal to player level)"
-	)
-	E:AddTag("mh-difficultycolor:level-hide", "UNIT_LEVEL PLAYER_LEVEL_UP", function(unit)
+-- Difficulty colored level that hides at max level
+MHCT.registerTag(
+	"mh-difficultycolor:level-hide",
+	MISC_SUBCATEGORY,
+	"Traditional ElvUI difficulty color + level with more modern updates (will always show level and only hide level when you reach max level and unit level is equal to player level)",
+	"UNIT_LEVEL PLAYER_LEVEL_UP",
+	function(unit)
 		local unitLevel = UnitEffectiveLevel(unit)
 		local playerLevel = UnitEffectiveLevel("player")
 
@@ -78,54 +85,35 @@ do
 		end
 
 		return MHCT.difficultyLevelFormatter(unit, unitLevel)
-	end)
-end
+	end
+)
 
 -- ===================================================================================
--- STATUS
+-- STATUS TAGS
 -- ===================================================================================
-do
-	E:AddTagInfo(
-		"mh-status",
-		thisCategory,
-		"Simple status tag that shows all the different flags: AFK, DND, OFFLINE, DEAD, or GHOST (with their own icons)"
-	)
-	E:AddTag("mh-status", "UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED", function(unit)
-		return MHCT.formatWithStatusCheck(unit)
-	end)
 
-	E:AddTagInfo(
-		"mh-status-noicon",
-		thisCategory,
-		"Simple status tag that shows all the different flags: AFK, DND, OFFLINE, DEAD, or GHOST (NO icon, text only)"
-	)
-	E:AddTag("mh-status-noicon", "UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED", function(unit)
+-- Status tag with icons
+MHCT.registerTag(
+	"mh-status",
+	MISC_SUBCATEGORY,
+	"Simple status tag that shows all the different flags: AFK, DND, OFFLINE, DEAD, or GHOST (with their own icons)",
+	"UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED",
+	function(unit)
+		return MHCT.formatWithStatusCheck(unit) or ""
+	end
+)
+
+-- Status tag without icons
+MHCT.registerTag(
+	"mh-status-noicon",
+	MISC_SUBCATEGORY,
+	"Simple status tag that shows all the different flags: AFK, DND, OFFLINE, DEAD, or GHOST (NO icon, text only)",
+	"UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED",
+	function(unit)
 		local status = MHCT.statusCheck(unit)
 		if status then
 			return format("|cffD6BFA6%s|r", strupper(status))
 		end
-	end)
-end
-
--- ===================================================================================
--- HEALTH COLOR (red => yellow => green sequence from 0% health to 100% health)
--- ===================================================================================
-do
-	E:AddTagInfo(
-		"mh-healthcolor",
-		thisCategory,
-		"Similar color tag to base ElvUI, but with brighter and high contrast gradient"
-	)
-	E:AddTag("mh-healthcolor", "UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED", function(unit)
-		if UnitIsDeadOrGhost(unit) or not UnitIsConnected(unit) then
-			return "|cffD6BFA6" -- Precomputed Hex for dead or disconnected units
-		else
-			-- Calculate health percentage and round to the nearest integer percent
-			local healthPercent = (UnitHealth(unit) / UnitHealthMax(unit)) * 100
-			local roundedPercent = floor(healthPercent)
-
-			-- Lookup the color in the precomputed table
-			return MHCT.HEALTH_GRADIENT_RGB[roundedPercent] or "|cffFFFFFF" -- Fallback to white if not found
-		end
-	end)
-end
+		return ""
+	end
+)

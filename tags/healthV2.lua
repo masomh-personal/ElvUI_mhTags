@@ -406,130 +406,26 @@ do
 	)
 end
 
---[[
 -- ===================================================================================
--- MEMORY LEAK TESTING - Add to the end of your health tag file
+-- HEALTH COLOR TAGS
 -- ===================================================================================
-do
-	local leakTestFrame = CreateFrame("Frame")
 
-	-- Memory leak test function
-	local function testForMemoryLeaks(iterations)
-		iterations = iterations or 100000
-
-		print("|cff0388fcmhTags|r Memory Leak Test:")
-		print(format("Running %s iterations per test phase", iterations))
-		print("----------------------------------------")
-
-		local startMem = collectgarbage("count")
-
-		-- Force garbage collection before test
-		collectgarbage("collect")
-		collectgarbage("collect")
-
-		-- Run a large number of tag updates for various tag types
-		print("Phase 1: Testing standard health tags...")
-		for i = 1, iterations do
-			formatHealthText("player", false)
-		end
-
-		-- Measure memory after first run
-		collectgarbage("collect")
-		collectgarbage("collect")
-		local midMem1 = collectgarbage("count")
-
-		-- Run again to see if memory continues to grow
-		print("Phase 2: Testing standard health tags again...")
-		for i = 1, iterations do
-			formatHealthText("player", false)
-		end
-
-		-- Force garbage collection and measure memory
-		collectgarbage("collect")
-		collectgarbage("collect")
-		local midMem2 = collectgarbage("count")
-
-		-- Test another tag type
-		print("Phase 3: Testing health deficit tags...")
-		for i = 1, iterations do
-			formatHealthDeficitWithStatus("player")
-		end
-
-		-- Force garbage collection and measure memory
-		collectgarbage("collect")
-		collectgarbage("collect")
-		local midMem3 = collectgarbage("count")
-
-		-- Test colored health tags
-		print("Phase 4: Testing colored health tags...")
-		for i = 1, iterations do
-			formatHealthWithLowHealthColor("player", false, 20)
-		end
-
-		-- Force garbage collection and measure final memory
-		collectgarbage("collect")
-		collectgarbage("collect")
-		local endMem = collectgarbage("count")
-
-		-- Compare memory usage
-		print("----------------------------------------")
-		print(format("Initial memory: |cffccff33%.2f KB|r", startMem))
-		print(format("After phase 1: |cffccff33%.2f KB|r (delta: %.2f KB)", midMem1, midMem1 - startMem))
-		print(format("After phase 2: |cffccff33%.2f KB|r (delta: %.2f KB)", midMem2, midMem2 - midMem1))
-		print(format("After phase 3: |cffccff33%.2f KB|r (delta: %.2f KB)", midMem3, midMem3 - midMem2))
-		print(format("Final memory: |cffccff33%.2f KB|r (delta: %.2f KB)", endMem, endMem - midMem3))
-		print(format("Total memory growth: |cffccff33%.2f KB|r", endMem - startMem))
-
-		-- Analyze results
-		local leakThreshold = 20 -- KB threshold for considering it a leak
-		local phaseResults = {
-			{ name = "Standard health tags (repeated)", delta = midMem2 - midMem1 },
-			{ name = "Health deficit tags", delta = midMem3 - midMem2 },
-			{ name = "Colored health tags", delta = endMem - midMem3 },
-		}
-
-		print("----------------------------------------")
-		print("ANALYSIS:")
-
-		local anyLeak = false
-		for _, result in ipairs(phaseResults) do
-			if result.delta > leakThreshold then
-				print(format("|cffFF0000Possible memory leak in %s: %.2f KB growth|r", result.name, result.delta))
-				anyLeak = true
-			else
-				print(format("|cff00FF00No memory leak detected in %s: %.2f KB growth|r", result.name, result.delta))
-			end
-		end
-
-		if not anyLeak then
-			print("|cff00FF00All tests passed! No significant memory leaks detected.|r")
+-- Health color gradient tag
+MHCT.registerTag(
+	"mh-healthcolor",
+	thisCategory,
+	"Similar color tag to base ElvUI, but with brighter and high contrast gradient",
+	"UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED",
+	function(unit)
+		if UnitIsDeadOrGhost(unit) or not UnitIsConnected(unit) then
+			return "|cffD6BFA6" -- Precomputed Hex for dead or disconnected units
 		else
-			print("|cffFF0000Warning: Possible memory leaks detected. Review the results above.|r")
+			-- Calculate health percentage and round to the nearest integer percent
+			local healthPercent = (UnitHealth(unit) / UnitHealthMax(unit)) * 100
+			local roundedPercent = floor(healthPercent)
+
+			-- Lookup the color in the precomputed table
+			return MHCT.HEALTH_GRADIENT_RGB[roundedPercent] or "|cffFFFFFF" -- Fallback to white if not found
 		end
-
-		-- Testing complete
-		print("----------------------------------------")
-		print("Memory leak test complete!")
 	end
-
-	-- Register slash command
-	SLASH_MHTAGSLEAK1 = "/mhtagsleak"
-	SlashCmdList["MHTAGSLEAK"] = function(msg)
-		local iterations = tonumber(msg) or 100000
-		testForMemoryLeaks(iterations)
-	end
-
-	-- Add to MHCT for programmatic access
-	MHCT.runMemoryLeakTest = testForMemoryLeaks
-
-	-- Print instruction on load
-	leakTestFrame:RegisterEvent("PLAYER_LOGIN")
-	leakTestFrame:SetScript("OnEvent", function(self, event)
-		if event == "PLAYER_LOGIN" then
-			C_Timer.After(3, function()
-				print("|cff0388fcmhTags|r: Use |cffccff33/mhtagsleak [iterations]|r to run memory leak test")
-			end)
-		end
-	end)
-end
-]]
+)
