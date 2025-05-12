@@ -11,8 +11,6 @@ local E = unpack(ElvUI)
 local UnitHealthMax = UnitHealthMax
 local UnitHealth = UnitHealth
 local UnitGetTotalAbsorbs = UnitGetTotalAbsorbs
-local UnitIsDeadOrGhost = UnitIsDeadOrGhost
-local UnitIsConnected = UnitIsConnected
 
 -- Localize Lua functions directly
 local format = string.format
@@ -459,25 +457,169 @@ MHCT.registerMultiThrottledTag(
 )
 
 -- ===================================================================================
+-- GRADIENT COLORED HEALTH - Full range coloring (0-100%)
+-- ===================================================================================
+
+-- Create an optimized health formatter with full gradient coloring (only when below 100%)
+local WHITE_COLOR = "|cffFFFFFF"
+local function formatHealthWithFullGradient(unit, isPercentFirst)
+	local maxHp = UnitHealthMax(unit)
+	local currentHp = UnitHealth(unit)
+
+	-- Early return for division by zero
+	if maxHp == 0 then
+		return ""
+	end
+
+	-- Handle absorb information if present
+	local absorbText = ""
+	local absorbAmount = UnitGetTotalAbsorbs(unit) or 0
+	if absorbAmount > 0 then
+		absorbText = format("|cff%s(%s)|r ", MHCT.ABSORB_TEXT_COLOR, E:ShortValue(absorbAmount))
+	end
+
+	-- Special case: At full health, just show current value (which is max)
+	if currentHp == maxHp then
+		local fullHealthText = E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
+		return absorbText .. WHITE_COLOR .. fullHealthText .. "|r"
+	end
+
+	-- For non-full health, calculate percentage and format display
+	local healthPercent = (currentHp / maxHp) * 100
+	local percentText = format("%.1f%%", healthPercent)
+	local currentText = E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
+
+	-- Format in requested order
+	local contentText
+	if isPercentFirst then
+		contentText = percentText .. " | " .. currentText
+	else
+		contentText = currentText .. " | " .. percentText
+	end
+
+	-- Apply gradient color for non-full health
+	local roundedPercent = floor(healthPercent)
+	local colorCode = MHCT.HEALTH_GRADIENT_RGB[roundedPercent] or WHITE_COLOR
+	return absorbText .. colorCode .. contentText .. "|r"
+end
+
+-- Current | Percent with full gradient coloring
+MHCT.registerTag(
+	"mh-health-current-percent:gradient-colored",
+	HEALTH_V2_SUBCATEGORY,
+	"Shows health as: 100k | 85% with full color gradient from 0-100% (red to yellow to green)",
+	"UNIT_HEALTH UNIT_MAXHEALTH UNIT_ABSORB_AMOUNT_CHANGED",
+	function(unit)
+		return formatHealthWithFullGradient(unit, false) -- false = current first
+	end
+)
+
+-- Percent | Current with full gradient coloring
+MHCT.registerTag(
+	"mh-health-percent-current:gradient-colored",
+	HEALTH_V2_SUBCATEGORY,
+	"Shows health as: 85% | 100k with full color gradient from 0-100% (red to yellow to green)",
+	"UNIT_HEALTH UNIT_MAXHEALTH UNIT_ABSORB_AMOUNT_CHANGED",
+	function(unit)
+		return formatHealthWithFullGradient(unit, true) -- true = percent first
+	end
+)
+
+-- Add throttled versions for better performance in raids
+MHCT.registerMultiThrottledTag(
+	"mh-health-current-percent:gradient-colored",
+	HEALTH_V2_SUBCATEGORY,
+	"Shows health with full gradient coloring (current | percent), updating every %throttle% seconds",
+	MHCT.THROTTLE_SETS.STANDARD,
+	function(unit)
+		return formatHealthWithFullGradient(unit, false)
+	end
+)
+
+MHCT.registerMultiThrottledTag(
+	"mh-health-percent-current:gradient-colored",
+	HEALTH_V2_SUBCATEGORY,
+	"Shows health with full gradient coloring (percent | current), updating every %throttle% seconds",
+	MHCT.THROTTLE_SETS.STANDARD,
+	function(unit)
+		return formatHealthWithFullGradient(unit, true)
+	end
+)
+
+-- Add simple versions that only show health value (no percent)
+MHCT.registerTag(
+	"mh-health-current:gradient-colored",
+	HEALTH_V2_SUBCATEGORY,
+	"Shows only current health value with full color gradient from 0-100%",
+	"UNIT_HEALTH UNIT_MAXHEALTH UNIT_ABSORB_AMOUNT_CHANGED",
+	function(unit)
+		local maxHp = UnitHealthMax(unit)
+		local currentHp = UnitHealth(unit)
+
+		if maxHp == 0 then
+			return ""
+		end
+
+		local healthPercent = (currentHp / maxHp) * 100
+		local roundedPercent = floor(healthPercent)
+		local currentText = E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
+
+		-- Apply gradient color
+		local colorCode = MHCT.HEALTH_GRADIENT_RGB[roundedPercent] or "|cffFFFFFF"
+		return colorCode .. currentText .. "|r"
+	end
+)
+
+-- Add percent-only version with gradient coloring
+MHCT.registerTag(
+	"mh-health-percent:gradient-colored",
+	HEALTH_V2_SUBCATEGORY,
+	"Shows only health percentage with full color gradient from 0-100%",
+	"UNIT_HEALTH UNIT_MAXHEALTH",
+	function(unit)
+		local maxHp = UnitHealthMax(unit)
+		local currentHp = UnitHealth(unit)
+
+		if maxHp == 0 then
+			return ""
+		end
+
+		local healthPercent = (currentHp / maxHp) * 100
+		local roundedPercent = floor(healthPercent)
+		local percentText = format("%.1f%%", healthPercent)
+
+		-- Apply gradient color
+		local colorCode = MHCT.HEALTH_GRADIENT_RGB[roundedPercent] or "|cffFFFFFF"
+		return colorCode .. percentText .. "|r"
+	end
+)
+
+-- ===================================================================================
 -- HEALTH COLOR TAGS
 -- ===================================================================================
 
--- Health color gradient tag (using your already refactored version)
+-- Health color gradient tag - optimized version
+local DEAD_OR_DC_COLOR = "|cffD6BFA6"
 MHCT.registerTag(
 	"mh-healthcolor",
 	HEALTH_V2_SUBCATEGORY,
 	"Similar color tag to base ElvUI, but with brighter and high contrast gradient",
-	"UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED",
+	"UNIT_HEALTH UNIT_MAXHEALTH",
 	function(unit)
-		if UnitIsDeadOrGhost(unit) or not UnitIsConnected(unit) then
-			return "|cffD6BFA6" -- Precomputed Hex for dead or disconnected units
-		else
-			-- Calculate health percentage and round to the nearest integer percent
-			local healthPercent = (UnitHealth(unit) / UnitHealthMax(unit)) * 100
-			local roundedPercent = floor(healthPercent)
+		-- Direct health calculation without status checks
+		local currentHp = UnitHealth(unit)
+		local maxHp = UnitHealthMax(unit)
 
-			-- Lookup the color in the precomputed table
-			return MHCT.HEALTH_GRADIENT_RGB[roundedPercent] or "|cffFFFFFF" -- Fallback to white if not found
+		-- Early return for zero max health (prevents division by zero)
+		if maxHp == 0 then
+			return DEAD_OR_DC_COLOR -- Default
 		end
+
+		-- Calculate percentage and get the color directly
+		local healthPercent = (currentHp / maxHp) * 100
+		local index = floor(healthPercent)
+
+		-- Direct lookup without conditional checks
+		return MHCT.HEALTH_GRADIENT_RGB[index] or DEAD_OR_DC_COLOR
 	end
 )
