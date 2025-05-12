@@ -303,7 +303,7 @@ do
 			local maxHp = UnitHealthMax(unit)
 
 			if currentHp < maxHp then
-				return ShortValue(maxHp - currentHp)
+				return E:ShortValue(maxHp - currentHp)
 			end
 
 			return ""
