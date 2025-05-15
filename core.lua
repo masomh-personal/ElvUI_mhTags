@@ -129,28 +129,15 @@ local GRADIENT_COLORS = {
 
 -- Check if value exists in table (JS includes equivalent)
 MHCT.includes = function(table, value)
-	for _, v in ipairs(table) do
-		if v == value then
+	for i = 1, #table do
+		if table[i] == value then
 			return true
 		end
 	end
 	return false
 end
 
--- Convert RGB values to hex color code (with scaling)
-MHCT.rgbToHexDecimal = function(r, g, b)
-	if type(r) ~= "number" or type(g) ~= "number" or type(b) ~= "number" then
-		return "FFFFFF" -- Default to white if invalid input
-	end
-
-	local rValue = floor(r * 255)
-	local gValue = floor(g * 255)
-	local bValue = floor(b * 255)
-
-	return format("%02X%02X%02X", rValue, gValue, bValue)
-end
-
--- Simplified RGB to Hex converter with input validation
+-- Replace both rgbToHexDecimal and rgbToHex with this single function
 MHCT.rgbToHex = function(r, g, b)
 	if type(r) ~= "number" or type(g) ~= "number" or type(b) ~= "number" then
 		return "FFFFFF" -- Default to white if invalid input
@@ -172,21 +159,22 @@ MHCT.hexToRgb = function(hex)
 end
 
 -- Check unit status (AFK, DND, Dead, etc.)
+-- Reorder conditions to check most common cases first
 MHCT.statusCheck = function(unit)
 	if not unit then
 		return nil
 	end
 
-	if UnitIsAFK(unit) then
+	if not UnitIsConnected(unit) then
+		return L["Offline"]
+	elseif UnitIsGhost(unit) then
+		return L["Ghost"]
+	elseif not UnitIsFeignDeath(unit) and UnitIsDead(unit) then
+		return L["Dead"]
+	elseif UnitIsAFK(unit) then
 		return L["AFK"]
 	elseif UnitIsDND(unit) then
 		return L["DND"]
-	elseif not UnitIsFeignDeath(unit) and UnitIsDead(unit) then
-		return L["Dead"]
-	elseif UnitIsGhost(unit) then
-		return L["Ghost"]
-	elseif not UnitIsConnected(unit) then
-		return L["Offline"]
 	end
 
 	return nil
@@ -238,7 +226,7 @@ MHCT.difficultyLevelFormatter = function(unit, unitLevel)
 	local unitType = MHCT.classificationType(unit)
 	local difficultyColor = GetCreatureDifficultyColor(unitLevel)
 	local hexColor = (unitType == "rare" or unitType == "rareelite") and RARE_COLOR
-		or MHCT.rgbToHexDecimal(difficultyColor.r, difficultyColor.g, difficultyColor.b)
+		or MHCT.rgbToHex(difficultyColor.r, difficultyColor.g, difficultyColor.b)
 
 	-- Use table lookup for formatting based on unit type
 	local formatFunctions = {
@@ -289,23 +277,28 @@ MHCT.statusFormatter = function(status, size, reverse)
 	end
 end
 
--- Abbreviate multi-word names
+-- More efficient implementation with fewer table operations
 MHCT.abbreviate = function(str, reverse, unit)
 	if not str or str == "" then
 		return ""
 	end
 
+	-- Remove apostrophes once
+	local formattedString = gsub(str, "'", "")
+
+	-- Split into words
 	local words = {}
 	local firstLetters = {}
-	local formattedString = gsub(str, "'", "") -- remove apostrophes
+	local wordCount = 0
 
 	for word in gmatch(formattedString, "%w+") do
-		tinsert(firstLetters, sub(word, 1, 1))
-		tinsert(words, word)
+		wordCount = wordCount + 1
+		words[wordCount] = word
+		firstLetters[wordCount] = sub(word, 1, 1)
 	end
 
 	-- If only one word, return the original string
-	if #words == 1 then
+	if wordCount == 1 then
 		return str
 	end
 
@@ -314,22 +307,22 @@ MHCT.abbreviate = function(str, reverse, unit)
 		return words[1]
 	end
 
-	-- Build abbreviated string using table for efficiency
-	local parts = {}
-
+	-- Build abbreviated string
+	local result
 	if reverse then
-		parts[1] = words[1]
-		for i = 2, #words do
-			parts[i] = " " .. firstLetters[i] .. "."
+		result = words[1]
+		for i = 2, wordCount do
+			result = result .. " " .. firstLetters[i] .. "."
 		end
 	else
-		for i = 1, #words - 1 do
-			parts[i] = firstLetters[i] .. "."
+		result = ""
+		for i = 1, wordCount - 1 do
+			result = result .. firstLetters[i] .. "."
 		end
-		parts[#words] = " " .. words[#words]
+		result = result .. " " .. words[wordCount]
 	end
 
-	return concat(parts)
+	return result
 end
 
 --[[ 
@@ -337,31 +330,28 @@ end
     @param perc: Percentage (0 to 1) representing the position in the gradient.
     @return: Interpolated RGB color values.
 ]]
+-- More efficient implementation with fewer calculations
 MHCT.getColorGradient = function(perc)
 	if type(perc) ~= "number" then
-		return GRADIENT_COLORS[1], GRADIENT_COLORS[2], GRADIENT_COLORS[3] -- Default to first color
-	end
-
-	local num = #GRADIENT_COLORS / 3
-
-	-- Clamp the percentage to ensure it's within the 0-1 range
-	if perc >= 1 then
-		return GRADIENT_COLORS[(num - 1) * 3 + 1],
-			GRADIENT_COLORS[(num - 1) * 3 + 2],
-			GRADIENT_COLORS[(num - 1) * 3 + 3]
-	elseif perc <= 0 then
 		return GRADIENT_COLORS[1], GRADIENT_COLORS[2], GRADIENT_COLORS[3]
 	end
 
-	-- Determine the segment and interpolate
-	local segment = floor(perc * (num - 1))
-	local relperc = (perc * (num - 1)) - segment
-	local r1, g1, b1 =
-		GRADIENT_COLORS[(segment * 3) + 1], GRADIENT_COLORS[(segment * 3) + 2], GRADIENT_COLORS[(segment * 3) + 3]
-	local r2, g2, b2 =
-		GRADIENT_COLORS[(segment * 3) + 4], GRADIENT_COLORS[(segment * 3) + 5], GRADIENT_COLORS[(segment * 3) + 6]
+	-- Clamp percentage
+	perc = perc > 1 and 1 or (perc < 0 and 0 or perc)
 
-	-- Interpolate between r1,g1,b1 and r2,g2,b2 based on relperc
+	local num = #GRADIENT_COLORS / 3
+	local segment, relperc = math.modf(perc * (num - 1))
+
+	local idx = segment * 3 + 1
+	local r1, g1, b1 = GRADIENT_COLORS[idx], GRADIENT_COLORS[idx + 1], GRADIENT_COLORS[idx + 2]
+
+	-- If at the end of the gradient, return the last color
+	if segment >= num - 1 then
+		return r1, g1, b1
+	end
+
+	-- Calculate interpolation
+	local r2, g2, b2 = GRADIENT_COLORS[idx + 3], GRADIENT_COLORS[idx + 4], GRADIENT_COLORS[idx + 5]
 	return r1 + (r2 - r1) * relperc, g1 + (g2 - g1) * relperc, b1 + (b2 - b1) * relperc
 end
 
