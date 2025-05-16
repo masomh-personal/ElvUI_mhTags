@@ -16,6 +16,8 @@ local UnitPowerMax = UnitPowerMax
 -- Local constants
 local POWER_SUBCATEGORY = "power"
 local DEFAULT_DECIMAL_PLACE = MHCT.DEFAULT_DECIMAL_PLACE
+local ZERO_STRING = "0"
+local EMPTY_STRING = ""
 
 -- FORMAT_PATTERNS table for cached decimal formats
 local FORMAT_PATTERNS = {
@@ -25,6 +27,39 @@ local FORMAT_PATTERNS = {
 -- Initialize commonly used decimal precision patterns
 for i = 0, 3 do -- Cache patterns for 0-3 decimal places (common use cases)
 	FORMAT_PATTERNS.DECIMAL_WITHOUT_PERCENT[i] = format("%%.%df", i)
+end
+
+-- Pre-define variables to reuse (reduces memory allocation)
+local powerType, currentPower, maxPower, percent
+
+-- ===================================================================================
+-- HELPER FUNCTIONS
+-- ===================================================================================
+
+-- Optimized power percent formatter
+local function formatPowerPercent(unit, decimalPlaces)
+	powerType = UnitPowerType(unit)
+	maxPower = UnitPowerMax(unit, powerType)
+
+	-- Early return for invalid max power
+	if maxPower <= 0 then
+		return EMPTY_STRING
+	end
+
+	currentPower = UnitPower(unit, powerType)
+
+	-- Early return for zero power
+	if currentPower == 0 then
+		return ZERO_STRING
+	end
+
+	-- Calculate percentage
+	percent = (currentPower / maxPower) * 100
+
+	-- Use cached format pattern if available
+	local formatPattern = FORMAT_PATTERNS.DECIMAL_WITHOUT_PERCENT[decimalPlaces] or format("%%.%df", decimalPlaces)
+
+	return format(formatPattern, percent)
 end
 
 -- ===================================================================================
@@ -38,21 +73,7 @@ MHCT.registerTag(
 	"Simple power percent, no percentage sign with dynamic number of decimals (dynamic number within {} of tag)",
 	"UNIT_DISPLAYPOWER UNIT_POWER_FREQUENT UNIT_MAXPOWER",
 	function(unit, _, args)
-		local powerType = UnitPowerType(unit)
-		local currentPower = UnitPower(unit, powerType)
-		local maxPower = UnitPowerMax(unit)
-
-		if currentPower ~= 0 and maxPower > 0 then -- Added check for maxPower to avoid div by zero
-			local decimalPlaces = tonumber(args) or DEFAULT_DECIMAL_PLACE
-
-			-- Use cached format pattern if available, or create one if not
-			local formatPattern = FORMAT_PATTERNS.DECIMAL_WITHOUT_PERCENT[decimalPlaces]
-				or format("%%.%df", decimalPlaces)
-
-			return format(formatPattern, (currentPower / maxPower) * 100)
-		end
-
-		return ""
+		return formatPowerPercent(unit, tonumber(args) or DEFAULT_DECIMAL_PLACE)
 	end
 )
 
@@ -67,16 +88,6 @@ MHCT.registerMultiThrottledTag(
 	"Simple power percent, updates every %throttle% seconds",
 	MHCT.THROTTLE_SETS.STANDARD,
 	function(unit)
-		local powerType = UnitPowerType(unit)
-		local currentPower = UnitPower(unit, powerType)
-		local maxPower = UnitPowerMax(unit)
-
-		if currentPower ~= 0 and maxPower > 0 then
-			-- Default to 0 decimal places for throttled versions
-			local formatPattern = FORMAT_PATTERNS.DECIMAL_WITHOUT_PERCENT[0]
-			return format(formatPattern, (currentPower / maxPower) * 100)
-		end
-
-		return ""
+		return formatPowerPercent(unit, 0) -- Default to 0 decimal places for throttled versions
 	end
 )
