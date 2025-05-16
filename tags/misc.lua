@@ -34,17 +34,19 @@ MHCT.registerTag(
 		local unitLevel = UnitEffectiveLevel(unit)
 		local playerLevel = UnitEffectiveLevel("player")
 
-		-- if player is NOT max level, show level
-		if playerLevel ~= MAX_PLAYER_LEVEL then
-			return unitLevel
-		else
-			-- else only show unit level if unit is NOT max level
-			return MAX_PLAYER_LEVEL == unitLevel and "" or unitLevel
+		-- Optimize conditional logic - check if we need to show level at all
+		if playerLevel == MAX_PLAYER_LEVEL and unitLevel == MAX_PLAYER_LEVEL then
+			return ""
 		end
+
+		-- Otherwise just return the level
+		return unitLevel
 	end
 )
 
--- Absorb amount tag
+-- Pre-cache the format string
+local ABSORB_FORMAT = "|cff%s(%s)|r"
+
 MHCT.registerTag(
 	"mh-absorb",
 	MISC_SUBCATEGORY,
@@ -52,39 +54,50 @@ MHCT.registerTag(
 	"UNIT_ABSORB_AMOUNT_CHANGED",
 	function(unit)
 		local absorbAmount = UnitGetTotalAbsorbs(unit) or 0
-		if absorbAmount ~= 0 then
-			return format("|cff%s(%s)|r", ABSORB_TEXT_COLOR, E:ShortValue(absorbAmount))
+		-- Early return for common case
+		if absorbAmount == 0 then
+			return ""
 		end
-		return ""
+
+		return format(ABSORB_FORMAT, ABSORB_TEXT_COLOR, E:ShortValue(absorbAmount))
 	end
 )
 
--- Difficulty colored level tag
+-- ===================================================================================
+-- DIFFICULTY TAGS
+-- ===================================================================================
+
+-- Helper function for difficulty level formatting
+local function formatDifficultyLevel(unit, hideAtMax)
+	local unitLevel = UnitEffectiveLevel(unit)
+	local playerLevel = UnitEffectiveLevel("player")
+
+	-- Check if we should hide the level
+	if hideAtMax and playerLevel == unitLevel and playerLevel == MAX_PLAYER_LEVEL then
+		return ""
+	end
+
+	return MHCT.difficultyLevelFormatter(unit, unitLevel)
+end
+
+-- Then use this helper in both difficulty level tags
 MHCT.registerTag(
 	"mh-difficultycolor:level",
 	MISC_SUBCATEGORY,
 	"Traditional ElvUI difficulty color + level with more modern updates (will always show level)",
 	"UNIT_LEVEL PLAYER_LEVEL_UP",
 	function(unit)
-		return MHCT.difficultyLevelFormatter(unit, UnitEffectiveLevel(unit))
+		return formatDifficultyLevel(unit, false) -- false = don't hide at max level
 	end
 )
 
--- Difficulty colored level that hides at max level
 MHCT.registerTag(
 	"mh-difficultycolor:level-hide",
 	MISC_SUBCATEGORY,
 	"Traditional ElvUI difficulty color + level with more modern updates (will always show level and only hide level when you reach max level and unit level is equal to player level)",
 	"UNIT_LEVEL PLAYER_LEVEL_UP",
 	function(unit)
-		local unitLevel = UnitEffectiveLevel(unit)
-		local playerLevel = UnitEffectiveLevel("player")
-
-		if playerLevel == unitLevel and playerLevel == MAX_PLAYER_LEVEL then
-			return ""
-		end
-
-		return MHCT.difficultyLevelFormatter(unit, unitLevel)
+		return formatDifficultyLevel(unit, true) -- true = hide at max level
 	end
 )
 
@@ -103,7 +116,9 @@ MHCT.registerTag(
 	end
 )
 
--- Status tag without icons
+-- Pre-cache the format string
+local STATUS_FORMAT = "|cffD6BFA6%s|r"
+
 MHCT.registerTag(
 	"mh-status-noicon",
 	MISC_SUBCATEGORY,
@@ -111,9 +126,11 @@ MHCT.registerTag(
 	"UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED",
 	function(unit)
 		local status = MHCT.statusCheck(unit)
-		if status then
-			return format("|cffD6BFA6%s|r", strupper(status))
+		-- Early return for common case
+		if not status then
+			return ""
 		end
-		return ""
+
+		return format(STATUS_FORMAT, strupper(status))
 	end
 )
