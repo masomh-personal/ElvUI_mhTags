@@ -1,9 +1,33 @@
 # MH Custom Tags (ElvUI Plugin)
 
-## <span style="color:cyan">[4.0.0] Major update and refactor (May 11th, 2025)</span>.
+## <span style="color:cyan">[4.0.0] Major update and refactor (May 17th, 2025)</span>.
 
-- Complete refactor of all underlying design pattern to properly optimize all tags
-- NOTE: this will heavily influence and optimize health tags or any tags that are updated frequently
+### Performance Optimizations
+
+- Implemented proper Lua localization patterns throughout all modules
+- Optimized string handling with direct concatenation and cached format patterns
+- Reduced memory allocations by reusing variables and pre-allocating where possible
+- Optimized color gradient table generation with more efficient interpolation
+- Cached frequently used values to reduce redundant calculations
+
+### Code Structure Improvements
+
+- Created tag registration helpers to standardize tag creation
+- Reorganized files and modules for better maintainability
+- Implemented consistent naming conventions across modules
+- Moved related functionality to appropriate modules (e.g., health color tags)
+
+### New Features
+
+- Implemented multiple update frequencies for performance-critical tags
+- Added new tag variants with different formatting options
+- Enhanced abbreviation functionality for name tags
+
+### Developer Improvements
+
+- Added memory leak testing capabilities
+- Improved code documentation and comments
+- Standardized module structure for easier maintenance
 
 ## <span style="color:white">[3.0.4] TOC/Patch Update 11.5.0 (April 23rd, 2025)</span>.
 
