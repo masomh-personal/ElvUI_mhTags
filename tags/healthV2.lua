@@ -17,6 +17,9 @@ local format = string.format
 local floor = math.floor
 local tonumber = tonumber
 
+-- Localize gradient table
+local HEALTH_GRADIENT_RGB_TABLE = MHCT.HEALTH_GRADIENT_RGB
+
 -- Set the category name for all v2 health tags
 local HEALTH_V2_SUBCATEGORY = "health-v2"
 
@@ -166,7 +169,7 @@ local function formatHealthWithLowHealthColor(unit, isPercentFirst, threshold)
 	local lowHealthThreshold = threshold or 20 -- Default to 20%
 	if healthPercent <= lowHealthThreshold then
 		-- Apply color for low health
-		colorCode = MHCT.HEALTH_GRADIENT_RGB[floor(healthPercent)] or "|cffFF0000"
+		colorCode = HEALTH_GRADIENT_RGB_TABLE[floor(healthPercent)] or "|cffFF0000"
 		return absorbText .. colorCode .. result .. COLOR_END
 	else
 		return absorbText .. result
@@ -212,7 +215,7 @@ local function formatHealthWithFullGradient(unit, isPercentFirst)
 	end
 
 	-- Apply gradient color for non-full health
-	colorCode = MHCT.HEALTH_GRADIENT_RGB[roundedPercent] or WHITE_COLOR
+	colorCode = HEALTH_GRADIENT_RGB_TABLE[roundedPercent] or WHITE_COLOR
 	return absorbText .. colorCode .. result .. COLOR_END
 end
 
@@ -555,7 +558,7 @@ MHCT.registerTag(
 		local currentText = E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
 
 		-- Apply gradient color
-		local colorCode = MHCT.HEALTH_GRADIENT_RGB[roundedPercent] or WHITE_COLOR
+		local colorCode = HEALTH_GRADIENT_RGB_TABLE[roundedPercent] or WHITE_COLOR
 		return absorbText .. colorCode .. currentText .. COLOR_END
 	end
 )
@@ -584,7 +587,7 @@ MHCT.registerTag(
 		local percentText = format("%.1f%%", healthPercent)
 
 		-- Apply gradient color
-		local colorCode = MHCT.HEALTH_GRADIENT_RGB[roundedPercent] or WHITE_COLOR
+		local colorCode = HEALTH_GRADIENT_RGB_TABLE[roundedPercent] or WHITE_COLOR
 		return colorCode .. percentText .. COLOR_END
 	end
 )
@@ -614,7 +617,7 @@ MHCT.registerTag(
 		local index = floor(healthPercent)
 
 		-- Direct lookup without conditional checks
-		return MHCT.HEALTH_GRADIENT_RGB[index] or DEAD_OR_DC_COLOR
+		return HEALTH_GRADIENT_RGB_TABLE[index] or DEAD_OR_DC_COLOR
 	end
 )
 
@@ -639,6 +642,6 @@ MHCT.registerMultiThrottledTag(
 		local index = floor(healthPercent)
 
 		-- Direct lookup without conditional checks
-		return MHCT.HEALTH_GRADIENT_RGB[index] or DEAD_OR_DC_COLOR
+		return HEALTH_GRADIENT_RGB_TABLE[index] or DEAD_OR_DC_COLOR
 	end
 )

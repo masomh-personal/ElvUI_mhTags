@@ -359,18 +359,52 @@ end
     Creates a gradient table with hex color values interpolated at 1.0% intervals.
     @return: Gradient table with hex color codes mapped from 0 to 100 percent.
 ]]
+-- Optimized gradient table creation (one-time cost at login)
 MHCT.createGradientTable = function()
 	local gradientTable = {}
+
+	-- Pre-define color stops for efficiency
+	local colorStops = {
+		{ percent = 0, r = 0.996, g = 0.32, b = 0.32 }, -- Red at 0%
+		{ percent = 0.5, r = 0.98, g = 0.84, b = 0.58 }, -- Yellow at 50%
+		{ percent = 1, r = 0.44, g = 0.92, b = 0.44 }, -- Green at 100%
+	}
+
+	-- Pre-compute format string for efficiency
+	local colorFormat = "|cff%02X%02X%02X"
+
+	-- Generate all gradient entries in one pass
 	for i = 0, 100 do
-		local percent = i / 100 -- Convert to a percentage (0 to 1)
-		local r, g, b = MHCT.getColorGradient(percent)
-		gradientTable[i] = format("|cff%s", MHCT.rgbToHex(r, g, b))
+		local percent = i / 100
+
+		-- Find the color stops to interpolate between
+		local lower, upper
+		for j = 1, #colorStops - 1 do
+			if percent >= colorStops[j].percent and percent <= colorStops[j + 1].percent then
+				lower, upper = j, j + 1
+				break
+			end
+		end
+
+		-- Calculate interpolation factor
+		local range = colorStops[upper].percent - colorStops[lower].percent
+		local factor = range ~= 0 and (percent - colorStops[lower].percent) / range or 0
+
+		-- Interpolate RGB values directly
+		local r = colorStops[lower].r + factor * (colorStops[upper].r - colorStops[lower].r)
+		local g = colorStops[lower].g + factor * (colorStops[upper].g - colorStops[lower].g)
+		local b = colorStops[lower].b + factor * (colorStops[upper].b - colorStops[lower].b)
+
+		-- Convert to hex and store directly with format string
+		gradientTable[i] = format(colorFormat, r * 255, g * 255, b * 255)
 	end
+
 	return gradientTable
 end
 
 -- Create the gradient table with 1% increments and store it
 MHCT.HEALTH_GRADIENT_RGB = MHCT.createGradientTable()
+-- GLOBAL_MHCT_GRADIENT_TABLE = MHCT.HEALTH_GRADIENT_RGB
 
 -- Format unit status check
 MHCT.formatWithStatusCheck = function(unit)
