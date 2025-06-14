@@ -1,5 +1,12 @@
 # MH Custom Tags (ElvUI Plugin)
 
+## <span style="color:white">[4.0.1] Bug Fix (June 13th, 2025)</span>.
+
+### Bug Fixes
+
+- **FIXED**: `formatHealthPercent` function in core.lua not displaying max HP at full health due to incorrect ElvUI function reference
+- **FIXED**: Health tags using `MHCT.formatHealthPercent` now properly show formatted max HP value when at full health instead of showing nothing
+
 ## <span style="color:cyan">[4.0.0] Major update and refactor (May 17th, 2025)</span>.
 
 ### Performance Optimizations
