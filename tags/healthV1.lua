@@ -158,11 +158,12 @@ MHCT.registerTag(
 )
 
 -- Simple Percent with status
+-- Simple Percent with status
 MHCT.registerTag(
 	"mh-health:simple:percent",
 	HEALTH_SUBCATEGORY,
 	"Shows max hp at full or percent with dynamic # of decimals (dynamic number within {} of tag) - Example: [mh-health:simple:percent{2}] will show percent to 2 decimal places",
-	"PLAYER_FLAGS_CHANGED UNIT_CONNECTION UNIT_HEALTH",
+	"PLAYER_FLAGS_CHANGED UNIT_CONNECTION UNIT_HEALTH UNIT_MAXHEALTH",
 	function(unit, _, args)
 		local statusFormatted = MHCT.formatWithStatusCheck(unit)
 		if statusFormatted then
