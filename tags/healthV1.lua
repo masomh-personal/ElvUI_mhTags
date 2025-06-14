@@ -158,7 +158,6 @@ MHCT.registerTag(
 )
 
 -- Simple Percent with status
--- Simple Percent with status
 MHCT.registerTag(
 	"mh-health:simple:percent",
 	HEALTH_SUBCATEGORY,
