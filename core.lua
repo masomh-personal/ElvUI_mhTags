@@ -434,7 +434,7 @@ MHCT.formatHealthPercent = function(unit, decimalPlaces, showSign)
 	end
 
 	if currentHp == maxHp then
-		return GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
+		return E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
 	else
 		local numDecimals = tonumber(decimalPlaces) or MHCT.DEFAULT_DECIMAL_PLACE
 
