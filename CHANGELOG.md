@@ -1,8 +1,8 @@
 # MH Custom Tags (ElvUI Plugin)
 
-## <span style="color:white">[4.0.2] TOC/Patch Update 11.0.7 (June 18th, 2025)</span>.
+## <span style="color:white">[4.0.2] TOC/Patch Update 11.1.7 (June 18th, 2025)</span>.
 
-- **MAINTENANCE**: Updated TOC for 11.0.7
+- **MAINTENANCE**: Updated TOC for 11.1.7
 
 ## <span style="color:white">[4.0.1] Bug Fix (June 13th, 2025)</span>.
 
