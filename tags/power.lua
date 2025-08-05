@@ -19,16 +19,6 @@ local DEFAULT_DECIMAL_PLACE = MHCT.DEFAULT_DECIMAL_PLACE
 local ZERO_STRING = "0"
 local EMPTY_STRING = ""
 
--- FORMAT_PATTERNS table for cached decimal formats
-local FORMAT_PATTERNS = {
-	DECIMAL_WITHOUT_PERCENT = {}, -- Stores patterns like "%.0f", "%.1f", etc.
-}
-
--- Initialize commonly used decimal precision patterns
-for i = 0, 3 do -- Cache patterns for 0-3 decimal places (common use cases)
-	FORMAT_PATTERNS.DECIMAL_WITHOUT_PERCENT[i] = format("%%.%df", i)
-end
-
 -- Pre-define variables to reuse (reduces memory allocation)
 local powerType, currentPower, maxPower, percent
 
@@ -57,7 +47,7 @@ local function formatPowerPercent(unit, decimalPlaces)
 	percent = (currentPower / maxPower) * 100
 
 	-- Use cached format pattern if available
-	local formatPattern = FORMAT_PATTERNS.DECIMAL_WITHOUT_PERCENT[decimalPlaces] or format("%%.%df", decimalPlaces)
+	local formatPattern = MHCT.FORMAT_PATTERNS.DECIMAL_WITHOUT_PERCENT[decimalPlaces] or format("%%.%df", decimalPlaces)
 
 	return format(formatPattern, percent)
 end

@@ -18,6 +18,31 @@ local ELITE_COLOR = "ffcc00" -- gold
 local RARE_COLOR = "fc49f3" -- light magenta
 local NORMAL_COLOR = "ffffff" -- white
 
+-- Pre-computed classification text formats (one-time cost)
+local CLASSIFICATION_TEXT_FORMATS = {
+	boss = format("|cff%s[Boss]|r", BOSS_COLOR),
+	elite = format("|cff%s[Elite]|r", ELITE_COLOR),
+	rare = format("|cff%s[Rare]|r", RARE_COLOR),
+	rareelite = format("|cff%s[Rare Elite]|r", RARE_COLOR),
+	eliteplus = format("|cff%s[Elite+]|r", ELITE_COLOR),
+}
+
+local CLASSIFICATION_COMPACT_FORMATS = {
+	boss = format("|cff%sB|r", BOSS_COLOR),
+	elite = format("|cff%sE|r", ELITE_COLOR),
+	rare = format("|cff%sR|r", RARE_COLOR),
+	rareelite = format("|cff%sR+|r", RARE_COLOR),
+	eliteplus = format("|cff%sE+|r", ELITE_COLOR),
+}
+
+local CLASSIFICATION_FULL_TEXT = {
+	boss = "Boss",
+	elite = "Elite",
+	rare = "Rare",
+	rareelite = "Rare Elite",
+	eliteplus = "Elite+",
+}
+
 -- ===================================================================================
 -- UNIT CLASSIFICATION (ICONS)
 -- ===================================================================================
@@ -74,16 +99,7 @@ MHCT.registerTag(
 			return ""
 		end
 
-		-- Map classification types to colored descriptive text
-		local classificationText = {
-			boss = format("|cff%s[Boss]|r", BOSS_COLOR),
-			elite = format("|cff%s[Elite]|r", ELITE_COLOR),
-			rare = format("|cff%s[Rare]|r", RARE_COLOR),
-			rareelite = format("|cff%s[Rare Elite]|r", RARE_COLOR),
-			eliteplus = format("|cff%s[Elite+]|r", ELITE_COLOR),
-		}
-
-		return classificationText[unitType] or ""
+		return CLASSIFICATION_TEXT_FORMATS[unitType] or ""
 	end
 )
 
@@ -100,16 +116,7 @@ MHCT.registerTag(
 			return ""
 		end
 
-		-- Map classification types to compact colored text with symbols
-		local compactText = {
-			boss = format("|cff%sB|r", BOSS_COLOR),
-			elite = format("|cff%sE|r", ELITE_COLOR),
-			rare = format("|cff%sR|r", RARE_COLOR),
-			rareelite = format("|cff%sR+|r", RARE_COLOR),
-			eliteplus = format("|cff%sE+|r", ELITE_COLOR),
-		}
-
-		return compactText[unitType] or ""
+		return CLASSIFICATION_COMPACT_FORMATS[unitType] or ""
 	end
 )
 
@@ -126,15 +133,6 @@ MHCT.registerTag(
 			return ""
 		end
 
-		-- Map classification types to descriptive text
-		local fullText = {
-			boss = "Boss",
-			elite = "Elite",
-			rare = "Rare",
-			rareelite = "Rare Elite",
-			eliteplus = "Elite+",
-		}
-
-		return fullText[unitType] or ""
+		return CLASSIFICATION_FULL_TEXT[unitType] or ""
 	end
 )

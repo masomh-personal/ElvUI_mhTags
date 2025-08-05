@@ -29,6 +29,12 @@ local DEAD_OR_DC_COLOR = "|cffD6BFA6"
 local COLOR_END = "|r"
 local VERTICAL_SEPARATOR = " | "
 
+-- Pre-computed format strings for frequent operations
+local PERCENT_FORMAT = "%.1f%%"
+local ABSORB_PREFIX_FORMAT = "|cff%s(%s)|r "
+local COMBINED_FORMAT_LEFT = "%s" .. VERTICAL_SEPARATOR .. "%s" -- "percent | current"
+local COMBINED_FORMAT_RIGHT = "%s" .. VERTICAL_SEPARATOR .. "%s" -- "current | percent"
+
 -- Pre-allocate variables to reduce memory allocation
 local currentHp, maxHp, healthPercent, roundedPercent, absorbAmount
 local statusFormatted, currentText, percentText, result, colorCode, absorbText
@@ -53,20 +59,20 @@ local function formatHealthPercentWithStatus(unit, decimalPlaces)
 		return statusFormatted
 	end
 
-	-- Calculate percentage with configured decimal places
+	-- Calculate percentage with configured decimal places using cached format patterns
 	local decimals = tonumber(decimalPlaces) or 1
-	local formatStr = format("%%.%sf%%%%", decimals)
-	return format(formatStr, (currentHp / maxHp) * 100)
+	local formatPattern = MHCT.FORMAT_PATTERNS.DECIMAL_WITH_PERCENT[decimals] or format("%%.%sf%%%%", decimals)
+	return format(formatPattern, (currentHp / maxHp) * 100)
 end
 
--- Format health deficit with status check
+-- Format health deficit with status check - OPTIMIZED
 local function formatHealthDeficitWithStatus(unit)
 	currentHp = UnitHealth(unit)
 	maxHp = UnitHealthMax(unit)
 
 	-- Only show deficit if not at full health (most common check first)
 	if currentHp < maxHp then
-		return format("-%s", E:ShortValue(maxHp - currentHp))
+		return "-" .. E:ShortValue(maxHp - currentHp)
 	end
 
 	-- Check for status
@@ -117,13 +123,13 @@ local function formatHealthHideFullPercent(unit, isPercentFirst)
 	currentText = E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
 
 	-- Calculate percentage since health isn't full
-	percentText = format("%.1f%%", (currentHp / maxHp) * 100)
+	percentText = format(PERCENT_FORMAT, (currentHp / maxHp) * 100)
 
-	-- Format in requested order
+	-- Format in requested order using pre-computed format strings
 	if isPercentFirst then
-		return percentText .. VERTICAL_SEPARATOR .. currentText
+		return format(COMBINED_FORMAT_LEFT, percentText, currentText)
 	else
-		return currentText .. VERTICAL_SEPARATOR .. percentText
+		return format(COMBINED_FORMAT_RIGHT, currentText, percentText)
 	end
 end
 
@@ -140,7 +146,7 @@ local function formatHealthWithLowHealthColor(unit, isPercentFirst, threshold)
 		-- Handle absorb information if present
 		absorbAmount = UnitGetTotalAbsorbs(unit) or 0
 		if absorbAmount > 0 then
-			return format("|cff%s(%s)|r ", MHCT.ABSORB_TEXT_COLOR, E:ShortValue(absorbAmount)) .. currentText
+			return format(ABSORB_PREFIX_FORMAT, MHCT.ABSORB_TEXT_COLOR, E:ShortValue(absorbAmount)) .. currentText
 		end
 		return currentText
 	end
@@ -152,17 +158,17 @@ local function formatHealthWithLowHealthColor(unit, isPercentFirst, threshold)
 	absorbText = ""
 	absorbAmount = UnitGetTotalAbsorbs(unit) or 0
 	if absorbAmount > 0 then
-		absorbText = format("|cff%s(%s)|r ", MHCT.ABSORB_TEXT_COLOR, E:ShortValue(absorbAmount))
+		absorbText = format(ABSORB_PREFIX_FORMAT, MHCT.ABSORB_TEXT_COLOR, E:ShortValue(absorbAmount))
 	end
 
 	-- Calculate percentage text
-	percentText = format("%.1f%%", healthPercent)
+	percentText = format(PERCENT_FORMAT, healthPercent)
 
-	-- Format text in requested order
+	-- Format text in requested order using pre-computed format strings
 	if isPercentFirst then
-		result = percentText .. VERTICAL_SEPARATOR .. currentText
+		result = format(COMBINED_FORMAT_LEFT, percentText, currentText)
 	else
-		result = currentText .. VERTICAL_SEPARATOR .. percentText
+		result = format(COMBINED_FORMAT_RIGHT, currentText, percentText)
 	end
 
 	-- Check if health is below threshold
@@ -190,7 +196,7 @@ local function formatHealthWithFullGradient(unit, isPercentFirst)
 	absorbText = ""
 	absorbAmount = UnitGetTotalAbsorbs(unit) or 0
 	if absorbAmount > 0 then
-		absorbText = format("|cff%s(%s)|r ", MHCT.ABSORB_TEXT_COLOR, E:ShortValue(absorbAmount))
+		absorbText = format(ABSORB_PREFIX_FORMAT, MHCT.ABSORB_TEXT_COLOR, E:ShortValue(absorbAmount))
 	end
 
 	-- Special case: At full health, just show current value (which is max)
@@ -204,14 +210,14 @@ local function formatHealthWithFullGradient(unit, isPercentFirst)
 	roundedPercent = floor(healthPercent)
 
 	-- Get text components
-	percentText = format("%.1f%%", healthPercent)
+	percentText = format(PERCENT_FORMAT, healthPercent)
 	currentText = E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
 
-	-- Format in requested order
+	-- Format in requested order using pre-computed format strings
 	if isPercentFirst then
-		result = percentText .. VERTICAL_SEPARATOR .. currentText
+		result = format(COMBINED_FORMAT_LEFT, percentText, currentText)
 	else
-		result = currentText .. VERTICAL_SEPARATOR .. percentText
+		result = format(COMBINED_FORMAT_RIGHT, currentText, percentText)
 	end
 
 	-- Apply gradient color for non-full health
@@ -545,7 +551,7 @@ MHCT.registerTag(
 		local absorbText = ""
 		local absorbAmount = UnitGetTotalAbsorbs(unit) or 0
 		if absorbAmount > 0 then
-			absorbText = format("|cff%s(%s)|r ", MHCT.ABSORB_TEXT_COLOR, E:ShortValue(absorbAmount))
+			absorbText = format(ABSORB_PREFIX_FORMAT, MHCT.ABSORB_TEXT_COLOR, E:ShortValue(absorbAmount))
 		end
 
 		-- Handle full health case separately with white color
@@ -584,7 +590,7 @@ MHCT.registerTag(
 
 		local healthPercent = (currentHp / maxHp) * 100
 		local roundedPercent = floor(healthPercent)
-		local percentText = format("%.1f%%", healthPercent)
+		local percentText = format(PERCENT_FORMAT, healthPercent)
 
 		-- Apply gradient color
 		local colorCode = HEALTH_GRADIENT_RGB_TABLE[roundedPercent] or WHITE_COLOR

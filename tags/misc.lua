@@ -20,6 +20,19 @@ local MISC_SUBCATEGORY = "misc"
 local MAX_PLAYER_LEVEL = MHCT.MAX_PLAYER_LEVEL
 local ABSORB_TEXT_COLOR = MHCT.ABSORB_TEXT_COLOR
 
+-- Cache player level to avoid repeated API calls
+local cachedPlayerLevel = UnitEffectiveLevel("player")
+
+-- Update cached player level when it changes
+local function updatePlayerLevel()
+	cachedPlayerLevel = UnitEffectiveLevel("player")
+end
+
+-- Register event to update cached player level
+local frame = CreateFrame("Frame")
+frame:RegisterEvent("PLAYER_LEVEL_UP")
+frame:SetScript("OnEvent", updatePlayerLevel)
+
 -- ===================================================================================
 -- LEVEL TAGS
 -- ===================================================================================
@@ -32,10 +45,9 @@ MHCT.registerTag(
 	"UNIT_LEVEL PLAYER_LEVEL_UP",
 	function(unit)
 		local unitLevel = UnitEffectiveLevel(unit)
-		local playerLevel = UnitEffectiveLevel("player")
 
 		-- Optimize conditional logic - check if we need to show level at all
-		if playerLevel == MAX_PLAYER_LEVEL and unitLevel == MAX_PLAYER_LEVEL then
+		if cachedPlayerLevel == MAX_PLAYER_LEVEL and unitLevel == MAX_PLAYER_LEVEL then
 			return ""
 		end
 
@@ -43,9 +55,6 @@ MHCT.registerTag(
 		return unitLevel
 	end
 )
-
--- Pre-cache the format string
-local ABSORB_FORMAT = "|cff%s(%s)|r"
 
 MHCT.registerTag(
 	"mh-absorb",
@@ -59,7 +68,7 @@ MHCT.registerTag(
 			return ""
 		end
 
-		return format(ABSORB_FORMAT, ABSORB_TEXT_COLOR, E:ShortValue(absorbAmount))
+		return format(MHCT.COLOR_FORMATS.ABSORB, ABSORB_TEXT_COLOR, E:ShortValue(absorbAmount))
 	end
 )
 
@@ -70,10 +79,9 @@ MHCT.registerTag(
 -- Helper function for difficulty level formatting
 local function formatDifficultyLevel(unit, hideAtMax)
 	local unitLevel = UnitEffectiveLevel(unit)
-	local playerLevel = UnitEffectiveLevel("player")
 
 	-- Check if we should hide the level
-	if hideAtMax and playerLevel == unitLevel and playerLevel == MAX_PLAYER_LEVEL then
+	if hideAtMax and cachedPlayerLevel == unitLevel and cachedPlayerLevel == MAX_PLAYER_LEVEL then
 		return ""
 	end
 
@@ -116,9 +124,6 @@ MHCT.registerTag(
 	end
 )
 
--- Pre-cache the format string
-local STATUS_FORMAT = "|cffD6BFA6%s|r"
-
 MHCT.registerTag(
 	"mh-status-noicon",
 	MISC_SUBCATEGORY,
@@ -131,6 +136,6 @@ MHCT.registerTag(
 			return ""
 		end
 
-		return format(STATUS_FORMAT, strupper(status))
+		return format(MHCT.COLOR_FORMATS.STATUS, strupper(status))
 	end
 )

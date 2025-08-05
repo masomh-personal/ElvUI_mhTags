@@ -38,7 +38,7 @@ local UnitIsPlayer = UnitIsPlayer
 local UnitEffectiveLevel = UnitEffectiveLevel
 local UnitClassification = UnitClassification
 local GetCreatureDifficultyColor = GetCreatureDifficultyColor
-local GetMaxPlayerLevel = GetMaxPlayerLevel()
+local GetMaxPlayerLevel = GetMaxPlayerLevel
 
 -- ElvUI references - treated like any other API
 local E, L = unpack(ElvUI)
@@ -48,7 +48,7 @@ local ShortValue = E.ShortValue
 -- CONSTANTS
 -------------------------------------
 MHCT.TAG_CATEGORY_NAME = "|cff0388fcmh|r|cffccff33Tags|r"
-MHCT.MAX_PLAYER_LEVEL = GetMaxPlayerLevel
+MHCT.MAX_PLAYER_LEVEL = GetMaxPlayerLevel()
 MHCT.DEFAULT_ICON_SIZE = 14
 MHCT.ABSORB_TEXT_COLOR = "ccff33"
 MHCT.DEFAULT_TEXT_LENGTH = 28
@@ -64,16 +64,30 @@ local ELITE_SYMBOL = "+"
 local ELITE_PLUS_SYMBOL = "◆"
 local BOSS_SYMBOL = "??"
 
--- Format pattern caching
-local FORMAT_PATTERNS = {
+-- Pre-computed color format strings for common use
+MHCT.COLOR_FORMATS = {
+	STATUS = "|cff" .. STATUS_COLOR .. "%s|r",
+	BOSS = "|cff" .. BOSS_COLOR .. "%s|r",
+	RARE = "|cff" .. RARE_COLOR .. "%s|r",
+	ABSORB = "|cff%s(%s)|r",
+	GROUP = "%s |cff00FFFF(%s)|r",
+	NAME_REALM = "%s-%s",
+}
+
+-- Format pattern caching - make globally available for all tag modules
+MHCT.FORMAT_PATTERNS = {
 	DECIMAL_WITH_PERCENT = {}, -- Stores patterns like "%.0f%%", "%.1f%%", etc.
 	DECIMAL_WITHOUT_PERCENT = {}, -- Stores patterns like "%.0f", "%.1f", etc.
+	DEFICIT_WITH_PERCENT = {}, -- Stores patterns like "-%.0f%%", "-%.1f%%", etc.
+	DEFICIT_WITHOUT_PERCENT = {}, -- Stores patterns like "-%.0f", "-%.1f", etc.
 }
 
 -- Initialize with commonly used decimal precision patterns
 for i = 0, 5 do -- Cache patterns for 0-5 decimal places
-	FORMAT_PATTERNS.DECIMAL_WITH_PERCENT[i] = format("%%.%df%%%%", i)
-	FORMAT_PATTERNS.DECIMAL_WITHOUT_PERCENT[i] = format("%%.%df", i)
+	MHCT.FORMAT_PATTERNS.DECIMAL_WITH_PERCENT[i] = format("%%.%df%%%%", i)
+	MHCT.FORMAT_PATTERNS.DECIMAL_WITHOUT_PERCENT[i] = format("%%.%df", i)
+	MHCT.FORMAT_PATTERNS.DEFICIT_WITH_PERCENT[i] = format("-%%.%df%%%%", i)
+	MHCT.FORMAT_PATTERNS.DEFICIT_WITHOUT_PERCENT[i] = format("-%%.%df", i)
 end
 
 -- Icon table with texture paths
@@ -266,7 +280,7 @@ MHCT.statusFormatter = function(status, size, reverse)
 
 	local iconSize = size or MHCT.DEFAULT_ICON_SIZE
 	local iconName = STATUS_ICON_MAP[status]
-	local formattedStatus = format("|cff%s%s|r", STATUS_COLOR, strupper(status))
+	local formattedStatus = format(MHCT.COLOR_FORMATS.STATUS, strupper(status))
 	local icon = MHCT.getFormattedIcon(iconName, iconSize)
 
 	if reverse then
@@ -276,7 +290,7 @@ MHCT.statusFormatter = function(status, size, reverse)
 	end
 end
 
--- More efficient implementation with fewer table operations
+-- More efficient implementation with minimal table operations
 MHCT.abbreviate = function(str, reverse, unit)
 	if not str or str == "" then
 		return ""
@@ -285,15 +299,10 @@ MHCT.abbreviate = function(str, reverse, unit)
 	-- Remove apostrophes once
 	local formattedString = gsub(str, "'", "")
 
-	-- Split into words
-	local words = {}
-	local firstLetters = {}
+	-- Count words first to avoid unnecessary table creation
 	local wordCount = 0
-
-	for word in gmatch(formattedString, "%w+") do
+	for _ in gmatch(formattedString, "%w+") do
 		wordCount = wordCount + 1
-		words[wordCount] = word
-		firstLetters[wordCount] = sub(word, 1, 1)
 	end
 
 	-- If only one word, return the original string
@@ -303,25 +312,34 @@ MHCT.abbreviate = function(str, reverse, unit)
 
 	-- If mob is special (boss, rare, etc) just use first name
 	if unit and MHCT.classificationType(unit) == "boss" then
-		return words[1]
+		-- Extract first word directly without table
+		local firstWord = formattedString:match("%w+")
+		return firstWord or str
+	end
+
+	-- For multiple words, build result more efficiently
+	local words = {}
+	local i = 1
+	for word in gmatch(formattedString, "%w+") do
+		words[i] = word
+		i = i + 1
 	end
 
 	-- Build abbreviated string
-	local result
 	if reverse then
-		result = words[1]
-		for i = 2, wordCount do
-			result = result .. " " .. firstLetters[i] .. "."
+		local result = words[1]
+		for j = 2, wordCount do
+			result = result .. " " .. sub(words[j], 1, 1) .. "."
 		end
+		return result
 	else
-		result = ""
-		for i = 1, wordCount - 1 do
-			result = result .. firstLetters[i] .. "."
+		local parts = {}
+		for j = 1, wordCount - 1 do
+			parts[j] = sub(words[j], 1, 1) .. "."
 		end
-		result = result .. " " .. words[wordCount]
+		parts[wordCount] = " " .. words[wordCount]
+		return concat(parts)
 	end
-
-	return result
 end
 
 --[[ 
@@ -362,13 +380,6 @@ end
 MHCT.createGradientTable = function()
 	local gradientTable = {}
 
-	-- Pre-define color stops for efficiency
-	local colorStops = {
-		{ percent = 0, r = 0.996, g = 0.32, b = 0.32 }, -- Red at 0%
-		{ percent = 0.5, r = 0.98, g = 0.84, b = 0.58 }, -- Yellow at 50%
-		{ percent = 1, r = 0.44, g = 0.92, b = 0.44 }, -- Green at 100%
-	}
-
 	-- Pre-compute format string for efficiency
 	local colorFormat = "|cff%02X%02X%02X"
 
@@ -376,23 +387,21 @@ MHCT.createGradientTable = function()
 	for i = 0, 100 do
 		local percent = i / 100
 
-		-- Find the color stops to interpolate between
-		local lower, upper
-		for j = 1, #colorStops - 1 do
-			if percent >= colorStops[j].percent and percent <= colorStops[j + 1].percent then
-				lower, upper = j, j + 1
-				break
-			end
+		-- Direct calculation based on percentage ranges
+		local r, g, b
+		if percent <= 0.5 then
+			-- Red to Yellow (0% to 50%)
+			local factor = percent * 2 -- Scale to 0-1 range
+			r = 0.996 + factor * (0.98 - 0.996)
+			g = 0.32 + factor * (0.84 - 0.32)
+			b = 0.32 + factor * (0.58 - 0.32)
+		else
+			-- Yellow to Green (50% to 100%)
+			local factor = (percent - 0.5) * 2 -- Scale to 0-1 range
+			r = 0.98 + factor * (0.44 - 0.98)
+			g = 0.84 + factor * (0.92 - 0.84)
+			b = 0.58 + factor * (0.44 - 0.58)
 		end
-
-		-- Calculate interpolation factor
-		local range = colorStops[upper].percent - colorStops[lower].percent
-		local factor = range ~= 0 and (percent - colorStops[lower].percent) / range or 0
-
-		-- Interpolate RGB values directly
-		local r = colorStops[lower].r + factor * (colorStops[upper].r - colorStops[lower].r)
-		local g = colorStops[lower].g + factor * (colorStops[upper].g - colorStops[lower].g)
-		local b = colorStops[lower].b + factor * (colorStops[upper].b - colorStops[lower].b)
 
 		-- Convert to hex and store directly with format string
 		gradientTable[i] = format(colorFormat, r * 255, g * 255, b * 255)
@@ -440,9 +449,9 @@ MHCT.formatHealthPercent = function(unit, decimalPlaces, showSign)
 		-- Use cached format patterns if available
 		local pattern
 		if showSign then
-			pattern = FORMAT_PATTERNS.DECIMAL_WITH_PERCENT[numDecimals] or format("%%.%df%%%%", numDecimals)
+			pattern = MHCT.FORMAT_PATTERNS.DECIMAL_WITH_PERCENT[numDecimals] or format("%%.%df%%%%", numDecimals)
 		else
-			pattern = FORMAT_PATTERNS.DECIMAL_WITHOUT_PERCENT[numDecimals] or format("%%.%df", numDecimals)
+			pattern = MHCT.FORMAT_PATTERNS.DECIMAL_WITHOUT_PERCENT[numDecimals] or format("%%.%df", numDecimals)
 		end
 
 		return format(pattern, (currentHp / maxHp) * 100)

@@ -59,17 +59,14 @@ MHCT.registerTag(
 		end
 
 		local name = UnitName(unit)
-		if not name or name == "" then
-			return ""
+		if not name or name == EMPTY_STRING then
+			return EMPTY_STRING
 		end
 
 		local length = tonumber(args) or DEFAULT_TEXT_LENGTH
 		return E:ShortenString(strupper(name), length)
 	end
 )
-
--- Pre-cache the format string
-local GROUP_FORMAT = "%s |cff00FFFF(%s)|r"
 
 MHCT.registerTag(
 	"mh-player:frame:name:caps-groupnumber",
@@ -78,8 +75,8 @@ MHCT.registerTag(
 	"UNIT_NAME_UPDATE GROUP_ROSTER_UPDATE",
 	function(unit, _, args)
 		local name = UnitName(unit)
-		if not name or name == "" then
-			return ""
+		if not name or name == EMPTY_STRING then
+			return EMPTY_STRING
 		end
 
 		local length = tonumber(args) or DEFAULT_TEXT_LENGTH
@@ -93,8 +90,8 @@ MHCT.registerTag(
 		-- Look up group number
 		local nameRealm
 		local realm = select(2, UnitName(unit))
-		if realm and realm ~= "" then
-			nameRealm = format("%s-%s", name, realm)
+		if realm and realm ~= EMPTY_STRING then
+			nameRealm = format(MHCT.COLOR_FORMATS.NAME_REALM, name, realm)
 		else
 			nameRealm = name
 		end
@@ -102,7 +99,7 @@ MHCT.registerTag(
 		for i = 1, GetNumGroupMembers() do
 			local raidName, _, group = GetRaidRosterInfo(i)
 			if raidName == nameRealm then
-				return format(GROUP_FORMAT, formatted, group)
+				return format(MHCT.COLOR_FORMATS.GROUP, formatted, group)
 			end
 		end
 
@@ -115,7 +112,7 @@ MHCT.registerTag(
 local function formatAbbreviatedName(unit, reverse, lengthThreshold)
 	local name = UnitName(unit)
 	if not name then
-		return ""
+		return EMPTY_STRING
 	end
 
 	-- Convert to uppercase once
