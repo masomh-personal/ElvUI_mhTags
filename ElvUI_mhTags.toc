@@ -9,7 +9,6 @@
 core.lua
 tags/power.lua
 tags/classification.lua
-tags/healthV1.lua
-tags/healthV2.lua
+tags/health.lua
 tags/misc.lua
 tags/name.lua

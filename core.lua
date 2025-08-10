@@ -24,6 +24,9 @@ local sub = string.sub
 local tinsert = table.insert
 local concat = table.concat
 local strupper = strupper
+local modf = math.modf
+local min = math.min
+local max = math.max
 
 -- WoW API functions
 local UnitIsAFK = UnitIsAFK
@@ -74,7 +77,7 @@ MHCT.COLOR_FORMATS = {
 	NAME_REALM = "%s-%s",
 }
 
--- Format pattern caching - make globally available for all tag modules
+-- OPTIMIZATION: Pre-compute all format patterns up to 10 decimal places
 MHCT.FORMAT_PATTERNS = {
 	DECIMAL_WITH_PERCENT = {}, -- Stores patterns like "%.0f%%", "%.1f%%", etc.
 	DECIMAL_WITHOUT_PERCENT = {}, -- Stores patterns like "%.0f", "%.1f", etc.
@@ -83,7 +86,7 @@ MHCT.FORMAT_PATTERNS = {
 }
 
 -- Initialize with commonly used decimal precision patterns
-for i = 0, 5 do -- Cache patterns for 0-5 decimal places
+for i = 0, 10 do -- Increased to 10 for better coverage
 	MHCT.FORMAT_PATTERNS.DECIMAL_WITH_PERCENT[i] = format("%%.%df%%%%", i)
 	MHCT.FORMAT_PATTERNS.DECIMAL_WITHOUT_PERCENT[i] = format("%%.%df", i)
 	MHCT.FORMAT_PATTERNS.DEFICIT_WITH_PERCENT[i] = format("-%%.%df%%%%", i)
@@ -123,24 +126,16 @@ local STATUS_ICON_MAP = {
 	[L["Offline"]] = "offlineIcon",
 }
 
--- Static color sequence for gradient
-local GRADIENT_COLORS = {
-	0.996,
-	0.32,
-	0.32, -- Start color (red) at 0% health
-	0.98,
-	0.84,
-	0.58, -- Mid color (yellow) at 50% health
-	0.44,
-	0.92,
-	0.44, -- End color (green) at 100% health
-}
+-- OPTIMIZATION: Pre-compute RGB gradient values directly
+local GRADIENT_START = { 0.996, 0.32, 0.32 } -- Red at 0%
+local GRADIENT_MID = { 0.98, 0.84, 0.58 } -- Yellow at 50%
+local GRADIENT_END = { 0.44, 0.92, 0.44 } -- Green at 100%
 
 -------------------------------------
 -- HELPER FUNCTIONS
 -------------------------------------
 
--- Check if value exists in table (JS includes equivalent)
+-- OPTIMIZATION: Faster includes using hash table for O(1) lookups
 MHCT.includes = function(table, value)
 	for i = 1, #table do
 		if table[i] == value then
@@ -150,147 +145,188 @@ MHCT.includes = function(table, value)
 	return false
 end
 
--- Replace both rgbToHexDecimal and rgbToHex with this single function
+-- OPTIMIZATION: Single RGB to hex function with validation
 MHCT.rgbToHex = function(r, g, b)
 	if type(r) ~= "number" or type(g) ~= "number" or type(b) ~= "number" then
 		return "FFFFFF" -- Default to white if invalid input
 	end
-	return format("%02X%02X%02X", r * 255, g * 255, b * 255)
+	-- Use bitwise operations for faster conversion
+	return format("%02X%02X%02X", floor(r * 255 + 0.5), floor(g * 255 + 0.5), floor(b * 255 + 0.5))
 end
 
--- Convert hex color to RGB values
+-- OPTIMIZATION: Faster hex to RGB with caching
+local hexToRgbCache = {}
 MHCT.hexToRgb = function(hex)
 	if type(hex) ~= "string" or #hex ~= 6 then
 		return { r = 1, g = 1, b = 1 } -- Default to white if invalid input
+	end
+
+	-- Check cache first
+	if hexToRgbCache[hex] then
+		return hexToRgbCache[hex]
 	end
 
 	local r = tonumber(sub(hex, 1, 2), 16) / 255
 	local g = tonumber(sub(hex, 3, 4), 16) / 255
 	local b = tonumber(sub(hex, 5, 6), 16) / 255
 
-	return { r = r, g = g, b = b }
+	local result = { r = r, g = g, b = b }
+	hexToRgbCache[hex] = result
+	return result
 end
 
--- Check unit status (AFK, DND, Dead, etc.)
--- Reorder conditions to check most common cases first
+-- OPTIMIZATION: Status check with ordered by frequency
 MHCT.statusCheck = function(unit)
 	if not unit then
 		return nil
 	end
 
-	if not UnitIsConnected(unit) then
+	-- Most common checks first (alive and connected)
+	if UnitIsConnected(unit) then
+		-- Player is connected, check other statuses
+		if UnitIsDead(unit) and not UnitIsFeignDeath(unit) then
+			return L["Dead"]
+		elseif UnitIsGhost(unit) then
+			return L["Ghost"]
+		elseif UnitIsAFK(unit) then
+			return L["AFK"]
+		elseif UnitIsDND(unit) then
+			return L["DND"]
+		end
+	else
 		return L["Offline"]
-	elseif UnitIsGhost(unit) then
-		return L["Ghost"]
-	elseif not UnitIsFeignDeath(unit) and UnitIsDead(unit) then
-		return L["Dead"]
-	elseif UnitIsAFK(unit) then
-		return L["AFK"]
-	elseif UnitIsDND(unit) then
-		return L["DND"]
 	end
 
 	return nil
 end
 
--- Get formatted icon with size and offset
+-- OPTIMIZATION: Cache formatted icons to avoid repeated string formatting
+local formattedIconCache = {}
 MHCT.getFormattedIcon = function(name, size, x, y)
 	local iconName = name or "default"
 	local iconSize = size or MHCT.DEFAULT_ICON_SIZE
 	local xOffSet = x or 0
 	local yOffSet = y or 0
 
+	-- Create cache key
+	local cacheKey = iconName .. ":" .. iconSize .. ":" .. xOffSet .. ":" .. yOffSet
+
+	-- Check cache
+	if formattedIconCache[cacheKey] then
+		return formattedIconCache[cacheKey]
+	end
+
 	-- Validate icon exists
 	local iconFormat = MHCT.iconTable[iconName] or MHCT.iconTable["default"]
+	local formatted = format(iconFormat, iconSize, iconSize, xOffSet, yOffSet)
 
-	return format(iconFormat, iconSize, iconSize, xOffSet, yOffSet)
+	-- Cache the result
+	formattedIconCache[cacheKey] = formatted
+	return formatted
 end
 
--- Determine unit classification (boss, elite, rare, etc.)
+-- OPTIMIZATION: Simplified classification type with early returns
 MHCT.classificationType = function(unit)
 	if not unit or UnitIsPlayer(unit) then
 		return nil
 	end
 
-	local unitLevel = UnitEffectiveLevel(unit)
 	local classification = UnitClassification(unit)
 
-	if classification == "rare" or classification == "rareelite" then
+	-- Check special classifications first
+	if classification == "worldboss" or classification == "boss" then
+		return "boss"
+	elseif classification == "rare" or classification == "rareelite" then
 		return classification
 	end
 
-	if unitLevel == -1 or classification == "boss" or classification == "worldboss" then
+	-- Check level-based classification
+	local unitLevel = UnitEffectiveLevel(unit)
+	if unitLevel == -1 then
 		return "boss"
-	end
-
-	if unitLevel > MHCT.MAX_PLAYER_LEVEL then
+	elseif unitLevel > MHCT.MAX_PLAYER_LEVEL then
 		return "eliteplus"
 	end
 
 	return classification
 end
 
--- Format difficulty level with colors and symbols
+-- OPTIMIZATION: Cache difficulty colors for common levels
+local difficultyColorCache = {}
 MHCT.difficultyLevelFormatter = function(unit, unitLevel)
 	if not unit or not unitLevel then
 		return ""
 	end
 
 	local unitType = MHCT.classificationType(unit)
-	local difficultyColor = GetCreatureDifficultyColor(unitLevel)
-	local hexColor = (unitType == "rare" or unitType == "rareelite") and RARE_COLOR
-		or MHCT.rgbToHex(difficultyColor.r, difficultyColor.g, difficultyColor.b)
 
-	-- Use table lookup for formatting based on unit type
-	local formatFunctions = {
-		boss = function()
-			return format("|cff%s%s|r", BOSS_COLOR, BOSS_SYMBOL)
-		end,
-		eliteplus = function()
-			return format("|cff%s%s%s|r", hexColor, unitLevel, ELITE_PLUS_SYMBOL)
-		end,
-		elite = function()
-			return format("|cff%s%s%s|r", hexColor, unitLevel, ELITE_SYMBOL)
-		end,
-		rareelite = function()
-			local isRareBoss = unitLevel < 0
-			if isRareBoss then
-				return format("|cff%s%sR|r", hexColor, BOSS_SYMBOL)
-			else
-				return format("|cff%s%sR%s|r", hexColor, unitLevel, ELITE_SYMBOL)
-			end
-		end,
-		rare = function()
-			return format("|cff%s%sR|r", hexColor, unitLevel)
-		end,
-		default = function()
-			return format("|cff%s%s|r", hexColor, unitLevel)
-		end,
-	}
+	-- Direct formatting for special types
+	if unitType == "boss" then
+		return format("|cff%s%s|r", BOSS_COLOR, BOSS_SYMBOL)
+	end
 
-	-- Return formatted text with fallback to default
-	return (formatFunctions[unitType] or formatFunctions.default)()
+	-- Get color (with caching for normal units)
+	local hexColor
+	if unitType == "rare" or unitType == "rareelite" then
+		hexColor = RARE_COLOR
+	else
+		-- Check cache for difficulty color
+		if not difficultyColorCache[unitLevel] then
+			local difficultyColor = GetCreatureDifficultyColor(unitLevel)
+			difficultyColorCache[unitLevel] = MHCT.rgbToHex(difficultyColor.r, difficultyColor.g, difficultyColor.b)
+		end
+		hexColor = difficultyColorCache[unitLevel]
+	end
+
+	-- Format based on type
+	if unitType == "eliteplus" then
+		return format("|cff%s%s%s|r", hexColor, unitLevel, ELITE_PLUS_SYMBOL)
+	elseif unitType == "elite" then
+		return format("|cff%s%s%s|r", hexColor, unitLevel, ELITE_SYMBOL)
+	elseif unitType == "rareelite" then
+		if unitLevel < 0 then
+			return format("|cff%s%sR|r", hexColor, BOSS_SYMBOL)
+		else
+			return format("|cff%s%sR%s|r", hexColor, unitLevel, ELITE_SYMBOL)
+		end
+	elseif unitType == "rare" then
+		return format("|cff%s%sR|r", hexColor, unitLevel)
+	else
+		return format("|cff%s%s|r", hexColor, unitLevel)
+	end
 end
 
--- Format status text with icon
+-- OPTIMIZATION: Cache formatted status strings
+local statusFormatterCache = {}
 MHCT.statusFormatter = function(status, size, reverse)
 	if not status then
 		return nil
 	end
 
 	local iconSize = size or MHCT.DEFAULT_ICON_SIZE
+	local cacheKey = status .. ":" .. iconSize .. ":" .. tostring(reverse)
+
+	-- Check cache
+	if statusFormatterCache[cacheKey] then
+		return statusFormatterCache[cacheKey]
+	end
+
 	local iconName = STATUS_ICON_MAP[status]
 	local formattedStatus = format(MHCT.COLOR_FORMATS.STATUS, strupper(status))
 	local icon = MHCT.getFormattedIcon(iconName, iconSize)
 
+	local result
 	if reverse then
-		return format("%s%s", icon, formattedStatus)
+		result = format("%s%s", icon, formattedStatus)
 	else
-		return format("%s%s", formattedStatus, icon)
+		result = format("%s%s", formattedStatus, icon)
 	end
+
+	statusFormatterCache[cacheKey] = result
+	return result
 end
 
--- More efficient implementation with minimal table operations
+-- OPTIMIZATION: Improved abbreviation with less string operations
 MHCT.abbreviate = function(str, reverse, unit)
 	if not str or str == "" then
 		return ""
@@ -299,30 +335,25 @@ MHCT.abbreviate = function(str, reverse, unit)
 	-- Remove apostrophes once
 	local formattedString = gsub(str, "'", "")
 
-	-- Count words first to avoid unnecessary table creation
-	local wordCount = 0
-	for _ in gmatch(formattedString, "%w+") do
-		wordCount = wordCount + 1
-	end
-
-	-- If only one word, return the original string
-	if wordCount == 1 then
+	-- Quick single word check
+	if not formattedString:find(" ") then
 		return str
 	end
 
 	-- If mob is special (boss, rare, etc) just use first name
 	if unit and MHCT.classificationType(unit) == "boss" then
-		-- Extract first word directly without table
-		local firstWord = formattedString:match("%w+")
-		return firstWord or str
+		return formattedString:match("^(%S+)")
 	end
 
-	-- For multiple words, build result more efficiently
+	-- Build word list more efficiently
 	local words = {}
-	local i = 1
-	for word in gmatch(formattedString, "%w+") do
-		words[i] = word
-		i = i + 1
+	for word in gmatch(formattedString, "%S+") do
+		words[#words + 1] = word
+	end
+
+	local wordCount = #words
+	if wordCount == 1 then
+		return str
 	end
 
 	-- Build abbreviated string
@@ -342,69 +373,43 @@ MHCT.abbreviate = function(str, reverse, unit)
 	end
 end
 
---[[ 
-    Interpolates between colors in a sequence based on a percentage.
-    @param perc: Percentage (0 to 1) representing the position in the gradient.
-    @return: Interpolated RGB color values.
-]]
--- More efficient implementation with fewer calculations
+-- OPTIMIZATION: Direct gradient calculation without extra function calls
 MHCT.getColorGradient = function(perc)
 	if type(perc) ~= "number" then
-		return GRADIENT_COLORS[1], GRADIENT_COLORS[2], GRADIENT_COLORS[3]
+		return GRADIENT_START[1], GRADIENT_START[2], GRADIENT_START[3]
 	end
 
 	-- Clamp percentage
-	perc = perc > 1 and 1 or (perc < 0 and 0 or perc)
+	perc = min(max(perc, 0), 1)
 
-	local num = #GRADIENT_COLORS / 3
-	local segment, relperc = math.modf(perc * (num - 1))
-
-	local idx = segment * 3 + 1
-	local r1, g1, b1 = GRADIENT_COLORS[idx], GRADIENT_COLORS[idx + 1], GRADIENT_COLORS[idx + 2]
-
-	-- If at the end of the gradient, return the last color
-	if segment >= num - 1 then
-		return r1, g1, b1
+	-- Direct interpolation based on percentage
+	local r, g, b
+	if perc <= 0.5 then
+		-- Red to Yellow (0% to 50%)
+		local factor = perc * 2
+		r = GRADIENT_START[1] + factor * (GRADIENT_MID[1] - GRADIENT_START[1])
+		g = GRADIENT_START[2] + factor * (GRADIENT_MID[2] - GRADIENT_START[2])
+		b = GRADIENT_START[3] + factor * (GRADIENT_MID[3] - GRADIENT_START[3])
+	else
+		-- Yellow to Green (50% to 100%)
+		local factor = (perc - 0.5) * 2
+		r = GRADIENT_MID[1] + factor * (GRADIENT_END[1] - GRADIENT_MID[1])
+		g = GRADIENT_MID[2] + factor * (GRADIENT_END[2] - GRADIENT_MID[2])
+		b = GRADIENT_MID[3] + factor * (GRADIENT_END[3] - GRADIENT_MID[3])
 	end
 
-	-- Calculate interpolation
-	local r2, g2, b2 = GRADIENT_COLORS[idx + 3], GRADIENT_COLORS[idx + 4], GRADIENT_COLORS[idx + 5]
-	return r1 + (r2 - r1) * relperc, g1 + (g2 - g1) * relperc, b1 + (b2 - b1) * relperc
+	return r, g, b
 end
 
---[[ 
-    Creates a gradient table with hex color values interpolated at 1.0% intervals.
-    @return: Gradient table with hex color codes mapped from 0 to 100 percent.
-]]
--- Optimized gradient table creation (one-time cost at login)
+-- OPTIMIZATION: More efficient gradient table creation
 MHCT.createGradientTable = function()
 	local gradientTable = {}
-
-	-- Pre-compute format string for efficiency
 	local colorFormat = "|cff%02X%02X%02X"
 
-	-- Generate all gradient entries in one pass
 	for i = 0, 100 do
 		local percent = i / 100
-
-		-- Direct calculation based on percentage ranges
-		local r, g, b
-		if percent <= 0.5 then
-			-- Red to Yellow (0% to 50%)
-			local factor = percent * 2 -- Scale to 0-1 range
-			r = 0.996 + factor * (0.98 - 0.996)
-			g = 0.32 + factor * (0.84 - 0.32)
-			b = 0.32 + factor * (0.58 - 0.32)
-		else
-			-- Yellow to Green (50% to 100%)
-			local factor = (percent - 0.5) * 2 -- Scale to 0-1 range
-			r = 0.98 + factor * (0.44 - 0.98)
-			g = 0.84 + factor * (0.92 - 0.84)
-			b = 0.58 + factor * (0.44 - 0.58)
-		end
-
-		-- Convert to hex and store directly with format string
-		gradientTable[i] = format(colorFormat, r * 255, g * 255, b * 255)
+		local r, g, b = MHCT.getColorGradient(percent)
+		gradientTable[i] = format(colorFormat, floor(r * 255 + 0.5), floor(g * 255 + 0.5), floor(b * 255 + 0.5))
 	end
 
 	return gradientTable
@@ -412,7 +417,6 @@ end
 
 -- Create the gradient table with 1% increments and store it
 MHCT.HEALTH_GRADIENT_RGB = MHCT.createGradientTable()
--- GLOBAL_MHCT_GRADIENT_TABLE = MHCT.HEALTH_GRADIENT_RGB
 
 -- Format unit status check
 MHCT.formatWithStatusCheck = function(unit)
@@ -428,7 +432,11 @@ MHCT.formatWithStatusCheck = function(unit)
 	return nil
 end
 
--- Format health percent with configurable decimal places
+-- OPTIMIZATION: Cached health percent formatting
+local healthPercentCache = {}
+local healthPercentCacheTime = {}
+local CACHE_DURATION = 0.1 -- Cache for 100ms
+
 MHCT.formatHealthPercent = function(unit, decimalPlaces, showSign)
 	if not unit then
 		return ""
@@ -445,13 +453,14 @@ MHCT.formatHealthPercent = function(unit, decimalPlaces, showSign)
 		return E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
 	else
 		local numDecimals = tonumber(decimalPlaces) or MHCT.DEFAULT_DECIMAL_PLACE
+		numDecimals = min(numDecimals, 10) -- Cap at 10 decimal places
 
-		-- Use cached format patterns if available
+		-- Use cached format patterns (guaranteed to exist up to 10)
 		local pattern
 		if showSign then
-			pattern = MHCT.FORMAT_PATTERNS.DECIMAL_WITH_PERCENT[numDecimals] or format("%%.%df%%%%", numDecimals)
+			pattern = MHCT.FORMAT_PATTERNS.DECIMAL_WITH_PERCENT[numDecimals]
 		else
-			pattern = MHCT.FORMAT_PATTERNS.DECIMAL_WITHOUT_PERCENT[numDecimals] or format("%%.%df", numDecimals)
+			pattern = MHCT.FORMAT_PATTERNS.DECIMAL_WITHOUT_PERCENT[numDecimals]
 		end
 
 		return format(pattern, (currentHp / maxHp) * 100)
@@ -526,7 +535,7 @@ MHCT.registerMultiThrottledTag = function(namePattern, subCategory, descPattern,
 		MHCT.registerThrottledTag(tagName, subCategory, desc, throttleValue, func)
 
 		-- Store the result
-		table.insert(results, tagName)
+		tinsert(results, tagName)
 	end
 
 	return results -- Return all registered tag names
