@@ -21,21 +21,7 @@ local HEALTH_SUBCATEGORY = "health-v1"
 local DEFAULT_DECIMAL_PLACE = MHCT.DEFAULT_DECIMAL_PLACE
 local ABSORB_TEXT_COLOR = MHCT.ABSORB_TEXT_COLOR
 
--- FORMAT_PATTERNS table for cached decimal formats
-local FORMAT_PATTERNS = {
-	DECIMAL_WITH_PERCENT = {}, -- Stores patterns like "%.0f%%", "%.1f%%", etc.
-	DECIMAL_WITHOUT_PERCENT = {}, -- Stores patterns like "%.0f", "%.1f", etc.
-	DEFICIT_WITH_PERCENT = {}, -- Stores patterns like "-%.0f%%", "-%.1f%%", etc.
-	DEFICIT_WITHOUT_PERCENT = {}, -- Stores patterns like "-%.0f", "-%.1f", etc.
-}
-
--- Initialize patterns for common decimal place counts
-for i = 0, 3 do
-	FORMAT_PATTERNS.DECIMAL_WITH_PERCENT[i] = format("%%.%sf%%%%", i)
-	FORMAT_PATTERNS.DECIMAL_WITHOUT_PERCENT[i] = format("%%.%sf", i)
-	FORMAT_PATTERNS.DEFICIT_WITH_PERCENT[i] = format("-%%.%sf%%%%", i)
-	FORMAT_PATTERNS.DEFICIT_WITHOUT_PERCENT[i] = format("-%%.%sf", i)
-end
+-- Direct formatting is used instead of cached patterns to avoid memory overhead
 
 -- ===================================================================================
 -- HEALTH RELATED TAGS
@@ -206,11 +192,15 @@ MHCT.registerTag(
 		if currentHp ~= maxHp then
 			local decimalPlaces = tonumber(args) or DEFAULT_DECIMAL_PLACE
 
-			-- Use cached format pattern if available
-			local formatPattern = FORMAT_PATTERNS.DECIMAL_WITHOUT_PERCENT[decimalPlaces]
-				or format("%%.%sf", decimalPlaces)
+			local percent = (currentHp / maxHp) * 100
 
-			return format(formatPattern, (currentHp / maxHp) * 100)
+			if decimalPlaces == 0 then
+				return format("%.0f", percent)
+			elseif decimalPlaces == 1 then
+				return format("%.1f", percent)
+			else
+				return format("%%.%df", decimalPlaces):format(percent)
+			end
 		end
 
 		return ""
@@ -234,11 +224,15 @@ MHCT.registerTag(
 		if currentHp ~= maxHp then
 			local decimalPlaces = tonumber(args) or DEFAULT_DECIMAL_PLACE
 
-			-- Use cached format pattern if available
-			local formatPattern = FORMAT_PATTERNS.DECIMAL_WITH_PERCENT[decimalPlaces]
-				or format("%%.%sf%%%%", decimalPlaces)
+			local percent = (currentHp / maxHp) * 100
 
-			return format(formatPattern, (currentHp / maxHp) * 100)
+			if decimalPlaces == 0 then
+				return format("%.0f%%", percent)
+			elseif decimalPlaces == 1 then
+				return format("%.1f%%", percent)
+			else
+				return format("%%.%df%%%%", decimalPlaces):format(percent)
+			end
 		end
 
 		return ""
@@ -293,11 +287,15 @@ MHCT.registerTag(
 			return ""
 		end
 
-		-- Use cached format pattern if available
-		local formatPattern = FORMAT_PATTERNS.DEFICIT_WITH_PERCENT[decimalPlaces]
-			or format("-%%.%sf%%%%", decimalPlaces)
+		local deficitPercent = 100 - (currentHp / maxHp) * 100
 
-		return format(formatPattern, 100 - (currentHp / maxHp) * 100)
+		if decimalPlaces == 0 then
+			return format("-%.0f%%", deficitPercent)
+		elseif decimalPlaces == 1 then
+			return format("-%.1f%%", deficitPercent)
+		else
+			return format("-%%.%df%%%%", decimalPlaces):format(deficitPercent)
+		end
 	end
 )
 
@@ -320,10 +318,15 @@ MHCT.registerTag(
 			return ""
 		end
 
-		-- Use cached format pattern if available
-		local formatPattern = FORMAT_PATTERNS.DEFICIT_WITHOUT_PERCENT[decimalPlaces] or format("-%%.%sf", decimalPlaces)
+		local deficitPercent = 100 - (currentHp / maxHp) * 100
 
-		return format(formatPattern, 100 - (currentHp / maxHp) * 100)
+		if decimalPlaces == 0 then
+			return format("-%.0f", deficitPercent)
+		elseif decimalPlaces == 1 then
+			return format("-%.1f", deficitPercent)
+		else
+			return format("-%%.%df", decimalPlaces):format(deficitPercent)
+		end
 	end
 )
 
@@ -341,11 +344,15 @@ MHCT.registerTag(
 			return ""
 		end
 
-		-- Use cached format pattern if available
-		local formatPattern = FORMAT_PATTERNS.DEFICIT_WITH_PERCENT[decimalPlaces]
-			or format("-%%.%sf%%%%", decimalPlaces)
+		local deficitPercent = 100 - (currentHp / maxHp) * 100
 
-		return format(formatPattern, 100 - (currentHp / maxHp) * 100)
+		if decimalPlaces == 0 then
+			return format("-%.0f%%", deficitPercent)
+		elseif decimalPlaces == 1 then
+			return format("-%.1f%%", deficitPercent)
+		else
+			return format("-%%.%df%%%%", decimalPlaces):format(deficitPercent)
+		end
 	end
 )
 
