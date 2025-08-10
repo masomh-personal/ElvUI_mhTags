@@ -48,18 +48,19 @@ local function formatHealthPercentWithStatus(unit, decimalPlaces)
 	maxHp = UnitHealthMax(unit)
 	currentHp = UnitHealth(unit)
 
-	-- Handle full health (common case)
-	if currentHp == maxHp then
-		return E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
+	-- Guard against zero max health and prioritize status display
+	if maxHp == 0 then
+		statusFormatted = MHCT.formatWithStatusCheck(unit)
+		return statusFormatted or ""
 	end
 
-	-- Check for status (less common)
+	-- Check for status first (offline/dead/ghost/afk/dnd)
 	statusFormatted = MHCT.formatWithStatusCheck(unit)
 	if statusFormatted then
 		return statusFormatted
 	end
 
-	-- Calculate percentage with configured decimal places using cached format patterns
+	-- Always return percentage for this tag (even at full health)
 	local decimals = tonumber(decimalPlaces) or 1
 	local formatPattern = MHCT.FORMAT_PATTERNS.DECIMAL_WITH_PERCENT[decimals] or format("%%.%sf%%%%", decimals)
 	return format(formatPattern, (currentHp / maxHp) * 100)
