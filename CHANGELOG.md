@@ -1,71 +1,37 @@
 # MH Custom Tags (ElvUI Plugin)
 
-## <span style="color:blue">[5.1.1] CPU Performance Optimizations (December 20th, 2024)</span>
+## <span style="color:cyan">[5.0.0] Optimization, Consolidation, and CPU Improvements (August 10th, 2025)</span>
 
-### Performance Improvements
+### Critical Optimization Overhaul
 
-- **Optimized Status Check Order**: Reordered conditions to check most common cases first (connected & alive units)
-- **Fast Path Gradient Colors**: Added fast paths for full health (100%) and dead (0%) to skip table lookups
-- **Reduced String Concatenation**: Pre-built common format strings to reduce runtime concatenation
-- **Optimized Hot Paths**: Focused on functions called multiple times per second in raid scenarios
+- Fixed severe memory leak from v4.x causing rapid memory growth
+- Removed complex caching that accumulated memory
+- Rewrote core systems for efficiency and stability
 
-### Technical Details
+### CPU Performance Improvements
 
-#### Status Check Optimization
+- Optimized status check order (common cases first)
+- Fast path gradient colors (skip lookups for 100% and 0%)
+- Reduced string concatenation using pre-built format strings
+- Focus on hot paths used heavily in raids; estimated 5–10% CPU reduction
 
-- Now checks if unit is connected first (most common)
-- Then checks if alive (also very common)
-- Death/ghost/AFK/DND checks moved to less common branches
-- ~10-15% faster in typical raid scenarios
+### Health Tag Consolidation & DRY Refactor
 
-#### Gradient Color Fast Paths
-
-- Immediate return for 100% health (WHITE_COLOR)
-- Immediate return for 0% health (uses cached color)
-- Skips floor() calculation and table lookup for these common cases
-- ~20% faster for full health units
-
-#### String Operation Optimization
-
-- Pre-built format strings: `PERCENT_FORMAT`, `DEFICIT_FORMAT`, `ABSORB_FORMAT_START/END`
-- Reduced format() calls in hot paths
-- Less garbage collection pressure from temporary strings
-
-### Impact
-
-- Estimated 5-10% overall CPU reduction in 40-person raids
-- Most noticeable with many units at full health
-- Reduced micro-stutters during combat
-
-## <span style="color:green">[5.1.0] Health Tag Consolidation & DRY Refactor (December 20th, 2024)</span>
-
-### Major Changes
-
-- **Health Tag Consolidation**: Unified all health tags from 2 files into single organized file
-- **DRY Principles Applied**: Created shared helper functions to eliminate code duplication
-- **Simplified Tag Naming**: New intuitive naming convention (e.g., `mh-health-current-percent`)
-- **Smart Organization**: 8 clear sections for different health tag categories
-- **Automated Throttling**: Smart creation of performance variants for key tags
-
-### Technical Improvements
-
-- **60% Code Reduction**: Eliminated duplicate implementations across health tags
-- **Shared Helpers**: `getHealthData()`, `formatPercent()`, `getAbsorbText()`, `getGradientColor()`
-- **Consistent Behavior**: All health tags now use same underlying logic
-- **Better Maintainability**: Single file structure with clear section comments
-
-### Tag Updates
-
-- **Streamlined Core Set**: Reduced ~50+ tags to essential set with variants
-- **Backwards Compatibility**: Legacy tag names still work but marked deprecated
-- **Consistent Parameters**: All percentage tags use `{N}` for decimal places
-- **Smart Defaults**: 1 decimal place for percentages by default
+- Unified all health tags from 2 files into a single organized file (`tags/health.lua`)
+- Applied DRY principles via shared helpers: `getHealthData()`, `formatPercent()`, `getAbsorbText()`, `getGradientColor()`
+- Simplified naming convention (e.g., `mh-health-current-percent`)
+- 8 clear sections for health tags; throttled variants generated for key tags
+- ~60% code reduction; improved maintainability and consistency
 
 ### IMPORTANT: Tag Name Changes
 
-The v5.1 update introduces a new simplified naming convention. **If you're upgrading from v5.0 or earlier, you'll need to update your tag names in your ElvUI profiles.**
+The 5.0.0 update introduces a simplified naming convention. If you're upgrading from any 4.x version, update your ElvUI profiles accordingly.
 
-#### Key Name Changes:
+#### Key Name Changes
+
+#### Colored/Gradient Tags
+
+#### Throttled Variants
 
 - `[mh-health:current:percent:right]` → `[mh-health-current-percent]`
 - `[mh-health:current:percent:left]` → `[mh-health-percent-current]`
@@ -78,27 +44,13 @@ The v5.1 update introduces a new simplified naming convention. **If you're upgra
 - `[mh-deficit:num-nostatus]` → `[mh-health-deficit-nostatus]`
 - `[mh-deficit:percent-status]` → `[mh-health-deficit-percent]`
 
-#### Colored/Gradient Tags:
-
-- `[mh-health-current-percent:gradient-colored]` → `[mh-health-current-percent-colored]`
-- `[mh-health-percent-current:gradient-colored]` → `[mh-health-percent-current-colored]`
-- `[mh-health-current:gradient-colored]` → `[mh-health-current-colored]`
-- `[mh-health-percent:gradient-colored]` → `[mh-health-percent-colored]`
-
-#### Throttled Variants:
-
-- Old: `[mh-health:simple:percent-0.25]`
-- New: `[mh-health-percent-0.25]`
-
-**Note**: The old colon-separated names (`:`) have been replaced with consistent hyphen-separated names (`-`). Old names continue to work but are deprecated.
+Note: Old colon-separated names (`:`) have been replaced with consistent hyphen-separated names (`-`). Old names continue to work but are deprecated.
 
 ### Files Changed
 
 - Created: `tags/health.lua` (unified health system)
 - Removed: `tags/healthV1.lua`, `tags/healthV2.lua`
 - Updated: `ElvUI_mhTags.toc` to reference new structure
-
-## <span style="color:red">[5.0.0] CRITICAL OPTIMIZATION UPDATE (December 20th, 2024)</span>
 
 ### CRITICAL CHANGES
 
