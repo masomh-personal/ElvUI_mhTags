@@ -37,6 +37,12 @@ local DEAD_OR_DC_COLOR = "|cffD6BFA6"
 local COLOR_END = "|r"
 local VERTICAL_SEPARATOR = " | "
 
+-- Pre-built common format strings to reduce concatenation
+local PERCENT_FORMAT = "%.1f%%"
+local DEFICIT_FORMAT = "-%s"
+local ABSORB_FORMAT_START = "|cff" .. ABSORB_TEXT_COLOR .. "("
+local ABSORB_FORMAT_END = ")|r "
+
 -- ===================================================================================
 -- SHARED HELPER FUNCTIONS
 -- ===================================================================================
@@ -68,16 +74,29 @@ local function getHealthData(unit)
 end
 
 -- Format absorb shield if present
+-- Optimized to use pre-built format strings
 local function getAbsorbText(unit)
 	local absorbAmount = UnitGetTotalAbsorbs(unit) or 0
 	if absorbAmount > 0 then
-		return format("|cff%s(%s)|r ", ABSORB_TEXT_COLOR, E:ShortValue(absorbAmount))
+		return ABSORB_FORMAT_START .. E:ShortValue(absorbAmount) .. ABSORB_FORMAT_END
 	end
 	return ""
 end
 
 -- Get gradient color based on health percentage
+-- Optimized with fast paths for common cases
 local function getGradientColor(percent)
+	-- Fast path: full health (very common)
+	if percent >= 100 then
+		return WHITE_COLOR
+	end
+
+	-- Fast path: dead or zero health
+	if percent <= 0 then
+		return HEALTH_GRADIENT_RGB_TABLE[0] or DEAD_OR_DC_COLOR
+	end
+
+	-- Standard lookup for everything else
 	local index = floor(percent)
 	return HEALTH_GRADIENT_RGB_TABLE[index] or WHITE_COLOR
 end
@@ -184,7 +203,7 @@ MHCT.registerTag(
 
 		local currentHp, maxHp, percent = getHealthData(unit)
 		local currentText = E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
-		local percentText = format("%.1f%%", percent)
+		local percentText = format(PERCENT_FORMAT, percent)
 
 		return currentText .. VERTICAL_SEPARATOR .. percentText
 	end
@@ -204,7 +223,7 @@ MHCT.registerTag(
 
 		local currentHp, maxHp, percent = getHealthData(unit)
 		local currentText = E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
-		local percentText = format("%.1f%%", percent)
+		local percentText = format(PERCENT_FORMAT, percent)
 
 		return percentText .. VERTICAL_SEPARATOR .. currentText
 	end
@@ -229,7 +248,7 @@ MHCT.registerTag(
 			return currentText
 		end
 
-		local percentText = format("%.1f%%", percent)
+		local percentText = format(PERCENT_FORMAT, percent)
 		return currentText .. VERTICAL_SEPARATOR .. percentText
 	end
 )
@@ -253,7 +272,7 @@ MHCT.registerTag(
 			return currentText
 		end
 
-		local percentText = format("%.1f%%", percent)
+		local percentText = format(PERCENT_FORMAT, percent)
 		return percentText .. VERTICAL_SEPARATOR .. currentText
 	end
 )
@@ -278,7 +297,7 @@ MHCT.registerTag(
 			return absorbText .. currentText
 		end
 
-		local percentText = format("%.1f%%", percent)
+		local percentText = format(PERCENT_FORMAT, percent)
 		return absorbText .. currentText .. VERTICAL_SEPARATOR .. percentText
 	end
 )
@@ -305,7 +324,7 @@ MHCT.registerTag(
 			return ""
 		end
 
-		return format("-%s", E:ShortValue(maxHp - currentHp))
+		return format(DEFICIT_FORMAT, E:ShortValue(maxHp - currentHp))
 	end
 )
 
@@ -321,7 +340,7 @@ MHCT.registerTag(
 			return ""
 		end
 
-		return format("-%s", E:ShortValue(maxHp - currentHp))
+		return format(DEFICIT_FORMAT, E:ShortValue(maxHp - currentHp))
 	end
 )
 
@@ -344,7 +363,7 @@ MHCT.registerTag(
 
 		local decimals = tonumber(args) or 1
 		local deficit = 100 - percent
-		return format("-%s%%", formatPercent(deficit, decimals))
+		return "-" .. formatPercent(deficit, decimals) .. "%"
 	end
 )
 
@@ -369,7 +388,7 @@ MHCT.registerTag(
 			return absorbText .. WHITE_COLOR .. currentText .. COLOR_END
 		end
 
-		local percentText = format("%.1f%%", percent)
+		local percentText = format(PERCENT_FORMAT, percent)
 		local result = currentText .. VERTICAL_SEPARATOR .. percentText
 		local colorCode = getGradientColor(percent)
 
@@ -393,7 +412,7 @@ MHCT.registerTag(
 			return absorbText .. WHITE_COLOR .. currentText .. COLOR_END
 		end
 
-		local percentText = format("%.1f%%", percent)
+		local percentText = format(PERCENT_FORMAT, percent)
 		local result = percentText .. VERTICAL_SEPARATOR .. currentText
 		local colorCode = getGradientColor(percent)
 
@@ -436,7 +455,7 @@ MHCT.registerTag(
 			return WHITE_COLOR .. "100%" .. COLOR_END
 		end
 
-		local percentText = format("%.1f%%", percent)
+		local percentText = format(PERCENT_FORMAT, percent)
 		local colorCode = getGradientColor(percent)
 		return colorCode .. percentText .. COLOR_END
 	end
@@ -490,7 +509,7 @@ local function createThrottledVariants()
 
 				local currentHp, maxHp, percent = getHealthData(unit)
 				local currentText = E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
-				local percentText = format("%.1f%%", percent)
+				local percentText = format(PERCENT_FORMAT, percent)
 
 				return currentText .. VERTICAL_SEPARATOR .. percentText
 			end,
@@ -510,7 +529,7 @@ local function createThrottledVariants()
 					return currentText
 				end
 
-				local percentText = format("%.1f%%", percent)
+				local percentText = format(PERCENT_FORMAT, percent)
 				return currentText .. VERTICAL_SEPARATOR .. percentText
 			end,
 		},
@@ -527,7 +546,7 @@ local function createThrottledVariants()
 					return ""
 				end
 
-				return format("-%s", E:ShortValue(maxHp - currentHp))
+				return format(DEFICIT_FORMAT, E:ShortValue(maxHp - currentHp))
 			end,
 		},
 		{
@@ -541,7 +560,7 @@ local function createThrottledVariants()
 					return absorbText .. WHITE_COLOR .. currentText .. COLOR_END
 				end
 
-				local percentText = format("%.1f%%", percent)
+				local percentText = format(PERCENT_FORMAT, percent)
 				local result = currentText .. VERTICAL_SEPARATOR .. percentText
 				local colorCode = getGradientColor(percent)
 
@@ -598,7 +617,7 @@ MHCT.registerTag(
 
 		local currentHp, maxHp, percent = getHealthData(unit)
 		local currentText = E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
-		local percentText = format("%.1f%%", percent)
+		local percentText = format(PERCENT_FORMAT, percent)
 
 		return currentText .. VERTICAL_SEPARATOR .. percentText
 	end
@@ -617,7 +636,7 @@ MHCT.registerTag(
 
 		local currentHp, maxHp, percent = getHealthData(unit)
 		local currentText = E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
-		local percentText = format("%.1f%%", percent)
+		local percentText = format(PERCENT_FORMAT, percent)
 
 		return percentText .. VERTICAL_SEPARATOR .. currentText
 	end
@@ -641,7 +660,7 @@ MHCT.registerTag(
 			return currentText
 		end
 
-		local percentText = format("%.1f%%", percent)
+		local percentText = format(PERCENT_FORMAT, percent)
 		return currentText .. VERTICAL_SEPARATOR .. percentText
 	end
 )
@@ -664,7 +683,7 @@ MHCT.registerTag(
 			return currentText
 		end
 
-		local percentText = format("%.1f%%", percent)
+		local percentText = format(PERCENT_FORMAT, percent)
 		return percentText .. VERTICAL_SEPARATOR .. currentText
 	end
 )

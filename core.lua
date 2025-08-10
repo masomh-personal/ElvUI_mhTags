@@ -137,25 +137,30 @@ end
 -- Removed - not used anywhere in the codebase
 
 -- Check unit status (AFK, DND, Dead, etc.)
--- Reorder conditions to check most common cases first
+-- Optimized: Check most common cases first (connected & alive)
 MHCT.statusCheck = function(unit)
 	if not unit then
 		return nil
 	end
 
-	if not UnitIsConnected(unit) then
+	-- Most common case: unit is connected
+	if UnitIsConnected(unit) then
+		-- Most units are alive, check death states first
+		if UnitIsDead(unit) and not UnitIsFeignDeath(unit) then
+			return L["Dead"]
+		elseif UnitIsGhost(unit) then
+			return L["Ghost"]
+		-- Then check less common statuses
+		elseif UnitIsAFK(unit) then
+			return L["AFK"]
+		elseif UnitIsDND(unit) then
+			return L["DND"]
+		end
+		return nil
+	else
+		-- Offline is relatively rare
 		return L["Offline"]
-	elseif UnitIsGhost(unit) then
-		return L["Ghost"]
-	elseif not UnitIsFeignDeath(unit) and UnitIsDead(unit) then
-		return L["Dead"]
-	elseif UnitIsAFK(unit) then
-		return L["AFK"]
-	elseif UnitIsDND(unit) then
-		return L["DND"]
 	end
-
-	return nil
 end
 
 -- Get formatted icon with size and offset
