@@ -190,18 +190,22 @@ local function formatCurrentPercent(unit, isPercentFirst, hidePercent, withAbsor
 
 	-- Apply color if requested
 	if withColor then
-		local colorCode
-		if lowHealthThreshold and healthPercent <= lowHealthThreshold then
-			-- Use gradient color for low health
-			local roundedPercent = floor(healthPercent)
-			colorCode = HEALTH_GRADIENT_RGB_TABLE[roundedPercent] or WHITE_COLOR
-		elseif healthPercent < 100 then
-			local roundedPercent = floor(healthPercent)
-			colorCode = HEALTH_GRADIENT_RGB_TABLE[roundedPercent] or WHITE_COLOR
+		-- Distinguish between full-gradient mode and low-health-only mode
+		if lowHealthThreshold then
+			-- Color only when at or below the threshold; otherwise leave uncolored
+			if healthPercent <= lowHealthThreshold then
+				local roundedPercent = floor(healthPercent)
+				local colorCode = HEALTH_GRADIENT_RGB_TABLE[roundedPercent] or WHITE_COLOR
+				return absorbText .. colorCode .. result .. COLOR_END
+			else
+				return absorbText .. result
+			end
 		else
-			colorCode = WHITE_COLOR
+			-- Full gradient mode: always apply gradient, including at 100%
+			local roundedPercent = floor(healthPercent)
+			local colorCode = HEALTH_GRADIENT_RGB_TABLE[roundedPercent] or WHITE_COLOR
+			return absorbText .. colorCode .. result .. COLOR_END
 		end
-		return absorbText .. colorCode .. result .. COLOR_END
 	end
 
 	return absorbText .. result
@@ -627,15 +631,10 @@ MHCT.registerTag(
 			absorbText = format(ABSORB_PREFIX_FORMAT, MHCT.ABSORB_TEXT_COLOR, E:ShortValue(absorbAmount))
 		end
 
-		-- Handle full health case with white color
-		if currentHp == maxHp then
-			return absorbText .. WHITE_COLOR .. E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true) .. COLOR_END
-		end
-
 		local roundedPercent = floor(healthPercent)
 		local currentText = E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
 
-		-- Apply gradient color
+		-- Apply gradient color even at 100%
 		local colorCode = HEALTH_GRADIENT_RGB_TABLE[roundedPercent] or WHITE_COLOR
 		return absorbText .. colorCode .. currentText .. COLOR_END
 	end
@@ -653,15 +652,10 @@ MHCT.registerTag(
 			return ""
 		end
 
-		-- Handle full health case with white color
-		if currentHp == maxHp then
-			return WHITE_COLOR .. "100%" .. COLOR_END
-		end
-
 		local roundedPercent = floor(healthPercent)
 		local percentText = format(PERCENT_FORMAT, healthPercent)
 
-		-- Apply gradient color
+		-- Apply gradient color even at 100%
 		local colorCode = HEALTH_GRADIENT_RGB_TABLE[roundedPercent] or WHITE_COLOR
 		return colorCode .. percentText .. COLOR_END
 	end
