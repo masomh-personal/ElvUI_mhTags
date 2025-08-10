@@ -1,5 +1,66 @@
 # MH Custom Tags (ElvUI Plugin)
 
+## <span style="color:green">[5.1.0] Health Tag Consolidation & DRY Refactor (December 20th, 2024)</span>
+
+### Major Changes
+
+- **Health Tag Consolidation**: Unified all health tags from 2 files into single organized file
+- **DRY Principles Applied**: Created shared helper functions to eliminate code duplication
+- **Simplified Tag Naming**: New intuitive naming convention (e.g., `mh-health-current-percent`)
+- **Smart Organization**: 8 clear sections for different health tag categories
+- **Automated Throttling**: Smart creation of performance variants for key tags
+
+### Technical Improvements
+
+- **60% Code Reduction**: Eliminated duplicate implementations across health tags
+- **Shared Helpers**: `getHealthData()`, `formatPercent()`, `getAbsorbText()`, `getGradientColor()`
+- **Consistent Behavior**: All health tags now use same underlying logic
+- **Better Maintainability**: Single file structure with clear section comments
+
+### Tag Updates
+
+- **Streamlined Core Set**: Reduced ~50+ tags to essential set with variants
+- **Backwards Compatibility**: Legacy tag names still work but marked deprecated
+- **Consistent Parameters**: All percentage tags use `{N}` for decimal places
+- **Smart Defaults**: 1 decimal place for percentages by default
+
+### IMPORTANT: Tag Name Changes
+
+The v5.1 update introduces a new simplified naming convention. **If you're upgrading from v5.0 or earlier, you'll need to update your tag names in your ElvUI profiles.**
+
+#### Key Name Changes:
+
+- `[mh-health:current:percent:right]` → `[mh-health-current-percent]`
+- `[mh-health:current:percent:left]` → `[mh-health-percent-current]`
+- `[mh-health:current:percent:right-hidefull]` → `[mh-health-current-percent-hidefull]`
+- `[mh-health:current:percent:left-hidefull]` → `[mh-health-percent-current-hidefull]`
+- `[mh-health:absorb:current:percent:right]` → `[mh-health-current-percent-absorb]`
+- `[mh-health:simple:percent]` → `[mh-health-percent]`
+- `[mh-health:simple:percent-nosign]` → `[mh-health-percent-nosign]`
+- `[mh-deficit:num-status]` → `[mh-health-deficit]`
+- `[mh-deficit:num-nostatus]` → `[mh-health-deficit-nostatus]`
+- `[mh-deficit:percent-status]` → `[mh-health-deficit-percent]`
+
+#### Colored/Gradient Tags:
+
+- `[mh-health-current-percent:gradient-colored]` → `[mh-health-current-percent-colored]`
+- `[mh-health-percent-current:gradient-colored]` → `[mh-health-percent-current-colored]`
+- `[mh-health-current:gradient-colored]` → `[mh-health-current-colored]`
+- `[mh-health-percent:gradient-colored]` → `[mh-health-percent-colored]`
+
+#### Throttled Variants:
+
+- Old: `[mh-health:simple:percent-0.25]`
+- New: `[mh-health-percent-0.25]`
+
+**Note**: The old colon-separated names (`:`) have been replaced with consistent hyphen-separated names (`-`). Old names continue to work but are deprecated.
+
+### Files Changed
+
+- Created: `tags/health.lua` (unified health system)
+- Removed: `tags/healthV1.lua`, `tags/healthV2.lua`
+- Updated: `ElvUI_mhTags.toc` to reference new structure
+
 ## <span style="color:red">[5.0.0] CRITICAL OPTIMIZATION UPDATE (December 20th, 2024)</span>
 
 ### CRITICAL CHANGES

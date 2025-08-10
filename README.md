@@ -1,6 +1,6 @@
 # ElvUI_mhTags - High-Performance Custom Tags for ElvUI
 
-[![Version](https://img.shields.io/badge/Version-5.0.0-brightgreen)](https://github.com/masomh-personal/ElvUI_mhTags)
+[![Version](https://img.shields.io/badge/Version-5.1.0-brightgreen)](https://github.com/masomh-personal/ElvUI_mhTags)
 [![ElvUI](https://img.shields.io/badge/Requires-ElvUI-blue)](https://www.tukui.org/download.php?ui=elvui)
 [![WoW](https://img.shields.io/badge/WoW-11.0.2-orange)](https://worldofwarcraft.com)
 [![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
@@ -25,18 +25,20 @@ This addon fills those gaps while maintaining a **zero-tolerance policy on perfo
 - **Memory-efficient**: Stable usage under 1MB even in 40-person raids
 - **CPU-optimized**: Streamlined algorithms with minimal overhead
 - **Throttle options**: Multiple update frequencies (0.25s, 0.5s, 1.0s, 2.0s) for different use cases
-- **No memory leaks**: v5.0 completely eliminated all caching-related memory issues
+- **No memory leaks**: v5.0+ completely eliminated all caching-related memory issues
+- **DRY principles**: v5.1 consolidated all health tags with shared helper functions
 
 ### Rich Tag Collection
 
-#### Health Tags (30+ variants)
+#### Health Tags (Unified System)
 
-- Current health with percentage displays
-- Deficit tracking (numeric and percentage)
-- Gradient coloring (red to yellow to green)
-- Smart status indicators (AFK, Dead, Offline, etc.)
-- Absorb shield integration
-- Hide-at-full options for cleaner displays
+- **Basic Display**: Current health values with smart formatting
+- **Percentages**: Configurable decimal places, with or without % sign
+- **Combined Views**: Current + percentage in various orders
+- **Deficit Tracking**: Missing health as numeric or percentage
+- **Gradient Coloring**: Full red-yellow-green spectrum based on health
+- **Smart Features**: Hide-at-full options, absorb shields, status indicators
+- **Throttled Variants**: Pre-configured update rates for performance
 
 #### Name Tags
 
@@ -78,6 +80,38 @@ Download from: [MH Custom Tags on CurseForge](https://www.curseforge.com/wow/add
 2. Extract to: `World of Warcraft/_retail_/Interface/AddOns/`
 3. Restart WoW or `/reload`
 
+## Important: Tag Name Changes in v5.1
+
+### Simplified Naming Convention
+
+Version 5.1 introduced a simplified, consistent naming convention for all tags. If you're upgrading from v5.0 or earlier, you'll need to update your tag names:
+
+#### Old Format (v5.0 and earlier)
+
+- Used colons (`:`) as separators
+- Inconsistent naming patterns
+- Examples: `[mh-health:current:percent:right]`, `[mh-deficit:num-status]`
+
+#### New Format (v5.1+)
+
+- Uses hyphens (`-`) consistently
+- Clearer, more intuitive names
+- Examples: `[mh-health-current-percent]`, `[mh-health-deficit]`
+
+#### Common Tag Migrations
+
+| Old Tag Name                                   | New Tag Name                           |
+| ---------------------------------------------- | -------------------------------------- |
+| `[mh-health:current:percent:right]`            | `[mh-health-current-percent]`          |
+| `[mh-health:current:percent:left]`             | `[mh-health-percent-current]`          |
+| `[mh-health:current:percent:right-hidefull]`   | `[mh-health-current-percent-hidefull]` |
+| `[mh-health:current:percent:gradient-colored]` | `[mh-health-current-percent-colored]`  |
+| `[mh-deficit:num-status]`                      | `[mh-health-deficit]`                  |
+| `[mh-deficit:percent-status]`                  | `[mh-health-deficit-percent]`          |
+| `[mh-health:simple:percent]`                   | `[mh-health-percent]`                  |
+
+**Note**: Old tag names still work for backwards compatibility but are marked as deprecated. We recommend updating to the new names.
+
 ## Usage Guide
 
 ### Basic Usage
@@ -96,7 +130,7 @@ Use throttled variants for better performance:
 
 ```lua
 [mh-health-current-percent-hidefull-1.0]  -- Updates every 1 second
-[mh-health-deficit:status-2.0]             -- Updates every 2 seconds
+[mh-health-deficit-2.0]                    -- Updates every 2 seconds
 ```
 
 #### For Party/Arena (5-10 units)
@@ -105,7 +139,7 @@ Can use faster updates:
 
 ```lua
 [mh-health-current-percent-hidefull-0.5]  -- Updates every 0.5 seconds
-[mh-deficit:num-status-0.5]
+[mh-health-deficit-0.5]                    -- Updates every 0.5 seconds
 ```
 
 #### For Player/Target (1-3 units)
@@ -113,8 +147,8 @@ Can use faster updates:
 Can use real-time or fast updates:
 
 ```lua
-[mh-health-current-percent:gradient-colored]  -- Real-time updates
-[mh-health-deficit:status-0.25]               -- Updates every 0.25 seconds
+[mh-health-current-percent-colored]  -- Real-time updates with gradient
+[mh-health-deficit-0.25]             -- Updates every 0.25 seconds
 ```
 
 ### Popular Tag Combinations
@@ -130,7 +164,7 @@ Shows "100k | 85%" but only "100k" at full health
 #### Raid Frame Deficit Tracker
 
 ```lua
-[mh-deficit:num-status-1.0]
+[mh-health-deficit-1.0]
 ```
 
 Shows "-15k" when damaged, or status icons when dead/offline
@@ -138,7 +172,7 @@ Shows "-15k" when damaged, or status icons when dead/offline
 #### Colored Health with Absorbs
 
 ```lua
-[mh-health-current-percent:gradient-colored]
+[mh-health-current-percent-colored]
 ```
 
 Full gradient coloring with absorb shield display
@@ -153,9 +187,17 @@ Abbreviates names longer than 20 characters
 
 ## Technical Details
 
-### Memory Optimization (v5.0)
+### Recent Optimizations
 
-The addon underwent a complete optimization overhaul to address memory issues:
+#### Version 5.1 - Health Tag Consolidation
+
+- **Unified health system** - All health tags now in single organized file
+- **DRY principles applied** - Shared helper functions eliminate code duplication
+- **Simplified naming** - Intuitive tag names (e.g., `mh-health-current-percent`)
+- **Smart throttling** - Automated creation of performance variants
+- **60% code reduction** - Consolidated from 2 files to 1 with better organization
+
+#### Version 5.0 - Memory Optimization
 
 - **Removed all caching mechanisms** - Direct formatting prevents memory accumulation
 - **Local variable scoping** - All variables scoped within functions
@@ -186,13 +228,18 @@ Expected values:
 
 The addon organizes tags into logical categories within ElvUI's tag system:
 
-### Health Tags - Version 1
+### Health Tags (Unified)
 
-Classic health display tags with various formatting options and status integration.
+Complete health tag system with 8 organized sections:
 
-### Health Tags - Version 2
-
-Performance-optimized health tags with gradient coloring and advanced features. These tags are specifically designed for high-unit-count scenarios.
+- Basic health display values
+- Percentage displays with configurable decimals
+- Combined current + percentage views
+- Deficit tracking for missing health
+- Gradient colored displays
+- Health color codes for custom styling
+- Throttled variants for performance
+- Legacy tags for backwards compatibility
 
 ### Classification Tags
 
@@ -214,10 +261,10 @@ Additional utility tags including absorb shields, status indicators, and smart l
 
 ### Planned Features
 
-- Consolidation of health tags into a unified system
 - Additional gradient color schemes
 - More abbreviation patterns for names
 - Custom icon sets for different UI styles
+- Further performance optimizations for massive raid scenarios
 
 ### Performance Goals
 
