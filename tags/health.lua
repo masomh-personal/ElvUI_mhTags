@@ -46,17 +46,20 @@ local ABSORB_FORMAT_END = ")|r "
 -- SHARED HELPER FUNCTIONS
 -- ===================================================================================
 
--- Format health percentage with configurable decimal places
+-- Fast lookup for common percent formats; falls back to dynamic format
+local PERCENT_FORMATS = {
+	[0] = "%.0f",
+	[1] = "%.1f",
+	[2] = "%.2f",
+	[3] = "%.3f",
+}
+
 local function formatPercent(value, decimals)
-	if decimals == 0 then
-		return format("%.0f", value)
-	elseif decimals == 1 then
-		return format("%.1f", value)
-	elseif decimals == 2 then
-		return format("%.2f", value)
-	else
-		return format("%%.%df", decimals):format(value)
+	local fmt = PERCENT_FORMATS[decimals]
+	if fmt then
+		return format(fmt, value)
 	end
+	return format("%." .. decimals .. "f", value)
 end
 
 -- Get health values and calculate percentage
