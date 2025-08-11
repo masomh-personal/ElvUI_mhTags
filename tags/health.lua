@@ -27,7 +27,6 @@ local UnitGetTotalAbsorbs = UnitGetTotalAbsorbs
 -- ===================================================================================
 
 local HEALTH_SUBCATEGORY = "health"
-local DEFAULT_DECIMAL_PLACE = MHCT.DEFAULT_DECIMAL_PLACE
 local ABSORB_TEXT_COLOR = MHCT.ABSORB_TEXT_COLOR
 local HEALTH_GRADIENT_RGB_TABLE = MHCT.HEALTH_GRADIENT_RGB
 
@@ -86,11 +85,6 @@ end
 -- Get gradient color based on health percentage
 -- Optimized with fast paths for common cases
 local function getGradientColor(percent)
-	-- Fast path: full health (very common)
-	if percent >= 100 then
-		return WHITE_COLOR
-	end
-
 	-- Fast path: dead or zero health
 	if percent <= 0 then
 		return HEALTH_GRADIENT_RGB_TABLE[0] or DEAD_OR_DC_COLOR
@@ -383,9 +377,9 @@ MHCT.registerTag(
 		local currentText = E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
 		local absorbText = getAbsorbText(unit)
 
-		-- White at full health
+		-- Use gradient color (green) at full health for consistency
 		if currentHp == maxHp then
-			return absorbText .. WHITE_COLOR .. currentText .. COLOR_END
+			return absorbText .. getGradientColor(100) .. currentText .. COLOR_END
 		end
 
 		local percentText = format(PERCENT_FORMAT, percent)
@@ -407,9 +401,9 @@ MHCT.registerTag(
 		local currentText = E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
 		local absorbText = getAbsorbText(unit)
 
-		-- White at full health
+		-- Use gradient color (green) at full health for consistency
 		if currentHp == maxHp then
-			return absorbText .. WHITE_COLOR .. currentText .. COLOR_END
+			return absorbText .. getGradientColor(100) .. currentText .. COLOR_END
 		end
 
 		local percentText = format(PERCENT_FORMAT, percent)
@@ -431,9 +425,9 @@ MHCT.registerTag(
 		local currentText = E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
 		local absorbText = getAbsorbText(unit)
 
-		-- White at full health
+		-- Use gradient color (green) at full health for consistency
 		if currentHp == maxHp then
-			return absorbText .. WHITE_COLOR .. currentText .. COLOR_END
+			return absorbText .. getGradientColor(100) .. currentText .. COLOR_END
 		end
 
 		local colorCode = getGradientColor(percent)
@@ -450,9 +444,9 @@ MHCT.registerTag(
 	function(unit)
 		local currentHp, maxHp, percent = getHealthData(unit)
 
-		-- White at full health
+		-- Use gradient color (green) at full health for consistency
 		if currentHp == maxHp then
-			return WHITE_COLOR .. "100%" .. COLOR_END
+			return getGradientColor(100) .. "100%" .. COLOR_END
 		end
 
 		local percentText = format(PERCENT_FORMAT, percent)
