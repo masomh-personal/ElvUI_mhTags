@@ -2,36 +2,31 @@
 
 ## <span style="color:cyan">[5.0.0] Optimization, Consolidation, and CPU Improvements (August 10th, 2025)</span>
 
-### Critical Optimization Overhaul
+### Highlights
 
-- Fixed severe memory leak from v4.x causing rapid memory growth
-- Removed complex caching that accumulated memory
-- Rewrote core systems for efficiency and stability
+- Unified health tags into one module with shared helpers (DRY)
+- Fixed severe memory leak from v4.0 (memory usage was climbing dramatically)
+- CPU optimizations for raid scenarios (fewer branches, faster hot paths)
+- Full health (100%) now uses gradient color (not white)
+- Simplified tag naming (hyphenated) with backward-compatible aliases
 
-### CPU Performance Improvements
+### CPU & Memory Improvements
 
-- Optimized status check order (common cases first)
-- Fast path gradient colors (skip lookups for 100% and 0%)
-- Reduced string concatenation using pre-built format strings
-- Focus on hot paths used heavily in raids; estimated 5–10% CPU reduction
+- Reordered status checks to hit common cases first (connected/alive)
+- Gradient color lookups streamlined; zero-health fast path retained
+- Reduced string allocations via pre-built format fragments
+- Removed legacy caching patterns; stabilized memory usage
+- Estimated 5–10% CPU reduction in 40-person raids
 
-### Health Tag Consolidation & DRY Refactor
+### Health Tag Consolidation
 
-- Unified all health tags from 2 files into a single organized file (`tags/health.lua`)
-- Applied DRY principles via shared helpers: `getHealthData()`, `formatPercent()`, `getAbsorbText()`, `getGradientColor()`
-- Simplified naming convention (e.g., `mh-health-current-percent`)
-- 8 clear sections for health tags; throttled variants generated for key tags
-- ~60% code reduction; improved maintainability and consistency
+- All health tags refactored into `tags/health.lua`
+- Shared helpers: `getHealthData()`, `formatPercent()`, `getAbsorbText()`, `getGradientColor()`
+- Clear, consistent output across all variants
 
 ### IMPORTANT: Tag Name Changes
 
-The 5.0.0 update introduces a simplified naming convention. If you're upgrading from any 4.x version, update your ElvUI profiles accordingly.
-
-#### Key Name Changes
-
-#### Colored/Gradient Tags
-
-#### Throttled Variants
+New naming uses hyphens instead of colons. Old names still work but are deprecated.
 
 - `[mh-health:current:percent:right]` → `[mh-health-current-percent]`
 - `[mh-health:current:percent:left]` → `[mh-health-percent-current]`
@@ -44,53 +39,29 @@ The 5.0.0 update introduces a simplified naming convention. If you're upgrading 
 - `[mh-deficit:num-nostatus]` → `[mh-health-deficit-nostatus]`
 - `[mh-deficit:percent-status]` → `[mh-health-deficit-percent]`
 
-Note: Old colon-separated names (`:`) have been replaced with consistent hyphen-separated names (`-`). Old names continue to work but are deprecated.
+Colored/Gradient tags:
+
+- `[mh-health-current-percent:gradient-colored]` → `[mh-health-current-percent-colored]`
+- `[mh-health-percent-current:gradient-colored]` → `[mh-health-percent-current-colored]`
+- `[mh-health-current:gradient-colored]` → `[mh-health-current-colored]`
+- `[mh-health-percent:gradient-colored]` → `[mh-health-percent-colored]`
+
+Throttled variants:
+
+- Old: `[mh-health:simple:percent-0.25]` → New: `[mh-health-percent-0.25]`
 
 ### Files Changed
 
-- Created: `tags/health.lua` (unified health system)
+- Added: `tags/health.lua` (unified health)
 - Removed: `tags/healthV1.lua`, `tags/healthV2.lua`
-- Updated: `ElvUI_mhTags.toc` to reference new structure
-
-### CRITICAL CHANGES
-
-- **COMPLETE OPTIMIZATION OVERHAUL** - Fixes severe memory leak from v4.x
-- Memory usage now stable under 1MB (was growing to 3MB+ in seconds)
-- All complex caching removed - was causing memory accumulation
-- Complete rewrite of core systems for efficiency
-
-### Fixed
-
-- **CRITICAL**: Fixed memory leak causing addon to consume 3MB+ within 20 seconds
-- Fixed concurrent call issues from shared module-level variables
-- Fixed excessive string concatenation causing memory churn
-- Fixed format pattern caching that accumulated memory
-- Fixed pre-allocated variables causing state corruption
-
-### Performance Improvements
-
-- Reduced initial memory footprint by ~60%
-- Stable memory usage even in 40-person raids
-- Faster tag execution with optimized algorithms
-- Direct formatting instead of cached patterns
-- Simplified gradient calculation (3-step instead of complex interpolation)
-
-### Technical Changes
-
-- Removed all FORMAT_PATTERNS caching systems
-- Eliminated module-level variable pre-allocation
-- All variables now locally scoped within functions
-- Removed unused functions (hexToRgb, includes)
-- Simplified abbreviation function with table.concat
-- Optimized classification formatting without function tables
-- Direct API calls without intermediate caching
+- Updated: `core.lua`, `tags/misc.lua`, `tags/name.lua`, `tags/power.lua`
+- Updated: `ElvUI_mhTags.toc` to 5.0.0
 
 ### Developer Notes
 
-- Monitor memory with: `/run print(GetAddOnMemoryUsage("ElvUI_mhTags"))`
+- Monitor memory: `/run print(GetAddOnMemoryUsage("ElvUI_mhTags"))`
 - Expected usage: <200KB initial, <500KB after 1 min, <1MB stable
 - Use throttled tags for raid frames (-1.0 or -2.0 suffix)
-- See OPTIMIZATION_NOTES.md for detailed guidelines
 
 ## <span style="color:white">[4.0.3] TOC/Patch Update 11.2 (August 5th, 2025)</span>.
 
