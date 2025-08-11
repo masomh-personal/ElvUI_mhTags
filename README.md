@@ -80,11 +80,11 @@ Download from: [MH Custom Tags on CurseForge](https://www.curseforge.com/wow/add
 2. Extract to: `World of Warcraft/_retail_/Interface/AddOns/`
 3. Restart WoW or `/reload`
 
-## Important: Tag Name Changes in v5.1
+## Important: Tag Name Changes in v5.0.0
 
 ### Simplified Naming Convention
 
-Version 5.1 introduced a simplified, consistent naming convention for all tags. If you're upgrading from v5.0 or earlier, you'll need to update your tag names:
+Version 5.0.0 introduced a simplified, consistent naming convention for all tags. If you're upgrading from older versions, you'll need to update your tag names:
 
 #### Old Format (v5.0 and earlier)
 
@@ -92,7 +92,7 @@ Version 5.1 introduced a simplified, consistent naming convention for all tags. 
 - Inconsistent naming patterns
 - Examples: `[mh-health:current:percent:right]`, `[mh-deficit:num-status]`
 
-#### New Format (v5.1+)
+#### New Format (v5.0.0+)
 
 - Uses hyphens (`-`) consistently
 - Clearer, more intuitive names
