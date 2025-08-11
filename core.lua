@@ -70,8 +70,8 @@ local FORMAT_PATTERNS = {
 	DECIMAL_WITHOUT_PERCENT = {}, -- Stores patterns like "%.0f", "%.1f", etc.
 }
 
--- Initialize with commonly used decimal precision patterns
-for i = 0, 5 do -- Cache patterns for 0-5 decimal places
+-- Only cache the most commonly used patterns (0-2 decimals)
+for i = 0, 2 do
 	FORMAT_PATTERNS.DECIMAL_WITH_PERCENT[i] = format("%%.%df%%%%", i)
 	FORMAT_PATTERNS.DECIMAL_WITHOUT_PERCENT[i] = format("%%.%df", i)
 end
@@ -126,57 +126,41 @@ local GRADIENT_COLORS = {
 -- HELPER FUNCTIONS
 -------------------------------------
 
--- Check if value exists in table (JS includes equivalent)
-MHCT.includes = function(table, value)
-	for i = 1, #table do
-		if table[i] == value then
-			return true
-		end
-	end
-	return false
-end
+-- Removed - not used anywhere in the codebase
 
--- Replace both rgbToHexDecimal and rgbToHex with this single function
+-- Optimized RGB to hex conversion
 MHCT.rgbToHex = function(r, g, b)
-	if type(r) ~= "number" or type(g) ~= "number" or type(b) ~= "number" then
-		return "FFFFFF" -- Default to white if invalid input
-	end
+	-- Skip type checking for performance - callers should ensure valid input
 	return format("%02X%02X%02X", r * 255, g * 255, b * 255)
 end
 
--- Convert hex color to RGB values
-MHCT.hexToRgb = function(hex)
-	if type(hex) ~= "string" or #hex ~= 6 then
-		return { r = 1, g = 1, b = 1 } -- Default to white if invalid input
-	end
-
-	local r = tonumber(sub(hex, 1, 2), 16) / 255
-	local g = tonumber(sub(hex, 3, 4), 16) / 255
-	local b = tonumber(sub(hex, 5, 6), 16) / 255
-
-	return { r = r, g = g, b = b }
-end
+-- Removed - not used anywhere in the codebase
 
 -- Check unit status (AFK, DND, Dead, etc.)
--- Reorder conditions to check most common cases first
+-- Optimized: Check most common cases first (connected & alive)
 MHCT.statusCheck = function(unit)
 	if not unit then
 		return nil
 	end
 
-	if not UnitIsConnected(unit) then
+	-- Most common case: unit is connected
+	if UnitIsConnected(unit) then
+		-- Most units are alive, check death states first
+		if UnitIsDead(unit) and not UnitIsFeignDeath(unit) then
+			return L["Dead"]
+		elseif UnitIsGhost(unit) then
+			return L["Ghost"]
+		-- Then check less common statuses
+		elseif UnitIsAFK(unit) then
+			return L["AFK"]
+		elseif UnitIsDND(unit) then
+			return L["DND"]
+		end
+		return nil
+	else
+		-- Offline is relatively rare
 		return L["Offline"]
-	elseif UnitIsGhost(unit) then
-		return L["Ghost"]
-	elseif not UnitIsFeignDeath(unit) and UnitIsDead(unit) then
-		return L["Dead"]
-	elseif UnitIsAFK(unit) then
-		return L["AFK"]
-	elseif UnitIsDND(unit) then
-		return L["DND"]
 	end
-
-	return nil
 end
 
 -- Get formatted icon with size and offset
@@ -216,46 +200,40 @@ MHCT.classificationType = function(unit)
 	return classification
 end
 
--- Format difficulty level with colors and symbols
+-- Format difficulty level with colors and symbols - optimized
 MHCT.difficultyLevelFormatter = function(unit, unitLevel)
 	if not unit or not unitLevel then
 		return ""
 	end
 
 	local unitType = MHCT.classificationType(unit)
-	local difficultyColor = GetCreatureDifficultyColor(unitLevel)
-	local hexColor = (unitType == "rare" or unitType == "rareelite") and RARE_COLOR
-		or MHCT.rgbToHex(difficultyColor.r, difficultyColor.g, difficultyColor.b)
+	local hexColor
 
-	-- Use table lookup for formatting based on unit type
-	local formatFunctions = {
-		boss = function()
-			return format("|cff%s%s|r", BOSS_COLOR, BOSS_SYMBOL)
-		end,
-		eliteplus = function()
-			return format("|cff%s%s%s|r", hexColor, unitLevel, ELITE_PLUS_SYMBOL)
-		end,
-		elite = function()
-			return format("|cff%s%s%s|r", hexColor, unitLevel, ELITE_SYMBOL)
-		end,
-		rareelite = function()
-			local isRareBoss = unitLevel < 0
-			if isRareBoss then
-				return format("|cff%s%sR|r", hexColor, BOSS_SYMBOL)
-			else
-				return format("|cff%s%sR%s|r", hexColor, unitLevel, ELITE_SYMBOL)
-			end
-		end,
-		rare = function()
-			return format("|cff%s%sR|r", hexColor, unitLevel)
-		end,
-		default = function()
-			return format("|cff%s%s|r", hexColor, unitLevel)
-		end,
-	}
+	if unitType == "rare" or unitType == "rareelite" then
+		hexColor = RARE_COLOR
+	else
+		local difficultyColor = GetCreatureDifficultyColor(unitLevel)
+		hexColor = MHCT.rgbToHex(difficultyColor.r, difficultyColor.g, difficultyColor.b)
+	end
 
-	-- Return formatted text with fallback to default
-	return (formatFunctions[unitType] or formatFunctions.default)()
+	-- Direct formatting without function table
+	if unitType == "boss" then
+		return format("|cff%s%s|r", BOSS_COLOR, BOSS_SYMBOL)
+	elseif unitType == "eliteplus" then
+		return format("|cff%s%s%s|r", hexColor, unitLevel, ELITE_PLUS_SYMBOL)
+	elseif unitType == "elite" then
+		return format("|cff%s%s%s|r", hexColor, unitLevel, ELITE_SYMBOL)
+	elseif unitType == "rareelite" then
+		if unitLevel < 0 then
+			return format("|cff%s%sR|r", hexColor, BOSS_SYMBOL)
+		else
+			return format("|cff%s%sR%s|r", hexColor, unitLevel, ELITE_SYMBOL)
+		end
+	elseif unitType == "rare" then
+		return format("|cff%s%sR|r", hexColor, unitLevel)
+	else
+		return format("|cff%s%s|r", hexColor, unitLevel)
+	end
 end
 
 -- Format status text with icon
@@ -276,134 +254,95 @@ MHCT.statusFormatter = function(status, size, reverse)
 	end
 end
 
--- More efficient implementation with fewer table operations
+-- Simplified abbreviation function
 MHCT.abbreviate = function(str, reverse, unit)
 	if not str or str == "" then
 		return ""
 	end
 
-	-- Remove apostrophes once
+	-- Quick check for single word
+	if not str:find(" ") then
+		return str
+	end
+
+	-- Remove apostrophes
 	local formattedString = gsub(str, "'", "")
 
-	-- Split into words
+	-- If boss unit, just return first word
+	if unit and MHCT.classificationType(unit) == "boss" then
+		return formattedString:match("%w+")
+	end
+
+	-- Build abbreviation directly without intermediate tables
+	local result = {}
 	local words = {}
-	local firstLetters = {}
 	local wordCount = 0
 
 	for word in gmatch(formattedString, "%w+") do
 		wordCount = wordCount + 1
 		words[wordCount] = word
-		firstLetters[wordCount] = sub(word, 1, 1)
 	end
 
-	-- If only one word, return the original string
 	if wordCount == 1 then
 		return str
 	end
 
-	-- If mob is special (boss, rare, etc) just use first name
-	if unit and MHCT.classificationType(unit) == "boss" then
-		return words[1]
-	end
-
-	-- Build abbreviated string
-	local result
 	if reverse then
-		result = words[1]
+		result[1] = words[1]
 		for i = 2, wordCount do
-			result = result .. " " .. firstLetters[i] .. "."
+			result[#result + 1] = " "
+			result[#result + 1] = sub(words[i], 1, 1)
+			result[#result + 1] = "."
 		end
 	else
-		result = ""
 		for i = 1, wordCount - 1 do
-			result = result .. firstLetters[i] .. "."
+			result[#result + 1] = sub(words[i], 1, 1)
+			result[#result + 1] = "."
 		end
-		result = result .. " " .. words[wordCount]
+		result[#result + 1] = " "
+		result[#result + 1] = words[wordCount]
 	end
 
-	return result
+	return concat(result)
 end
 
---[[ 
-    Interpolates between colors in a sequence based on a percentage.
-    @param perc: Percentage (0 to 1) representing the position in the gradient.
-    @return: Interpolated RGB color values.
-]]
--- More efficient implementation with fewer calculations
-MHCT.getColorGradient = function(perc)
-	if type(perc) ~= "number" then
-		return GRADIENT_COLORS[1], GRADIENT_COLORS[2], GRADIENT_COLORS[3]
-	end
+-- Removed - not used directly, replaced with pre-computed gradient table
 
-	-- Clamp percentage
-	perc = perc > 1 and 1 or (perc < 0 and 0 or perc)
-
-	local num = #GRADIENT_COLORS / 3
-	local segment, relperc = math.modf(perc * (num - 1))
-
-	local idx = segment * 3 + 1
-	local r1, g1, b1 = GRADIENT_COLORS[idx], GRADIENT_COLORS[idx + 1], GRADIENT_COLORS[idx + 2]
-
-	-- If at the end of the gradient, return the last color
-	if segment >= num - 1 then
-		return r1, g1, b1
-	end
-
-	-- Calculate interpolation
-	local r2, g2, b2 = GRADIENT_COLORS[idx + 3], GRADIENT_COLORS[idx + 4], GRADIENT_COLORS[idx + 5]
-	return r1 + (r2 - r1) * relperc, g1 + (g2 - g1) * relperc, b1 + (b2 - b1) * relperc
-end
-
---[[ 
-    Creates a gradient table with hex color values interpolated at 1.0% intervals.
-    @return: Gradient table with hex color codes mapped from 0 to 100 percent.
-]]
--- Optimized gradient table creation (one-time cost at login)
+-- Simplified gradient table - only create key health percentages
 MHCT.createGradientTable = function()
 	local gradientTable = {}
 
-	-- Pre-define color stops for efficiency
-	local colorStops = {
-		{ percent = 0, r = 0.996, g = 0.32, b = 0.32 }, -- Red at 0%
-		{ percent = 0.5, r = 0.98, g = 0.84, b = 0.58 }, -- Yellow at 50%
-		{ percent = 1, r = 0.44, g = 0.92, b = 0.44 }, -- Green at 100%
-	}
-
-	-- Pre-compute format string for efficiency
-	local colorFormat = "|cff%02X%02X%02X"
-
-	-- Generate all gradient entries in one pass
+	-- Use simpler interpolation for key percentages only
+	-- Red (0-30%), Yellow (30-70%), Green (70-100%)
 	for i = 0, 100 do
-		local percent = i / 100
-
-		-- Find the color stops to interpolate between
-		local lower, upper
-		for j = 1, #colorStops - 1 do
-			if percent >= colorStops[j].percent and percent <= colorStops[j + 1].percent then
-				lower, upper = j, j + 1
-				break
-			end
+		local r, g, b
+		if i <= 30 then
+			-- Red to yellow gradient (0-30%)
+			local factor = i / 30
+			r = 0.996
+			g = 0.32 + (0.84 - 0.32) * factor
+			b = 0.32 + (0.58 - 0.32) * factor
+		elseif i <= 70 then
+			-- Yellow to green gradient (30-70%)
+			local factor = (i - 30) / 40
+			r = 0.98 - (0.98 - 0.44) * factor
+			g = 0.84 + (0.92 - 0.84) * factor
+			b = 0.58 - (0.58 - 0.44) * factor
+		else
+			-- Green (70-100%)
+			r = 0.44
+			g = 0.92
+			b = 0.44
 		end
 
-		-- Calculate interpolation factor
-		local range = colorStops[upper].percent - colorStops[lower].percent
-		local factor = range ~= 0 and (percent - colorStops[lower].percent) / range or 0
-
-		-- Interpolate RGB values directly
-		local r = colorStops[lower].r + factor * (colorStops[upper].r - colorStops[lower].r)
-		local g = colorStops[lower].g + factor * (colorStops[upper].g - colorStops[lower].g)
-		local b = colorStops[lower].b + factor * (colorStops[upper].b - colorStops[lower].b)
-
-		-- Convert to hex and store directly with format string
-		gradientTable[i] = format(colorFormat, r * 255, g * 255, b * 255)
+		gradientTable[i] = format("|cff%02X%02X%02X", r * 255, g * 255, b * 255)
 	end
 
 	return gradientTable
 end
 
--- Create the gradient table with 1% increments and store it
+-- Create the gradient table once at load time
 MHCT.HEALTH_GRADIENT_RGB = MHCT.createGradientTable()
--- GLOBAL_MHCT_GRADIENT_TABLE = MHCT.HEALTH_GRADIENT_RGB
 
 -- Format unit status check
 MHCT.formatWithStatusCheck = function(unit)
@@ -419,33 +358,42 @@ MHCT.formatWithStatusCheck = function(unit)
 	return nil
 end
 
--- Format health percent with configurable decimal places
+-- Format health percent with configurable decimal places - simplified
 MHCT.formatHealthPercent = function(unit, decimalPlaces, showSign)
 	if not unit then
 		return ""
 	end
 
 	local maxHp = UnitHealthMax(unit)
-	local currentHp = UnitHealth(unit)
-
 	if maxHp == 0 then
-		return "" -- Avoid division by zero
+		return ""
 	end
 
+	local currentHp = UnitHealth(unit)
 	if currentHp == maxHp then
 		return E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
-	else
-		local numDecimals = tonumber(decimalPlaces) or MHCT.DEFAULT_DECIMAL_PLACE
+	end
 
-		-- Use cached format patterns if available
-		local pattern
-		if showSign then
-			pattern = FORMAT_PATTERNS.DECIMAL_WITH_PERCENT[numDecimals] or format("%%.%df%%%%", numDecimals)
+	local numDecimals = tonumber(decimalPlaces) or MHCT.DEFAULT_DECIMAL_PLACE
+	local percent = (currentHp / maxHp) * 100
+
+	-- Direct formatting based on common cases
+	if showSign then
+		if numDecimals == 0 then
+			return format("%.0f%%", percent)
+		elseif numDecimals == 1 then
+			return format("%.1f%%", percent)
 		else
-			pattern = FORMAT_PATTERNS.DECIMAL_WITHOUT_PERCENT[numDecimals] or format("%%.%df", numDecimals)
+			return format("%%.%df%%%%", numDecimals):format(percent)
 		end
-
-		return format(pattern, (currentHp / maxHp) * 100)
+	else
+		if numDecimals == 0 then
+			return format("%.0f", percent)
+		elseif numDecimals == 1 then
+			return format("%.1f", percent)
+		else
+			return format("%%.%df", numDecimals):format(percent)
+		end
 	end
 end
 

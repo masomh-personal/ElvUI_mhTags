@@ -26,8 +26,7 @@ local DEFAULT_TEXT_LENGTH = MHCT.DEFAULT_TEXT_LENGTH
 -- NAME RELATED TAGS
 -- ===================================================================================
 
--- Pre-cache the empty string for early returns
-local EMPTY_STRING = ""
+-- Removed - no need to cache empty string
 
 MHCT.registerTag(
 	"mh-dynamic:name:caps",
@@ -37,8 +36,8 @@ MHCT.registerTag(
 	function(unit, _, args)
 		local name = UnitName(unit)
 		-- Early return for common case
-		if not name or name == EMPTY_STRING then
-			return EMPTY_STRING
+		if not name or name == "" then
+			return ""
 		end
 
 		local length = tonumber(args) or DEFAULT_TEXT_LENGTH
@@ -68,8 +67,7 @@ MHCT.registerTag(
 	end
 )
 
--- Pre-cache the format string
-local GROUP_FORMAT = "%s |cff00FFFF(%s)|r"
+-- Removed - direct formatting is simpler
 
 MHCT.registerTag(
 	"mh-player:frame:name:caps-groupnumber",
@@ -102,7 +100,7 @@ MHCT.registerTag(
 		for i = 1, GetNumGroupMembers() do
 			local raidName, _, group = GetRaidRosterInfo(i)
 			if raidName == nameRealm then
-				return format(GROUP_FORMAT, formatted, group)
+				return format("%s |cff00FFFF(%s)|r", formatted, group)
 			end
 		end
 

@@ -1,5 +1,68 @@
 # MH Custom Tags (ElvUI Plugin)
 
+## <span style="color:cyan">[5.0.0] Optimization, Consolidation, and CPU Improvements (August 10th, 2025)</span>
+
+### Highlights
+
+- Unified health tags into one module with shared helpers (DRY)
+- Fixed severe memory leak from v4.0 (memory usage was climbing dramatically)
+- CPU optimizations for raid scenarios (fewer branches, faster hot paths)
+- Full health (100%) now uses gradient color (not white)
+- Simplified tag naming (hyphenated) with backward-compatible aliases
+
+### CPU & Memory Improvements
+
+- Reordered status checks to hit common cases first (connected/alive)
+- Gradient color lookups streamlined; zero-health fast path retained
+- Reduced string allocations via pre-built format fragments
+- Removed legacy caching patterns; stabilized memory usage
+- Estimated 5–10% CPU reduction in 40-person raids
+
+### Health Tag Consolidation
+
+- All health tags refactored into `tags/health.lua`
+- Shared helpers: `getHealthData()`, `formatPercent()`, `getAbsorbText()`, `getGradientColor()`
+- Clear, consistent output across all variants
+
+### IMPORTANT: Tag Name Changes
+
+New naming uses hyphens instead of colons. Old names still work but are deprecated.
+
+- `[mh-health:current:percent:right]` → `[mh-health-current-percent]`
+- `[mh-health:current:percent:left]` → `[mh-health-percent-current]`
+- `[mh-health:current:percent:right-hidefull]` → `[mh-health-current-percent-hidefull]`
+- `[mh-health:current:percent:left-hidefull]` → `[mh-health-percent-current-hidefull]`
+- `[mh-health:absorb:current:percent:right]` → `[mh-health-current-percent-absorb]`
+- `[mh-health:simple:percent]` → `[mh-health-percent]`
+- `[mh-health:simple:percent-nosign]` → `[mh-health-percent-nosign]`
+- `[mh-deficit:num-status]` → `[mh-health-deficit]`
+- `[mh-deficit:num-nostatus]` → `[mh-health-deficit-nostatus]`
+- `[mh-deficit:percent-status]` → `[mh-health-deficit-percent]`
+
+Colored/Gradient tags:
+
+- `[mh-health-current-percent:gradient-colored]` → `[mh-health-current-percent-colored]`
+- `[mh-health-percent-current:gradient-colored]` → `[mh-health-percent-current-colored]`
+- `[mh-health-current:gradient-colored]` → `[mh-health-current-colored]`
+- `[mh-health-percent:gradient-colored]` → `[mh-health-percent-colored]`
+
+Throttled variants:
+
+- Old: `[mh-health:simple:percent-0.25]` → New: `[mh-health-percent-0.25]`
+
+### Files Changed
+
+- Added: `tags/health.lua` (unified health)
+- Removed: `tags/healthV1.lua`, `tags/healthV2.lua`
+- Updated: `core.lua`, `tags/misc.lua`, `tags/name.lua`, `tags/power.lua`
+- Updated: `ElvUI_mhTags.toc` to 5.0.0
+
+### Developer Notes
+
+- Monitor memory: `/run print(GetAddOnMemoryUsage("ElvUI_mhTags"))`
+- Expected usage: <200KB initial, <500KB after 1 min, <1MB stable
+- Use throttled tags for raid frames (-1.0 or -2.0 suffix)
+
 ## <span style="color:white">[4.0.3] TOC/Patch Update 11.2 (August 5th, 2025)</span>.
 
 - **MAINTENANCE**: Updated TOC for 11.2

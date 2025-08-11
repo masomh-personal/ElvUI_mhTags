@@ -19,18 +19,9 @@ local DEFAULT_DECIMAL_PLACE = MHCT.DEFAULT_DECIMAL_PLACE
 local ZERO_STRING = "0"
 local EMPTY_STRING = ""
 
--- FORMAT_PATTERNS table for cached decimal formats
-local FORMAT_PATTERNS = {
-	DECIMAL_WITHOUT_PERCENT = {}, -- Stores patterns like "%.0f", "%.1f", etc.
-}
+-- Direct formatting is used instead of cached patterns to avoid memory overhead
 
--- Initialize commonly used decimal precision patterns
-for i = 0, 3 do -- Cache patterns for 0-3 decimal places (common use cases)
-	FORMAT_PATTERNS.DECIMAL_WITHOUT_PERCENT[i] = format("%%.%df", i)
-end
-
--- Pre-define variables to reuse (reduces memory allocation)
-local powerType, currentPower, maxPower, percent
+-- Variables are defined locally in functions to avoid state issues
 
 -- ===================================================================================
 -- HELPER FUNCTIONS
@@ -38,15 +29,15 @@ local powerType, currentPower, maxPower, percent
 
 -- Optimized power percent formatter
 local function formatPowerPercent(unit, decimalPlaces)
-	powerType = UnitPowerType(unit)
-	maxPower = UnitPowerMax(unit, powerType)
+	local powerType = UnitPowerType(unit)
+	local maxPower = UnitPowerMax(unit, powerType)
 
 	-- Early return for invalid max power
 	if maxPower <= 0 then
 		return EMPTY_STRING
 	end
 
-	currentPower = UnitPower(unit, powerType)
+	local currentPower = UnitPower(unit, powerType)
 
 	-- Early return for zero power
 	if currentPower == 0 then
@@ -54,12 +45,18 @@ local function formatPowerPercent(unit, decimalPlaces)
 	end
 
 	-- Calculate percentage
-	percent = (currentPower / maxPower) * 100
+	local percent = (currentPower / maxPower) * 100
 
-	-- Use cached format pattern if available
-	local formatPattern = FORMAT_PATTERNS.DECIMAL_WITHOUT_PERCENT[decimalPlaces] or format("%%.%df", decimalPlaces)
-
-	return format(formatPattern, percent)
+	-- Direct formatting based on decimal places
+	if decimalPlaces == 0 then
+		return format("%.0f", percent)
+	elseif decimalPlaces == 1 then
+		return format("%.1f", percent)
+	elseif decimalPlaces == 2 then
+		return format("%.2f", percent)
+	else
+		return format("%%.%df", decimalPlaces):format(percent)
+	end
 end
 
 -- ===================================================================================

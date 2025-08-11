@@ -44,8 +44,7 @@ MHCT.registerTag(
 	end
 )
 
--- Pre-cache the format string
-local ABSORB_FORMAT = "|cff%s(%s)|r"
+-- Removed - direct formatting is simpler
 
 MHCT.registerTag(
 	"mh-absorb",
@@ -59,7 +58,7 @@ MHCT.registerTag(
 			return ""
 		end
 
-		return format(ABSORB_FORMAT, ABSORB_TEXT_COLOR, E:ShortValue(absorbAmount))
+		return format("|cff%s(%s)|r", ABSORB_TEXT_COLOR, E:ShortValue(absorbAmount))
 	end
 )
 
@@ -116,8 +115,7 @@ MHCT.registerTag(
 	end
 )
 
--- Pre-cache the format string
-local STATUS_FORMAT = "|cffD6BFA6%s|r"
+-- Removed - direct formatting is simpler
 
 MHCT.registerTag(
 	"mh-status-noicon",
@@ -131,6 +129,6 @@ MHCT.registerTag(
 			return ""
 		end
 
-		return format(STATUS_FORMAT, strupper(status))
+		return format("|cffD6BFA6%s|r", strupper(status))
 	end
 )
