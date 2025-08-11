@@ -25,8 +25,8 @@ This addon fills those gaps while maintaining a **zero-tolerance policy on perfo
 - **Memory-efficient**: Stable usage under 1MB even in 40-person raids
 - **CPU-optimized**: Streamlined algorithms with minimal overhead
 - **Throttle options**: Multiple update frequencies (0.25s, 0.5s, 1.0s, 2.0s) for different use cases
-- **No memory leaks**: v5.0+ completely eliminated all caching-related memory issues
-- **DRY principles**: v5.1 consolidated all health tags with shared helper functions
+- **No memory leaks**: v5.0 completely eliminated all caching-related memory issues
+- **DRY principles**: v5.0 consolidated all health tags with shared helper functions
 
 ### Rich Tag Collection
 
