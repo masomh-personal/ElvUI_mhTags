@@ -107,7 +107,7 @@ end
 MHCT.registerTag(
 	"mh-health-current",
 	HEALTH_SUBCATEGORY,
-	"Shows current health value with smart formatting",
+	"Current health using ElvUI formatting. Example: 100k",
 	"UNIT_HEALTH UNIT_MAXHEALTH",
 	function(unit)
 		local currentHp, maxHp = getHealthData(unit)
@@ -119,7 +119,7 @@ MHCT.registerTag(
 MHCT.registerTag(
 	"mh-health-current-absorb",
 	HEALTH_SUBCATEGORY,
-	"Shows current health with absorb shield in parentheses",
+	"Current health with absorb shown first. Example: (25k) 100k",
 	"UNIT_HEALTH UNIT_MAXHEALTH UNIT_ABSORB_AMOUNT_CHANGED",
 	function(unit)
 		local currentHp, maxHp = getHealthData(unit)
@@ -137,7 +137,7 @@ MHCT.registerTag(
 MHCT.registerTag(
 	"mh-health-percent",
 	HEALTH_SUBCATEGORY,
-	"Shows health percentage with status check. Use {N} for decimal places",
+	"Health percent with status check. Use {N} for decimals. Example: 85.2%",
 	"UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED",
 	function(unit, _, args)
 		local statusFormatted = MHCT.formatWithStatusCheck(unit)
@@ -161,7 +161,7 @@ MHCT.registerTag(
 MHCT.registerTag(
 	"mh-health-percent-nosign",
 	HEALTH_SUBCATEGORY,
-	"Shows health percentage without % sign. Use {N} for decimal places",
+	"Health percent without % sign; status-aware. Use {N} for decimals. Example: 85.2",
 	"UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED",
 	function(unit, _, args)
 		local statusFormatted = MHCT.formatWithStatusCheck(unit)
@@ -190,7 +190,7 @@ MHCT.registerTag(
 MHCT.registerTag(
 	"mh-health-current-percent",
 	HEALTH_SUBCATEGORY,
-	"Shows health as: 100k | 85%",
+	"Current and percent. Example: 100k | 85%",
 	"UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED",
 	function(unit)
 		local statusFormatted = MHCT.formatWithStatusCheck(unit)
@@ -210,7 +210,7 @@ MHCT.registerTag(
 MHCT.registerTag(
 	"mh-health-percent-current",
 	HEALTH_SUBCATEGORY,
-	"Shows health as: 85% | 100k",
+	"Percent and current. Example: 85% | 100k",
 	"UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED",
 	function(unit)
 		local statusFormatted = MHCT.formatWithStatusCheck(unit)
@@ -230,7 +230,7 @@ MHCT.registerTag(
 MHCT.registerTag(
 	"mh-health-current-percent-hidefull",
 	HEALTH_SUBCATEGORY,
-	"Shows health as: 100k | 85% but only 100k at full health",
+	"Current | percent; hides percent at full. Example: 100k | 85%",
 	"UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED",
 	function(unit)
 		local statusFormatted = MHCT.formatWithStatusCheck(unit)
@@ -254,7 +254,7 @@ MHCT.registerTag(
 MHCT.registerTag(
 	"mh-health-percent-current-hidefull",
 	HEALTH_SUBCATEGORY,
-	"Shows health as: 85% | 100k but only 100k at full health",
+	"Percent | current; hides percent at full. Example: 85% | 100k",
 	"UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED",
 	function(unit)
 		local statusFormatted = MHCT.formatWithStatusCheck(unit)
@@ -278,7 +278,7 @@ MHCT.registerTag(
 MHCT.registerTag(
 	"mh-health-current-percent-absorb",
 	HEALTH_SUBCATEGORY,
-	"Shows (absorb) 100k | 85% with absorb shield when present",
+	"Absorb + current | percent. Example: (25k) 100k | 85%",
 	"UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED UNIT_ABSORB_AMOUNT_CHANGED",
 	function(unit)
 		local statusFormatted = MHCT.formatWithStatusCheck(unit)
@@ -308,7 +308,7 @@ MHCT.registerTag(
 MHCT.registerTag(
 	"mh-health-deficit",
 	HEALTH_SUBCATEGORY,
-	"Shows missing health as -15k or status when dead/offline",
+	"Missing health or status (AFK/Dead/etc). Example: -15k",
 	"UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED",
 	function(unit)
 		local statusFormatted = MHCT.formatWithStatusCheck(unit)
@@ -329,7 +329,7 @@ MHCT.registerTag(
 MHCT.registerTag(
 	"mh-health-deficit-nostatus",
 	HEALTH_SUBCATEGORY,
-	"Shows missing health as -15k (no status check)",
+	"Missing health only (no status). Example: -15k",
 	"UNIT_HEALTH UNIT_MAXHEALTH",
 	function(unit)
 		local currentHp, maxHp = getHealthData(unit)
@@ -345,7 +345,7 @@ MHCT.registerTag(
 MHCT.registerTag(
 	"mh-health-deficit-percent",
 	HEALTH_SUBCATEGORY,
-	"Shows missing health as -15% with status check. Use {N} for decimal places",
+	"Missing health as percent with status. Use {N} for decimals. Example: -15%",
 	"UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED",
 	function(unit, _, args)
 		local statusFormatted = MHCT.formatWithStatusCheck(unit)
@@ -373,7 +373,7 @@ MHCT.registerTag(
 MHCT.registerTag(
 	"mh-health-current-percent-colored",
 	HEALTH_SUBCATEGORY,
-	"Shows health with full gradient coloring (red to yellow to green)",
+	"Current | percent with gradient color. Example: 100k | 85%",
 	"UNIT_HEALTH UNIT_MAXHEALTH UNIT_ABSORB_AMOUNT_CHANGED",
 	function(unit)
 		local currentHp, maxHp, percent = getHealthData(unit)
@@ -397,7 +397,7 @@ MHCT.registerTag(
 MHCT.registerTag(
 	"mh-health-percent-current-colored",
 	HEALTH_SUBCATEGORY,
-	"Shows health with full gradient coloring (red to yellow to green)",
+	"Percent | current with gradient color. Example: 85% | 100k",
 	"UNIT_HEALTH UNIT_MAXHEALTH UNIT_ABSORB_AMOUNT_CHANGED",
 	function(unit)
 		local currentHp, maxHp, percent = getHealthData(unit)
@@ -421,7 +421,7 @@ MHCT.registerTag(
 MHCT.registerTag(
 	"mh-health-current-colored",
 	HEALTH_SUBCATEGORY,
-	"Shows only current health value with gradient coloring",
+	"Current only with gradient color. Example: 100k",
 	"UNIT_HEALTH UNIT_MAXHEALTH UNIT_ABSORB_AMOUNT_CHANGED",
 	function(unit)
 		local currentHp, maxHp, percent = getHealthData(unit)
@@ -442,7 +442,7 @@ MHCT.registerTag(
 MHCT.registerTag(
 	"mh-health-percent-colored",
 	HEALTH_SUBCATEGORY,
-	"Shows only health percentage with gradient coloring",
+	"Percent only with gradient color. Example: 85%",
 	"UNIT_HEALTH UNIT_MAXHEALTH",
 	function(unit)
 		local currentHp, maxHp, percent = getHealthData(unit)
@@ -466,7 +466,7 @@ MHCT.registerTag(
 MHCT.registerTag(
 	"mh-healthcolor",
 	HEALTH_SUBCATEGORY,
-	"Returns color code based on health percentage for use with other tags",
+	"Color code based on health percent for composing with other tags. Example: |cffRRGGBB",
 	"UNIT_HEALTH UNIT_MAXHEALTH",
 	function(unit)
 		local currentHp, maxHp, percent = getHealthData(unit)
