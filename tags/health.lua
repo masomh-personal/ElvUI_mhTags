@@ -554,7 +554,7 @@ local function createThrottledVariants()
 				local absorbText = getAbsorbText(unit)
 
 				if currentHp == maxHp then
-					return absorbText .. WHITE_COLOR .. currentText .. COLOR_END
+					return absorbText .. getGradientColor(100) .. currentText .. COLOR_END
 				end
 
 				local percentText = format(PERCENT_FORMAT, percent)
