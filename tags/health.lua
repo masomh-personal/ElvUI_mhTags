@@ -488,10 +488,8 @@ MHCT.registerTag(
 -- Helper function to create throttled variants
 local function createThrottledVariants()
 	local throttleConfigs = {
-		{ suffix = "-0.25", value = 0.25, desc = "0.25" },
-		{ suffix = "-0.5", value = 0.5, desc = "0.5" },
+		{ suffix = "-0.75", value = 0.75, desc = "0.75" },
 		{ suffix = "-1.0", value = 1.0, desc = "1.0" },
-		{ suffix = "-2.0", value = 2.0, desc = "2.0" },
 	}
 
 	-- List of tags that should have throttled variants
@@ -512,6 +510,21 @@ local function createThrottledVariants()
 			end,
 		},
 		{
+			base = "mh-health-percent-current",
+			func = function(unit)
+				local statusFormatted = MHCT.formatWithStatusCheck(unit)
+				if statusFormatted then
+					return statusFormatted
+				end
+
+				local currentHp, maxHp, percent = getHealthData(unit)
+				local currentText = E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
+				local percentText = format(PERCENT_FORMAT, percent)
+
+				return percentText .. VERTICAL_SEPARATOR .. currentText
+			end,
+		},
+		{
 			base = "mh-health-current-percent-hidefull",
 			func = function(unit)
 				local statusFormatted = MHCT.formatWithStatusCheck(unit)
@@ -528,6 +541,25 @@ local function createThrottledVariants()
 
 				local percentText = format(PERCENT_FORMAT, percent)
 				return currentText .. VERTICAL_SEPARATOR .. percentText
+			end,
+		},
+		{
+			base = "mh-health-percent-current-hidefull",
+			func = function(unit)
+				local statusFormatted = MHCT.formatWithStatusCheck(unit)
+				if statusFormatted then
+					return statusFormatted
+				end
+
+				local currentHp, maxHp, percent = getHealthData(unit)
+				local currentText = E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
+
+				if currentHp == maxHp then
+					return currentText
+				end
+
+				local percentText = format(PERCENT_FORMAT, percent)
+				return percentText .. VERTICAL_SEPARATOR .. currentText
 			end,
 		},
 		{
@@ -565,6 +597,24 @@ local function createThrottledVariants()
 			end,
 		},
 		{
+			base = "mh-health-percent-current-colored",
+			func = function(unit)
+				local currentHp, maxHp, percent = getHealthData(unit)
+				local currentText = E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
+				local absorbText = getAbsorbText(unit)
+
+				if currentHp == maxHp then
+					return absorbText .. getGradientColor(100) .. currentText .. COLOR_END
+				end
+
+				local percentText = format(PERCENT_FORMAT, percent)
+				local result = percentText .. VERTICAL_SEPARATOR .. currentText
+				local colorCode = getGradientColor(percent)
+
+				return absorbText .. colorCode .. result .. COLOR_END
+			end,
+		},
+		{
 			base = "mh-healthcolor",
 			func = function(unit)
 				local currentHp, maxHp, percent = getHealthData(unit)
@@ -578,15 +628,32 @@ local function createThrottledVariants()
 		},
 	}
 
-	-- Create throttled versions for each tag
+	-- Create throttled versions for each tag in dedicated throttled category
+	-- Precompute category label once to avoid reconstructing it each iteration
+	local throttledCategory = MHCT.TAG_CATEGORY_NAME .. " [throttled]"
 	for _, tagInfo in ipairs(tagsToThrottle) do
 		for _, throttle in ipairs(throttleConfigs) do
 			MHCT.registerThrottledTag(
 				tagInfo.base .. throttle.suffix,
 				HEALTH_SUBCATEGORY,
-				format("Throttled version updating every %s seconds", throttle.desc),
+				format(
+					"Throttled @ %ss. Example: %s",
+					throttle.desc,
+					(
+						(tagInfo.base == "mh-health-current-percent" and "100k | 85%")
+						or (tagInfo.base == "mh-health-percent-current" and "85% | 100k")
+						or (tagInfo.base == "mh-health-current-percent-hidefull" and "100k | 85% (hides at full)")
+						or (tagInfo.base == "mh-health-percent-current-hidefull" and "85% | 100k (hides at full)")
+						or (tagInfo.base == "mh-health-deficit" and "-15k")
+						or (tagInfo.base == "mh-health-current-percent-colored" and "100k | 85% (colored)")
+						or (tagInfo.base == "mh-health-percent-current-colored" and "85% | 100k (colored)")
+						or (tagInfo.base == "mh-healthcolor" and "|cffRRGGBB")
+						or "value"
+					)
+				),
 				throttle.value,
-				tagInfo.func
+				tagInfo.func,
+				throttledCategory
 			)
 		end
 	end

@@ -427,20 +427,17 @@ MHCT.registerTag = function(name, subCategory, description, events, func)
 end
 
 -- Throttled tag registration helper
-MHCT.registerThrottledTag = function(name, subCategory, description, throttle, func)
-	-- Create the full category name with the provided subcategory
-	local fullCategory = MHCT.TAG_CATEGORY_NAME .. " [" .. subCategory .. "]"
-
-	-- Register the tag info and the throttled tag
+-- Optional customCategory overrides the formatted mhTags category string
+MHCT.registerThrottledTag = function(name, subCategory, description, throttle, func, customCategory)
+	local fullCategory = customCategory or (MHCT.TAG_CATEGORY_NAME .. " [" .. subCategory .. "]")
 	E:AddTagInfo(name, fullCategory, description)
 	E:AddTag(name, throttle, func)
-
-	-- Return the name for potential chaining or reference
 	return name
 end
 
 -- Enhanced multi-throttled tag registration
-MHCT.registerMultiThrottledTag = function(namePattern, subCategory, descPattern, throttles, func)
+-- Optional customCategory places all generated throttled tags into that category
+MHCT.registerMultiThrottledTag = function(namePattern, subCategory, descPattern, throttles, func, customCategory)
 	local results = {}
 
 	-- Allow passing a predefined set by name
@@ -462,7 +459,7 @@ MHCT.registerMultiThrottledTag = function(namePattern, subCategory, descPattern,
 		local desc = descPattern:gsub("%%throttle%%", throttleSuffix:gsub("^-", ""))
 
 		-- Register the tag with this throttle value
-		MHCT.registerThrottledTag(tagName, subCategory, desc, throttleValue, func)
+		MHCT.registerThrottledTag(tagName, subCategory, desc, throttleValue, func, customCategory)
 
 		-- Store the result
 		table.insert(results, tagName)
