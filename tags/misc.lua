@@ -12,7 +12,7 @@ local UnitEffectiveLevel = UnitEffectiveLevel
 local UnitGetTotalAbsorbs = UnitGetTotalAbsorbs
 local strupper = strupper
 
--- ElvUI reference (for ShortValue)
+-- Get ElvUI references from core
 local E = unpack(ElvUI)
 
 -- Local constants

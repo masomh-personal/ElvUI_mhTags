@@ -9,7 +9,7 @@
 local _, ns = ...
 local MHCT = ns.MHCT
 
--- Get ElvUI references
+-- Get ElvUI references from core
 local E = unpack(ElvUI)
 
 -- Localize Lua functions

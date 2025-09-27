@@ -136,47 +136,48 @@ end
 
 -- Removed - not used anywhere in the codebase
 
--- Check unit status (AFK, DND, Dead, etc.)
--- Optimized: Check most common cases first (connected & alive)
+-- Optimized unit status check for ElvUI V14.0
 MHCT.statusCheck = function(unit)
 	if not unit then
 		return nil
 	end
 
-	-- Most common case: unit is connected
-	if UnitIsConnected(unit) then
-		-- Most units are alive, check death states first
-		if UnitIsDead(unit) and not UnitIsFeignDeath(unit) then
-			return L["Dead"]
-		elseif UnitIsGhost(unit) then
-			return L["Ghost"]
-		-- Then check less common statuses
-		elseif UnitIsAFK(unit) then
-			return L["AFK"]
-		elseif UnitIsDND(unit) then
-			return L["DND"]
-		end
-		return nil
-	else
-		-- Offline is relatively rare
+	-- Fast path: check connection first (most common case)
+	if not UnitIsConnected(unit) then
 		return L["Offline"]
 	end
+
+	-- Check death states (common in combat)
+	if UnitIsDead(unit) and not UnitIsFeignDeath(unit) then
+		return L["Dead"]
+	elseif UnitIsGhost(unit) then
+		return L["Ghost"]
+	end
+
+	-- Check status flags (less common)
+	if UnitIsAFK(unit) then
+		return L["AFK"]
+	elseif UnitIsDND(unit) then
+		return L["DND"]
+	end
+
+	return nil
 end
 
 -- Get formatted icon with size and offset
 MHCT.getFormattedIcon = function(name, size, x, y)
 	local iconName = name or "default"
 	local iconSize = size or MHCT.DEFAULT_ICON_SIZE
-	local xOffSet = x or 0
-	local yOffSet = y or 0
+	local xOffset = x or 0
+	local yOffset = y or 0
 
 	-- Validate icon exists
 	local iconFormat = MHCT.iconTable[iconName] or MHCT.iconTable["default"]
 
-	return format(iconFormat, iconSize, iconSize, xOffSet, yOffSet)
+	return format(iconFormat, iconSize, iconSize, xOffset, yOffset)
 end
 
--- Determine unit classification (boss, elite, rare, etc.)
+-- Optimized unit classification for ElvUI V14.0
 MHCT.classificationType = function(unit)
 	if not unit or UnitIsPlayer(unit) then
 		return nil
@@ -185,14 +186,17 @@ MHCT.classificationType = function(unit)
 	local unitLevel = UnitEffectiveLevel(unit)
 	local classification = UnitClassification(unit)
 
+	-- Fast path for rare types
 	if classification == "rare" or classification == "rareelite" then
 		return classification
 	end
 
+	-- Boss detection
 	if unitLevel == -1 or classification == "boss" or classification == "worldboss" then
 		return "boss"
 	end
 
+	-- Elite+ detection
 	if unitLevel > MHCT.MAX_PLAYER_LEVEL then
 		return "eliteplus"
 	end
@@ -358,7 +362,7 @@ MHCT.formatWithStatusCheck = function(unit)
 	return nil
 end
 
--- Format health percent with configurable decimal places - simplified
+-- Optimized health percent formatter for ElvUI V14.0
 MHCT.formatHealthPercent = function(unit, decimalPlaces, showSign)
 	if not unit then
 		return ""
@@ -374,30 +378,20 @@ MHCT.formatHealthPercent = function(unit, decimalPlaces, showSign)
 		return E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
 	end
 
-	local numDecimals = tonumber(decimalPlaces) or MHCT.DEFAULT_DECIMAL_PLACE
+	local decimals = tonumber(decimalPlaces) or MHCT.DEFAULT_DECIMAL_PLACE
 	local percent = (currentHp / maxHp) * 100
 
-	-- Direct formatting based on common cases
+	-- Use cached format patterns for better performance
+	local fmt = FORMAT_PATTERNS.DECIMAL_WITHOUT_PERCENT[decimals] or format("%%.%df", decimals)
+
 	if showSign then
-		if numDecimals == 0 then
-			return format("%.0f%%", percent)
-		elseif numDecimals == 1 then
-			return format("%.1f%%", percent)
-		else
-			return format("%%.%df%%%%", numDecimals):format(percent)
-		end
+		return format(fmt .. "%%", percent)
 	else
-		if numDecimals == 0 then
-			return format("%.0f", percent)
-		elseif numDecimals == 1 then
-			return format("%.1f", percent)
-		else
-			return format("%%.%df", numDecimals):format(percent)
-		end
+		return format(fmt, percent)
 	end
 end
 
--- Format health deficit
+-- Optimized health deficit formatter for ElvUI V14.0
 MHCT.formatHealthDeficit = function(unit)
 	if not unit then
 		return ""
@@ -413,40 +407,29 @@ MHCT.formatHealthDeficit = function(unit)
 	return format("-%s", ShortValue(maxHp - currentHp))
 end
 
--- Standard tag registration helper
+-- Optimized tag registration for ElvUI V14.0
 MHCT.registerTag = function(name, subCategory, description, events, func)
-	-- Create the full category name with the provided subcategory
 	local fullCategory = MHCT.TAG_CATEGORY_NAME .. " [" .. subCategory .. "]"
-
-	-- Register the tag info and the tag itself in one clean function
 	E:AddTagInfo(name, fullCategory, description)
 	E:AddTag(name, events, func)
-
-	-- Return the name for potential chaining or reference
 	return name
 end
 
--- Throttled tag registration helper
+-- Optimized throttled tag registration for ElvUI V14.0
 MHCT.registerThrottledTag = function(name, subCategory, description, throttle, func)
-	-- Create the full category name with the provided subcategory
 	local fullCategory = MHCT.TAG_CATEGORY_NAME .. " [" .. subCategory .. "]"
-
-	-- Register the tag info and the throttled tag
 	E:AddTagInfo(name, fullCategory, description)
 	E:AddTag(name, throttle, func)
-
-	-- Return the name for potential chaining or reference
 	return name
 end
 
--- Enhanced multi-throttled tag registration
+-- Optimized multi-throttled tag registration for ElvUI V14.0
 MHCT.registerMultiThrottledTag = function(namePattern, subCategory, descPattern, throttles, func)
 	local results = {}
 
-	-- Allow passing a predefined set by name
+	-- Use predefined throttle set or default
 	if type(throttles) == "string" and MHCT.THROTTLE_SETS[throttles] then
 		throttles = MHCT.THROTTLE_SETS[throttles]
-	-- Default to standard throttle set if not specified
 	elseif not throttles then
 		throttles = MHCT.THROTTLE_SETS.STANDARD
 	end
@@ -454,21 +437,14 @@ MHCT.registerMultiThrottledTag = function(namePattern, subCategory, descPattern,
 	for _, throttleInfo in ipairs(throttles) do
 		local throttleValue = throttleInfo.value
 		local throttleSuffix = throttleInfo.suffix or tostring(throttleValue)
-
-		-- Generate the tag name with the throttle suffix
 		local tagName = namePattern .. throttleSuffix
-
-		-- Generate the description with the throttle information
 		local desc = descPattern:gsub("%%throttle%%", throttleSuffix:gsub("^-", ""))
 
-		-- Register the tag with this throttle value
 		MHCT.registerThrottledTag(tagName, subCategory, desc, throttleValue, func)
-
-		-- Store the result
-		table.insert(results, tagName)
+		tinsert(results, tagName)
 	end
 
-	return results -- Return all registered tag names
+	return results
 end
 
 -- Define standard throttle rates that can be used throughout the addon

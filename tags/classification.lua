@@ -8,6 +8,9 @@ local MHCT = ns.MHCT
 local tonumber = tonumber
 local format = string.format
 
+-- Get ElvUI references from core
+local E = unpack(ElvUI)
+
 -- Local constants
 local CLASSIFICATION_SUBCATEGORY = "classification"
 local DEFAULT_ICON_SIZE = MHCT.DEFAULT_ICON_SIZE

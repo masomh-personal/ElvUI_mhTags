@@ -8,7 +8,7 @@ local MHCT = ns.MHCT
 local format = string.format
 local tonumber = tonumber
 
--- Get ElvUI references directly
+-- Get ElvUI references from core
 local E = unpack(ElvUI)
 
 -- Localize WoW API functions
@@ -165,6 +165,6 @@ MHCT.registerTag(
 	"Name abbreviation/shortener if greater than 25 characters - Example: 'Cleave Training Dummy' => 'Cleave T.D.'",
 	"UNIT_NAME_UPDATE",
 	function(unit, _, nameLen)
-		return formatAbbreviatedName(unit, true, tonumber(nameLen) or 22)
+		return formatAbbreviatedName(unit, true, tonumber(nameLen) or 25)
 	end
 )

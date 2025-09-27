@@ -8,6 +8,9 @@ local MHCT = ns.MHCT
 local format = string.format
 local tonumber = tonumber
 
+-- Get ElvUI references from core
+local E = unpack(ElvUI)
+
 -- Localize WoW API functions
 local UnitPowerType = UnitPowerType
 local UnitPower = UnitPower
@@ -16,8 +19,6 @@ local UnitPowerMax = UnitPowerMax
 -- Local constants
 local POWER_SUBCATEGORY = "power"
 local DEFAULT_DECIMAL_PLACE = MHCT.DEFAULT_DECIMAL_PLACE
-local ZERO_STRING = "0"
-local EMPTY_STRING = ""
 
 -- Direct formatting is used instead of cached patterns to avoid memory overhead
 
@@ -34,14 +35,14 @@ local function formatPowerPercent(unit, decimalPlaces)
 
 	-- Early return for invalid max power
 	if maxPower <= 0 then
-		return EMPTY_STRING
+		return ""
 	end
 
 	local currentPower = UnitPower(unit, powerType)
 
 	-- Early return for zero power
 	if currentPower == 0 then
-		return ZERO_STRING
+		return "0"
 	end
 
 	-- Calculate percentage
