@@ -469,6 +469,10 @@ MHCT.registerTag(
 	"Percent only with gradient color and status check. Use {N} for decimals. Example: 85%",
 	"UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED",
 	function(unit, _, args)
+		if not unit then
+			return ""
+		end
+
 		local statusFormatted = MHCT.formatWithStatusCheck(unit)
 		if statusFormatted then
 			return statusFormatted
@@ -476,12 +480,19 @@ MHCT.registerTag(
 
 		local currentHp, maxHp, percent = getHealthData(unit)
 
-		-- Use gradient color (green) at full health for consistency
-		if currentHp == maxHp then
-			return getGradientColor(100) .. "100%" .. COLOR_END
+		-- Handle dead/offline units (maxHp == 0)
+		if maxHp == 0 then
+			return ""
 		end
 
 		local decimals = tonumber(args) or 1
+
+		-- Use gradient color (green) at full health for consistency
+		if currentHp == maxHp then
+			local percentText = formatPercent(100, decimals) .. "%"
+			return getGradientColor(100) .. percentText .. COLOR_END
+		end
+
 		local percentText = formatPercent(percent, decimals) .. "%"
 		local colorCode = getGradientColor(percent)
 		return colorCode .. percentText .. COLOR_END
