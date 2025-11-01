@@ -1,5 +1,23 @@
 # MH Custom Tags (ElvUI Plugin)
 
+## <span style="color:cyan">[6.0.0] New Status-Aware Colored Health Tag (January 2025)</span>
+
+### New Features
+
+- **NEW Tag**: `[mh-health-percent-colored-status]` - Colored gradient health percent with dynamic decimals and status awareness
+  - Shows AFK/Dead/Offline/Ghost/DND status with icons when applicable
+  - Health percentage uses gradient coloring (green/yellow/red based on value)
+  - Configurable decimal places using `{N}` syntax (e.g., `{0}` for 85%, `{2}` for 85.12%)
+  - Perfect for group/raid frames when you want colored health with status checks
+
+### Technical Details
+
+- Added `_, args` parameter support to colored status tag for decimal configuration
+- Uses `formatPercent()` helper for optimized decimal formatting
+- Maintains all existing gradient color functionality
+
+---
+
 ## <span style="color:cyan">[5.0.0] Optimization, Consolidation, and CPU Improvements (August 10th, 2025)</span>
 
 ### Highlights
