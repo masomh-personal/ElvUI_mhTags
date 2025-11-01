@@ -1,6 +1,6 @@
 # ElvUI_mhTags - High-Performance Custom Tags for ElvUI
 
-[![Version](https://img.shields.io/badge/Version-5.0.0-brightgreen)](https://github.com/masomh-personal/ElvUI_mhTags)
+[![Version](https://img.shields.io/badge/Version-6.0.1-brightgreen)](https://github.com/masomh-personal/ElvUI_mhTags)
 [![ElvUI](https://img.shields.io/badge/Requires-ElvUI-blue)](https://www.tukui.org/download.php?ui=elvui)
 [![WoW](https://img.shields.io/badge/WoW-11.0.2-orange)](https://worldofwarcraft.com)
 [![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
