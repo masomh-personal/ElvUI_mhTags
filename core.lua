@@ -8,10 +8,9 @@ local _, ns = ...
 ns.MHCT = {}
 local MHCT = ns.MHCT
 
--- No global unpacking of ElvUI here - we'll do it locally where needed
-
 -------------------------------------
--- Direct function references for internal use
+-- FUNCTION LOCALIZATION
+-- Localizing all functions improves performance by avoiding global lookups
 -------------------------------------
 -- Lua functions
 local floor = math.floor
@@ -38,17 +37,24 @@ local UnitIsPlayer = UnitIsPlayer
 local UnitEffectiveLevel = UnitEffectiveLevel
 local UnitClassification = UnitClassification
 local GetCreatureDifficultyColor = GetCreatureDifficultyColor
-local GetMaxPlayerLevel = GetMaxPlayerLevel()
+local GetMaxPlayerLevel = GetMaxPlayerLevel
+-- Cache max player level at load time (doesn't change during session)
+local MAX_PLAYER_LEVEL_VALUE = GetMaxPlayerLevel()
 
--- ElvUI references - treated like any other API
+-- ElvUI references - unpack once and share references
 local E, L = unpack(ElvUI)
 local ShortValue = E.ShortValue
+
+-- Export ElvUI references for tag modules to avoid duplicate unpacking
+MHCT.E = E
+MHCT.L = L
+MHCT.ShortValue = ShortValue
 
 -------------------------------------
 -- CONSTANTS
 -------------------------------------
 MHCT.TAG_CATEGORY_NAME = "|cff0388fcmh|r|cffccff33Tags|r"
-MHCT.MAX_PLAYER_LEVEL = GetMaxPlayerLevel
+MHCT.MAX_PLAYER_LEVEL = MAX_PLAYER_LEVEL_VALUE
 MHCT.DEFAULT_ICON_SIZE = 14
 MHCT.ABSORB_TEXT_COLOR = "ccff33"
 MHCT.DEFAULT_TEXT_LENGTH = 28
@@ -196,8 +202,8 @@ MHCT.classificationType = function(unit)
 		return "boss"
 	end
 
-	-- Elite+ detection
-	if unitLevel > MHCT.MAX_PLAYER_LEVEL then
+	-- Elite+ detection (unit level exceeds max player level)
+	if unitLevel > MAX_PLAYER_LEVEL_VALUE then
 		return "eliteplus"
 	end
 

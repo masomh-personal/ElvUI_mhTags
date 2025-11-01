@@ -4,12 +4,12 @@
 local _, ns = ...
 local MHCT = ns.MHCT
 
+-- Get ElvUI references from core (shared to avoid duplicate unpacking)
+local E = MHCT.E
+
 -- Localize Lua functions
 local format = string.format
 local tonumber = tonumber
-
--- Get ElvUI references from core
-local E = unpack(ElvUI)
 
 -- Localize WoW API functions
 local UnitPowerType = UnitPowerType
@@ -20,9 +20,12 @@ local UnitPowerMax = UnitPowerMax
 local POWER_SUBCATEGORY = "power"
 local DEFAULT_DECIMAL_PLACE = MHCT.DEFAULT_DECIMAL_PLACE
 
--- Direct formatting is used instead of cached patterns to avoid memory overhead
-
--- Variables are defined locally in functions to avoid state issues
+-- Pre-built format strings for common decimal cases (performance optimization)
+local PERCENT_FORMATS = {
+	[0] = "%.0f",
+	[1] = "%.1f",
+	[2] = "%.2f",
+}
 
 -- ===================================================================================
 -- HELPER FUNCTIONS
@@ -48,15 +51,12 @@ local function formatPowerPercent(unit, decimalPlaces)
 	-- Calculate percentage
 	local percent = (currentPower / maxPower) * 100
 
-	-- Direct formatting based on decimal places
-	if decimalPlaces == 0 then
-		return format("%.0f", percent)
-	elseif decimalPlaces == 1 then
-		return format("%.1f", percent)
-	elseif decimalPlaces == 2 then
-		return format("%.2f", percent)
+	-- Use pre-built format strings for common cases, build dynamically for others
+	local fmt = PERCENT_FORMATS[decimalPlaces]
+	if fmt then
+		return format(fmt, percent)
 	else
-		return format("%%.%df", decimalPlaces):format(percent)
+		return format("%." .. decimalPlaces .. "f", percent)
 	end
 end
 

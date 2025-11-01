@@ -9,8 +9,9 @@
 local _, ns = ...
 local MHCT = ns.MHCT
 
--- Get ElvUI references from core
-local E = unpack(ElvUI)
+-- Get ElvUI references from core (shared to avoid duplicate unpacking)
+local E = MHCT.E
+local ShortValue = MHCT.ShortValue
 
 -- Localize Lua functions
 local format = string.format
@@ -80,7 +81,7 @@ end
 local function getAbsorbText(unit)
 	local absorbAmount = UnitGetTotalAbsorbs(unit) or 0
 	if absorbAmount > 0 then
-		return ABSORB_FORMAT_START .. E:ShortValue(absorbAmount) .. ABSORB_FORMAT_END
+		return ABSORB_FORMAT_START .. ShortValue(absorbAmount) .. ABSORB_FORMAT_END
 	end
 	return ""
 end
@@ -111,6 +112,9 @@ MHCT.registerTag(
 	"UNIT_HEALTH UNIT_MAXHEALTH",
 	function(unit)
 		local currentHp, maxHp = getHealthData(unit)
+		if maxHp == 0 then
+			return ""
+		end
 		return E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
 	end
 )
@@ -321,7 +325,7 @@ MHCT.registerTag(
 			return ""
 		end
 
-		return format(DEFICIT_FORMAT, E:ShortValue(maxHp - currentHp))
+		return format(DEFICIT_FORMAT, ShortValue(maxHp - currentHp))
 	end
 )
 
@@ -337,7 +341,7 @@ MHCT.registerTag(
 			return ""
 		end
 
-		return format(DEFICIT_FORMAT, E:ShortValue(maxHp - currentHp))
+		return format(DEFICIT_FORMAT, ShortValue(maxHp - currentHp))
 	end
 )
 
@@ -569,7 +573,7 @@ local function createThrottledVariants()
 					return ""
 				end
 
-				return format(DEFICIT_FORMAT, E:ShortValue(maxHp - currentHp))
+				return format(DEFICIT_FORMAT, ShortValue(maxHp - currentHp))
 			end,
 		},
 		{

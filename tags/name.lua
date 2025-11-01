@@ -4,12 +4,12 @@
 local _, ns = ...
 local MHCT = ns.MHCT
 
+-- Get ElvUI references from core (shared to avoid duplicate unpacking)
+local E = MHCT.E
+
 -- Localize Lua functions
 local format = string.format
 local tonumber = tonumber
-
--- Get ElvUI references from core
-local E = unpack(ElvUI)
 
 -- Localize WoW API functions
 local UnitName = UnitName

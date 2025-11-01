@@ -4,12 +4,12 @@
 local _, ns = ...
 local MHCT = ns.MHCT
 
+-- Get ElvUI references from core (shared to avoid duplicate unpacking)
+local E = MHCT.E
+
 -- Localize Lua functions
 local tonumber = tonumber
 local format = string.format
-
--- Get ElvUI references from core
-local E = unpack(ElvUI)
 
 -- Local constants
 local CLASSIFICATION_SUBCATEGORY = "classification"

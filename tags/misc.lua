@@ -4,6 +4,10 @@
 local _, ns = ...
 local MHCT = ns.MHCT
 
+-- Get ElvUI references from core (shared to avoid duplicate unpacking)
+local E = MHCT.E
+local ShortValue = MHCT.ShortValue
+
 -- Localize Lua functions
 local format = string.format
 
@@ -11,9 +15,6 @@ local format = string.format
 local UnitEffectiveLevel = UnitEffectiveLevel
 local UnitGetTotalAbsorbs = UnitGetTotalAbsorbs
 local strupper = strupper
-
--- Get ElvUI references from core
-local E = unpack(ElvUI)
 
 -- Local constants
 local MISC_SUBCATEGORY = "misc"
@@ -58,7 +59,7 @@ MHCT.registerTag(
 			return ""
 		end
 
-		return format("|cff%s(%s)|r", ABSORB_TEXT_COLOR, E:ShortValue(absorbAmount))
+		return format("|cff%s(%s)|r", ABSORB_TEXT_COLOR, ShortValue(absorbAmount))
 	end
 )
 
