@@ -469,23 +469,24 @@ MHCT.registerTag(
 	"Percent only with gradient color and status check. Use {N} for decimals. Example: 85%",
 	"UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED",
 	function(unit, _, args)
-		if not unit then
-			return ""
-		end
-
 		local statusFormatted = MHCT.formatWithStatusCheck(unit)
 		if statusFormatted then
 			return statusFormatted
 		end
 
 		local currentHp, maxHp, percent = getHealthData(unit)
-
-		-- Handle dead/offline units (maxHp == 0)
 		if maxHp == 0 then
 			return ""
 		end
 
-		local decimals = tonumber(args) or 1
+		-- Handle decimals argument: tonumber can return 0, which is falsy, so we need to check for nil explicitly
+		local decimals = 0 -- Default to 0 decimals as per user requirement
+		if args ~= nil then
+			local parsed = tonumber(args)
+			if parsed ~= nil then
+				decimals = parsed
+			end
+		end
 
 		-- Use gradient color (green) at full health for consistency
 		if currentHp == maxHp then
