@@ -686,6 +686,50 @@ MHCT.registerTag(
 	end
 )
 
+-- Percentage only with gradient coloring and status check (NO % SIGN)
+MHCT.registerTag(
+	"mh-health-percent-nosign-colored-status",
+	HEALTH_SUBCATEGORY,
+	"Colored health percent WITHOUT % sign, with status check. Default 0 decimals, max 3. Use {N}. Example: 85 or 85.3",
+	EVENTS.HEALTH_STATUS,
+	function(unit, _, args)
+		-- Early return if no unit
+		if not unit then
+			return ""
+		end
+
+		-- Status check first - if any status exists, show it immediately
+		local statusFormatted = MHCT.formatWithStatusCheck(unit)
+		if statusFormatted then
+			return statusFormatted
+		end
+
+		-- Get health data
+		local currentHp, maxHp, percent = getHealthData(unit)
+
+		-- Handle edge case: dead/offline units
+		if maxHp == 0 then
+			return ""
+		end
+
+		-- Parse decimals argument (default 0, clamp to 0-3)
+		local decimals = 0
+		if args then
+			local parsed = tonumber(args)
+			if parsed then
+				-- Clamp to 0-3 range
+				decimals = parsed < 0 and 0 or (parsed > 3 and 3 or parsed)
+			end
+		end
+
+		-- Format and color the percentage (WITHOUT % sign)
+		local percentText = formatPercent(percent, decimals)
+		local colorCode = getGradientColor(percent)
+
+		return colorCode .. percentText .. COLOR_END
+	end
+)
+
 -- ===================================================================================
 -- SECTION 6: HEALTH COLOR TAG
 -- ===================================================================================

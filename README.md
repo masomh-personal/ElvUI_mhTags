@@ -27,9 +27,12 @@ A high-performance ElvUI plugin providing 39 custom tags for unit frames, namepl
 
 ```
 Health Display:
-[mh-health-current-percent]              100k | 85%
-[mh-health-percent-colored-status{0}]    85% (gradient colored with status)
-[mh-health-deficit]                      -15k (shows missing health)
+[mh-health-current-percent]                    100k | 85%
+[mh-health-percent{1}]                         85.3% (with % sign)
+[mh-health-percent-nosign{1}]                  85.3 (without % sign, basic)
+[mh-health-percent-nosign-colored-status{1}]   85.3 (without % sign, colored + status)
+[mh-health-percent-colored-status{0}]          85% (with % sign, colored + status)
+[mh-health-deficit]                            -15k (shows missing health)
 
 Name Display:
 [mh-dynamic:name:caps{20}]                      PLAYERNAME
@@ -57,69 +60,70 @@ Status:
 
 ## Complete Tag Reference
 
-### Health Tags (20)
+### Health Tags (21)
 
-| Tag | Output Example | Description |
-|-----|----------------|-------------|
-| `[mh-health-current]` | `100k` | Current health value |
-| `[mh-health-current-absorb]` | `(25k) 100k` | Current health with absorb shield |
-| `[mh-health-percent{N}]` | `85.2%` or `DEAD` | Health percentage with status (configurable decimals) |
-| `[mh-health-percent-nosign{N}]` | `85.2` | Health percent without % sign |
-| `[mh-health-current-percent]` | `100k \| 85%` | Current and percentage |
-| `[mh-health-percent-current]` | `85% \| 100k` | Percentage and current |
-| `[mh-health-current-percent-hidefull]` | `100k \| 85%` | Hides percent at full health |
-| `[mh-health-percent-current-hidefull]` | `85% \| 100k` | Hides percent at full health |
-| `[mh-health-current-percent-absorb]` | `(25k) 100k \| 85%` | All metrics combined |
-| `[mh-health-deficit]` | `-15k` or `DEAD` | Missing health or status |
-| `[mh-health-deficit-nostatus]` | `-15k` | Missing health only |
-| `[mh-health-deficit-percent{N}]` | `-15%` or `AFK` | Missing health as percentage |
-| `[mh-health-current-percent-colored]` | `100k \| 85%` | Gradient colored (red/yellow/green) |
-| `[mh-health-percent-current-colored]` | `85% \| 100k` | Gradient colored (red/yellow/green) |
-| `[mh-health-current-percent-colored-status]` | `100k \| 85%` or `AFK` | Colored with status check |
-| `[mh-health-percent-current-colored-status]` | `85% \| 100k` or `DEAD` | Colored with status check |
-| `[mh-health-current-colored]` | `100k` | Current only, gradient colored |
-| `[mh-health-percent-colored]` | `85%` | Percent only, gradient colored |
-| `[mh-health-percent-colored-status{N}]` | `85%` or `GHOST` | Colored percent with status |
-| `[mh-healthcolor]` | `\|cffRRGGBB` | Color code for custom composition |
+| Tag                                            | Output Example          | Description                                           |
+| ---------------------------------------------- | ----------------------- | ----------------------------------------------------- |
+| `[mh-health-current]`                          | `100k`                  | Current health value                                  |
+| `[mh-health-current-absorb]`                   | `(25k) 100k`            | Current health with absorb shield                     |
+| `[mh-health-percent{N}]`                       | `85.2%` or `DEAD`       | Health percentage with status (configurable decimals) |
+| `[mh-health-percent-nosign{N}]`                | `85.2`                  | Health percent without % sign (basic)                 |
+| `[mh-health-percent-nosign-colored-status{N}]` | `85.2` or `DEAD`        | Health percent without % sign (gradient + status)     |
+| `[mh-health-current-percent]`                  | `100k \| 85%`           | Current and percentage                                |
+| `[mh-health-percent-current]`                  | `85% \| 100k`           | Percentage and current                                |
+| `[mh-health-current-percent-hidefull]`         | `100k \| 85%`           | Hides percent at full health                          |
+| `[mh-health-percent-current-hidefull]`         | `85% \| 100k`           | Hides percent at full health                          |
+| `[mh-health-current-percent-absorb]`           | `(25k) 100k \| 85%`     | All metrics combined                                  |
+| `[mh-health-deficit]`                          | `-15k` or `DEAD`        | Missing health or status                              |
+| `[mh-health-deficit-nostatus]`                 | `-15k`                  | Missing health only                                   |
+| `[mh-health-deficit-percent{N}]`               | `-15%` or `AFK`         | Missing health as percentage                          |
+| `[mh-health-current-percent-colored]`          | `100k \| 85%`           | Gradient colored (red/yellow/green)                   |
+| `[mh-health-percent-current-colored]`          | `85% \| 100k`           | Gradient colored (red/yellow/green)                   |
+| `[mh-health-current-percent-colored-status]`   | `100k \| 85%` or `AFK`  | Colored with status check                             |
+| `[mh-health-percent-current-colored-status]`   | `85% \| 100k` or `DEAD` | Colored with status check                             |
+| `[mh-health-current-colored]`                  | `100k`                  | Current only, gradient colored                        |
+| `[mh-health-percent-colored]`                  | `85%`                   | Percent only, gradient colored                        |
+| `[mh-health-percent-colored-status{N}]`        | `85%` or `GHOST`        | Colored percent with status                           |
+| `[mh-healthcolor]`                             | `\|cffRRGGBB`           | Color code for custom composition                     |
 
 ### Name Tags (7)
 
-| Tag | Output Example | Description |
-|-----|----------------|-------------|
-| `[mh-dynamic:name:caps{N}]` | `PLAYERNAME` | Name in ALL CAPS (N = max characters) |
-| `[mh-dynamic:name:caps-statusicon{N}]` | `PLAYERNAME` + icon | Name with status icon |
-| `[mh-player:frame:name:caps-groupnumber{N}]` | `PLAYERNAME (5)` | Name with raid group number |
-| `[mh-name:caps:abbrev]` | `C.T. Dummy` | Abbreviated name |
-| `[mh-name:caps:abbrev-reverse]` | `Cleave T.D.` | Abbreviated name (reverse) |
-| `[mh-name-caps-abbrev-V2{N}]` | `C.T. Dummy` | Smart abbreviation (if name > N chars) |
-| `[mh-name-caps-abbrev-reverse-V2{N}]` | `Cleave T.D.` | Smart abbreviation reverse (if name > N chars) |
+| Tag                                          | Output Example      | Description                                    |
+| -------------------------------------------- | ------------------- | ---------------------------------------------- |
+| `[mh-dynamic:name:caps{N}]`                  | `PLAYERNAME`        | Name in ALL CAPS (N = max characters)          |
+| `[mh-dynamic:name:caps-statusicon{N}]`       | `PLAYERNAME` + icon | Name with status icon                          |
+| `[mh-player:frame:name:caps-groupnumber{N}]` | `PLAYERNAME (5)`    | Name with raid group number                    |
+| `[mh-name:caps:abbrev]`                      | `C.T. Dummy`        | Abbreviated name                               |
+| `[mh-name:caps:abbrev-reverse]`              | `Cleave T.D.`       | Abbreviated name (reverse)                     |
+| `[mh-name-caps-abbrev-V2{N}]`                | `C.T. Dummy`        | Smart abbreviation (if name > N chars)         |
+| `[mh-name-caps-abbrev-reverse-V2{N}]`        | `Cleave T.D.`       | Smart abbreviation reverse (if name > N chars) |
 
 ### Classification Tags (5)
 
-| Tag | Output Example | Description |
-|-----|----------------|-------------|
-| `[mh-classification:icon]` | Icon | Elite/Rare/Boss custom icon |
-| `[mh-classification:icon-V2]` | Icon | Fixed-size classification icon |
-| `[mh-classification:text]` | `[Elite]` | Colored text with brackets |
-| `[mh-classification:text-compact]` | `E` | Single letter (E/R/B) |
-| `[mh-classification:text-full]` | `Elite` | Full text without brackets |
+| Tag                                | Output Example | Description                    |
+| ---------------------------------- | -------------- | ------------------------------ |
+| `[mh-classification:icon]`         | Icon           | Elite/Rare/Boss custom icon    |
+| `[mh-classification:icon-V2]`      | Icon           | Fixed-size classification icon |
+| `[mh-classification:text]`         | `[Elite]`      | Colored text with brackets     |
+| `[mh-classification:text-compact]` | `E`            | Single letter (E/R/B)          |
+| `[mh-classification:text-full]`    | `Elite`        | Full text without brackets     |
 
 ### Power Tags (1)
 
-| Tag | Output Example | Description |
-|-----|----------------|-------------|
+| Tag                     | Output Example | Description                           |
+| ----------------------- | -------------- | ------------------------------------- |
 | `[mh-power-percent{N}]` | `85` or `85.3` | Power percentage (mana, energy, etc.) |
 
 ### Miscellaneous Tags (6)
 
-| Tag | Output Example | Description |
-|-----|----------------|-------------|
-| `[mh-smartlevel]` | `80` | Smart level (hides at max) |
-| `[mh-absorb]` | `(25k)` | Absorb shield value |
-| `[mh-difficultycolor:level]` | `85` | Level with difficulty color |
-| `[mh-difficultycolor:level-hide]` | `85` | Hides when both at max level |
-| `[mh-status]` | `AFK` + icon | Status with icon |
-| `[mh-status-noicon]` | `AFK` | Status text only |
+| Tag                               | Output Example | Description                  |
+| --------------------------------- | -------------- | ---------------------------- |
+| `[mh-smartlevel]`                 | `80`           | Smart level (hides at max)   |
+| `[mh-absorb]`                     | `(25k)`        | Absorb shield value          |
+| `[mh-difficultycolor:level]`      | `85`           | Level with difficulty color  |
+| `[mh-difficultycolor:level-hide]` | `85`           | Hides when both at max level |
+| `[mh-status]`                     | `AFK` + icon   | Status with icon             |
+| `[mh-status-noicon]`              | `AFK`          | Status text only             |
 
 ---
 
@@ -130,9 +134,18 @@ Status:
 Use `{N}` to specify decimal places (0-5):
 
 ```
-[mh-health-percent{0}]     85%
-[mh-health-percent{1}]     85.3%
-[mh-health-percent{2}]     85.34%
+With % sign:
+[mh-health-percent{0}]            85%
+[mh-health-percent{1}]            85.3%
+[mh-health-percent{2}]            85.34%
+
+Without % sign (basic):
+[mh-health-percent-nosign{0}]     85
+[mh-health-percent-nosign{1}]     85.3
+
+Without % sign (colored + status):
+[mh-health-percent-nosign-colored-status{0}]     85 (gradient colored)
+[mh-health-percent-nosign-colored-status{1}]     85.3 (gradient colored)
 ```
 
 ### Dynamic Length: `{N}`
@@ -165,6 +178,7 @@ Specify maximum characters for name tags:
 ### Recommended Usage
 
 **Raid Frames (25-40 units):**
+
 ```
 [mh-health-current-percent-hidefull]
 [mh-health-deficit]
@@ -172,12 +186,14 @@ Specify maximum characters for name tags:
 ```
 
 **Party/Arena (5-10 units):**
+
 ```
 [mh-health-current-percent]
 [mh-health-deficit]
 ```
 
 **Player/Target (1-3 units):**
+
 ```
 [mh-health-current-percent-colored]
 [mh-health-current-absorb]
@@ -197,12 +213,12 @@ Specify maximum characters for name tags:
 
 Version 5.0.0+ simplified tag naming. Old tags still work via aliases:
 
-| Old Tag (v4.x) | New Tag (v5.0+) |
-|----------------|-----------------|
-| `[mh-health:current:percent:right]` | `[mh-health-current-percent]` |
-| `[mh-health:current:percent:left]` | `[mh-health-percent-current]` |
+| Old Tag (v4.x)                               | New Tag (v5.0+)                        |
+| -------------------------------------------- | -------------------------------------- |
+| `[mh-health:current:percent:right]`          | `[mh-health-current-percent]`          |
+| `[mh-health:current:percent:left]`           | `[mh-health-percent-current]`          |
 | `[mh-health:current:percent:right-hidefull]` | `[mh-health-current-percent-hidefull]` |
-| `[mh-health:current:percent:left-hidefull]` | `[mh-health-percent-current-hidefull]` |
+| `[mh-health:current:percent:left-hidefull]`  | `[mh-health-percent-current-hidefull]` |
 
 Aliases have zero performance overhead. Migration recommended but not required.
 
@@ -215,6 +231,7 @@ Aliases have zero performance overhead. Migration recommended but not required.
 - **CurseForge**: [Addon Page](https://www.curseforge.com/wow/addons/mh-custom-tags-elvui-plugin)
 
 When reporting bugs, please include:
+
 1. WoW and ElvUI versions
 2. Full error message with stack trace
 3. Steps to reproduce

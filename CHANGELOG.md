@@ -32,9 +32,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Includes absorb shield display and status icons
 
 - **New Tag**: `[mh-health-percent-current-colored-status]` - Percent and current with gradient coloring
+
   - Combines percentage and current health (e.g., `85% | 100k`)
   - Gradient coloring based on health percentage
   - Includes absorb shield display and status icons
+
+- **New Tag**: `[mh-health-percent-nosign-colored-status{N}]` - Health percentage without % sign, with gradient coloring and status
+
+  - Combines gradient coloring (red/yellow/green) with status awareness (AFK/Dead/Offline/etc.)
+  - **No % sign** - displays clean numbers like `85` or `85.3`
+  - Configurable decimals via `{N}` syntax (0-3 decimals, default 0)
+  - Perfect for minimalist raid frames with full status awareness
+  - Examples:
+    - `[mh-health-percent-nosign-colored-status{0}]` → `85` (gradient colored) or `DEAD`
+    - `[mh-health-percent-nosign-colored-status{1}]` → `85.3` (gradient colored) or `AFK`
+
+- **Highlighted Tag**: `[mh-health-percent-nosign{N}]` - Health percentage without % sign (basic version)
+  - Works like `[mh-health-percent{N}]` but omits the % symbol
+  - Includes status checks but **no gradient coloring**
+  - For colored version, use `[mh-health-percent-nosign-colored-status{N}]` above
+  - Example: `[mh-health-percent-nosign{0}]` displays `85` instead of `85%`
 
 ### Fixed
 
