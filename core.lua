@@ -563,30 +563,46 @@ end
 -- TAG REGISTRATION (with Error Boundaries)
 -------------------------------------
 
+-- Internal registry to track tag functions and events (needed for aliases in ElvUI 14.0+)
+local tagRegistry = {}
+
 -- Optimized tag registration for ElvUI V14.0 with error boundaries
 MHCT.registerTag = function(name, subCategory, description, events, func)
 	local fullCategory = MHCT.TAG_CATEGORY_NAME .. " [" .. subCategory .. "]"
+	local wrappedFunc = safeTagWrapper(name, func)
+
 	E:AddTagInfo(name, fullCategory, description)
-	-- Wrap function with error boundary to prevent crashes
-	E:AddTag(name, events, safeTagWrapper(name, func))
+	E:AddTag(name, events, wrappedFunc)
+
+	-- Store for alias creation (ElvUI 14.0+ doesn't expose tag methods)
+	tagRegistry[name] = {
+		func = wrappedFunc,
+		events = events,
+		category = fullCategory,
+		description = description,
+	}
+
 	return name
 end
 
 -- Create tag alias for backwards compatibility (shares function reference, no duplication)
 MHCT.registerTagAlias = function(oldName, newName)
-	-- Get the existing tag info and function from the new tag
+	-- Get the existing tag from our internal registry
+	local tagData = tagRegistry[newName]
 	local tagInfo = E.TagInfo[newName]
-	local tagFunction = E.Tags.Methods[newName]
 
-	if tagInfo and tagFunction then
-		-- Register alias with deprecation notice
+	if tagData and tagInfo then
+		-- Register alias with deprecation notice, using the same wrapped function
 		E:AddTagInfo(
 			oldName,
 			tagInfo.category,
 			tagInfo.description .. " (DEPRECATED - Use [" .. newName .. "] instead)"
 		)
-		-- Share the exact same function reference (no duplication)
-		E.Tags.Methods[oldName] = tagFunction
+		-- Use the same wrapped function reference (no duplication)
+		E:AddTag(oldName, tagData.events, tagData.func)
+
+		-- Store alias in registry too (in case someone aliases an alias)
+		tagRegistry[oldName] = tagData
 		return oldName
 	end
 
