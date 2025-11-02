@@ -38,31 +38,44 @@ A high-performance ElvUI plugin providing 39 custom tags for unit frames, namepl
 
 ### Common Examples
 
-```
-Health Display:
-[mh-health-current-percent]                    100k | 85%
-[mh-health-percent{1}]                         85.3% (with % sign)
-[mh-health-percent-nosign{1}]                  85.3 (without % sign, basic)
-[mh-health-percent-nosign-colored-status{1}]   85.3 (without % sign, colored + status)
-[mh-health-percent-colored-status{0}]          85% (with % sign, colored + status)
-[mh-health-deficit]                            -15k (shows missing health)
+**Health Display:**
 
-Name Display:
-[mh-dynamic:name:caps{20}]                      PLAYERNAME
-[mh-dynamic:name:caps-statusicon{20}]           PLAYERNAME + status icon
-[mh-player:frame:name:caps-groupnumber{15}]     PLAYERNAME (5)
+| Tag                                            | Output Example   | Notes                                                   |
+| ---------------------------------------------- | ---------------- | ------------------------------------------------------- |
+| `[mh-health-current-percent]`                  | `100k \| 85%`    | Current health and percentage                           |
+| `[mh-health-percent{1}]`                       | `85.3%`          | `{1}` = show 1 decimal place                            |
+| `[mh-health-percent-nosign{1}]`                | `85.3`           | `{1}` = 1 decimal; no % sign; basic styling             |
+| `[mh-health-percent-nosign-colored-status{1}]` | `85.3` or `DEAD` | `{1}` = 1 decimal; no % sign; gradient colored + status |
+| `[mh-health-percent-colored-status{0}]`        | `85%` or `AFK`   | `{0}` = no decimals; with % sign; colored + status      |
+| `[mh-health-deficit]`                          | `-15k`           | Shows missing health; hides at full                     |
 
-Classification:
-[mh-classification:icon]                 Elite/Rare/Boss icon
-[mh-difficultycolor:level]               80 (colored by difficulty)
+**Name Display:**
 
-Power:
-[mh-power-percent{1}]                    85.3 (mana/energy percent)
+| Tag                                           | Output Example      | Notes                                     |
+| --------------------------------------------- | ------------------- | ----------------------------------------- |
+| `[mh-dynamic:name:caps{20}]`                  | `PLAYERNAME`        | `{20}` = max 20 characters; uppercase     |
+| `[mh-dynamic:name:caps-statusicon{20}]`       | `PLAYERNAME` + icon | `{20}` = max 20 chars; with AFK/Dead icon |
+| `[mh-player:frame:name:caps-groupnumber{15}]` | `PLAYERNAME (5)`    | `{15}` = max 15 chars; shows raid group # |
 
-Status & Misc:
-[mh-status]                              AFK/Dead/Offline with icon
-[mh-healer-drinking]                     Drinking... (healers only, 5-man party)
-```
+**Classification:**
+
+| Tag                          | Output Example | Notes                       |
+| ---------------------------- | -------------- | --------------------------- |
+| `[mh-classification:icon]`   | 🛡️             | Elite/Rare/Boss custom icon |
+| `[mh-difficultycolor:level]` | `80`           | Level colored by difficulty |
+
+**Power:**
+
+| Tag                     | Output Example | Notes                                    |
+| ----------------------- | -------------- | ---------------------------------------- |
+| `[mh-power-percent{1}]` | `85.3`         | `{1}` = 1 decimal place; mana/energy/etc |
+
+**Status & Misc:**
+
+| Tag                    | Output Example | Notes                                 |
+| ---------------------- | -------------- | ------------------------------------- |
+| `[mh-status]`          | `AFK` + icon   | AFK/Dead/Offline with status icon     |
+| `[mh-healer-drinking]` | `Drinking...`  | Only shows for healers in 5-man party |
 
 ### Utility Command
 
@@ -283,12 +296,6 @@ Contributions welcome. Please ensure:
 - ElvUI 14.0+ native performance integration
 
 For complete technical details, see [CHANGELOG.md](CHANGELOG.md).
-
----
-
-## License
-
-MIT License - See [LICENSE](LICENSE) file for details.
 
 ---
 
