@@ -2,7 +2,7 @@
 
 [![Version](https://img.shields.io/badge/Version-6.1.0-brightgreen)](https://github.com/masomh-personal/ElvUI_mhTags)
 [![ElvUI](https://img.shields.io/badge/Requires-ElvUI-blue)](https://www.tukui.org/download.php?ui=elvui)
-[![WoW](https://img.shields.io/badge/WoW-11.0.2-orange)](https://worldofwarcraft.com)
+[![WoW](https://img.shields.io/badge/WoW-11.2.5-orange)](https://worldofwarcraft.com)
 [![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
 
 A lightweight, performance-optimized ElvUI plugin providing an extensive collection of custom tags for unit frames, nameplates, and other UI elements.
@@ -149,14 +149,14 @@ Version 5.0.0 introduced simplified naming using hyphens instead of colons. Old 
 
 ### Common Migrations
 
-| Old Tag Name (v4.x)                        | New Tag Name (v5.0+)                   |
-| ------------------------------------------ | -------------------------------------- |
-| `[mh-health:current:percent:right]`        | `[mh-health-current-percent]`          |
-| `[mh-health:current:percent:left]`         | `[mh-health-percent-current]`          |
+| Old Tag Name (v4.x)                          | New Tag Name (v5.0+)                   |
+| -------------------------------------------- | -------------------------------------- |
+| `[mh-health:current:percent:right]`          | `[mh-health-current-percent]`          |
+| `[mh-health:current:percent:left]`           | `[mh-health-percent-current]`          |
 | `[mh-health:current:percent:right-hidefull]` | `[mh-health-current-percent-hidefull]` |
-| `[mh-deficit:num-status]`                  | `[mh-health-deficit]`                  |
-| `[mh-deficit:percent-status]`              | `[mh-health-deficit-percent]`          |
-| `[mh-health:simple:percent]`               | `[mh-health-percent]`                  |
+| `[mh-deficit:num-status]`                    | `[mh-health-deficit]`                  |
+| `[mh-deficit:percent-status]`                | `[mh-health-deficit-percent]`          |
+| `[mh-health:simple:percent]`                 | `[mh-health-percent]`                  |
 
 Backward compatibility is maintained via tag aliases (zero performance overhead).
 
@@ -268,7 +268,7 @@ Utility tags:
 ## Requirements
 
 - **ElvUI**: Version 13.0 or higher - [Download from TukUI](https://www.tukui.org/download.php?ui=elvui)
-- **World of Warcraft**: Retail (11.0.2+)
+- **World of Warcraft**: Retail (11.2.5+)
 
 ## Support & Contributing
 

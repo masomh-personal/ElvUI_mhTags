@@ -1,4 +1,4 @@
-## Interface: 110200
+## Interface: 110205
 ## Title: |cff1784d1ElvUI|r |cffccff33MH Tags|r
 ## Notes: Custom tags for use across ElvUI
 ## Author: mhDesigns
