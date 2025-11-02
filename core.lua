@@ -47,6 +47,42 @@ local MAX_PLAYER_LEVEL_VALUE = GetMaxPlayerLevel()
 
 -- ElvUI references - unpack once and share references
 local E, L = unpack(ElvUI)
+
+-------------------------------------
+-- ELVUI API VALIDATION
+-- Validates required ElvUI functions exist to prevent runtime errors
+-------------------------------------
+local function validateElvUIAPI()
+	local requiredFunctions = {
+		"AddTag",
+		"AddTagInfo",
+		"GetFormattedText",
+		"ShortValue",
+		"ShortenString",
+	}
+
+	local missing = {}
+	for _, funcName in ipairs(requiredFunctions) do
+		if not E[funcName] then
+			tinsert(missing, funcName)
+		end
+	end
+
+	if #missing > 0 then
+		local missingList = concat(missing, ", ")
+		error(
+			format(
+				"ElvUI_mhTags: Required ElvUI functions not found: %s\n"
+					.. "This may indicate an incompatible ElvUI version. Please update both addons.",
+				missingList
+			)
+		)
+	end
+end
+
+-- Validate ElvUI API before proceeding
+validateElvUIAPI()
+
 local ShortValue = E.ShortValue
 
 -- Export ElvUI references for tag modules to avoid duplicate unpacking
@@ -63,6 +99,10 @@ MHCT.DEFAULT_ICON_SIZE = 14
 MHCT.ABSORB_TEXT_COLOR = "ccff33"
 MHCT.DEFAULT_TEXT_LENGTH = 28
 MHCT.DEFAULT_DECIMAL_PLACE = 0
+
+-- Debug mode: Set to true to see tag errors in chat
+-- Normal users should keep this false for silent error handling
+MHCT.DEBUG_MODE = false
 
 -- Status color constants
 local STATUS_COLOR = "D6BFA6"
@@ -144,12 +184,12 @@ local raidRosterCache = {}
 local function updateRaidRosterCache()
 	-- Wipe cache completely to prevent accumulation
 	wipe(raidRosterCache)
-	
+
 	-- Only build cache if in a raid
 	if not IsInRaid() then
 		return
 	end
-	
+
 	-- Rebuild cache with current roster (max 40 entries)
 	local numMembers = GetNumGroupMembers()
 	for i = 1, numMembers do
@@ -459,19 +499,49 @@ MHCT.formatHealthDeficit = function(unit)
 	return format("-%s", ShortValue(maxHp - currentHp))
 end
 
--- Optimized tag registration for ElvUI V14.0
+-------------------------------------
+-- ERROR HANDLING (Error Boundaries)
+-------------------------------------
+
+-- Safe wrapper that catches errors and prevents addon crashes
+local function safeTagWrapper(tagName, func)
+	return function(...)
+		local success, result = pcall(func, ...)
+
+		if not success then
+			-- Log error if debug mode is enabled
+			if MHCT.DEBUG_MODE then
+				print(format("|cffFF0000[mhTags Error]|r Tag '%s': %s", tagName, tostring(result)))
+			end
+
+			-- Return empty string as safe fallback
+			return ""
+		end
+
+		-- Return the result (handles nil gracefully)
+		return result or ""
+	end
+end
+
+-------------------------------------
+-- TAG REGISTRATION (with Error Boundaries)
+-------------------------------------
+
+-- Optimized tag registration for ElvUI V14.0 with error boundaries
 MHCT.registerTag = function(name, subCategory, description, events, func)
 	local fullCategory = MHCT.TAG_CATEGORY_NAME .. " [" .. subCategory .. "]"
 	E:AddTagInfo(name, fullCategory, description)
-	E:AddTag(name, events, func)
+	-- Wrap function with error boundary to prevent crashes
+	E:AddTag(name, events, safeTagWrapper(name, func))
 	return name
 end
 
--- Optimized throttled tag registration for ElvUI V14.0
+-- Optimized throttled tag registration for ElvUI V14.0 with error boundaries
 MHCT.registerThrottledTag = function(name, subCategory, description, throttle, func)
 	local fullCategory = MHCT.TAG_CATEGORY_NAME .. " [" .. subCategory .. "]"
 	E:AddTagInfo(name, fullCategory, description)
-	E:AddTag(name, throttle, func)
+	-- Wrap function with error boundary to prevent crashes
+	E:AddTag(name, throttle, safeTagWrapper(name, func))
 	return name
 end
 
