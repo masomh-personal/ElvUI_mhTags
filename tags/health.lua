@@ -92,11 +92,14 @@ local function getAbsorbText(unit)
 		return ""
 	end
 
-	local absorbAmount = UnitGetTotalAbsorbs(unit) or 0
-	if absorbAmount > 0 then
-		return ABSORB_FORMAT_START .. ShortValue(absorbAmount) .. ABSORB_FORMAT_END
+	local absorbAmount = UnitGetTotalAbsorbs(unit)
+	
+	-- Defensive nil check - UnitGetTotalAbsorbs can return nil for invalid units
+	if not absorbAmount or absorbAmount == 0 then
+		return ""
 	end
-	return ""
+	
+	return ABSORB_FORMAT_START .. ShortValue(absorbAmount) .. ABSORB_FORMAT_END
 end
 
 -- Get gradient color based on health percentage
@@ -468,6 +471,76 @@ MHCT.registerTag(
 		if not unit then
 			return ""
 		end
+		local currentHp, maxHp, percent = getHealthData(unit)
+		local currentText = E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
+		local absorbText = getAbsorbText(unit)
+
+		-- Use gradient color (green) at full health for consistency
+		if currentHp == maxHp then
+			return absorbText .. getGradientColor(100) .. currentText .. COLOR_END
+		end
+
+		local percentText = format(PERCENT_FORMAT, percent)
+		local result = percentText .. VERTICAL_SEPARATOR .. currentText
+		local colorCode = getGradientColor(percent)
+
+		return absorbText .. colorCode .. result .. COLOR_END
+	end
+)
+
+-- Current | Percent with gradient coloring AND status check
+MHCT.registerTag(
+	"mh-health-current-percent-colored-status",
+	HEALTH_SUBCATEGORY,
+	"Current | percent with gradient color and status check. Example: 100k | 85% or AFK/Dead/Offline",
+	EVENTS.HEALTH_STATUS_ABSORB,
+	function(unit)
+		if not unit then
+			return ""
+		end
+
+		-- Status check first
+		local statusFormatted = MHCT.formatWithStatusCheck(unit)
+		if statusFormatted then
+			return statusFormatted
+		end
+
+		-- Get health data
+		local currentHp, maxHp, percent = getHealthData(unit)
+		local currentText = E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
+		local absorbText = getAbsorbText(unit)
+
+		-- Use gradient color (green) at full health for consistency
+		if currentHp == maxHp then
+			return absorbText .. getGradientColor(100) .. currentText .. COLOR_END
+		end
+
+		local percentText = format(PERCENT_FORMAT, percent)
+		local result = currentText .. VERTICAL_SEPARATOR .. percentText
+		local colorCode = getGradientColor(percent)
+
+		return absorbText .. colorCode .. result .. COLOR_END
+	end
+)
+
+-- Percent | Current with gradient coloring AND status check
+MHCT.registerTag(
+	"mh-health-percent-current-colored-status",
+	HEALTH_SUBCATEGORY,
+	"Percent | current with gradient color and status check. Example: 85% | 100k or AFK/Dead/Offline",
+	EVENTS.HEALTH_STATUS_ABSORB,
+	function(unit)
+		if not unit then
+			return ""
+		end
+
+		-- Status check first
+		local statusFormatted = MHCT.formatWithStatusCheck(unit)
+		if statusFormatted then
+			return statusFormatted
+		end
+
+		-- Get health data
 		local currentHp, maxHp, percent = getHealthData(unit)
 		local currentText = E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
 		local absorbText = getAbsorbText(unit)

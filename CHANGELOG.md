@@ -17,12 +17,21 @@
   - Health percentage uses gradient coloring (green/yellow/red based on value)
   - Configurable decimal places using `{N}` syntax (e.g., `{0}` for 85%, `{2}` for 85.12%)
   - Perfect for group/raid frames when you want colored health with status checks
+- **NEW Tag**: `[mh-health-current-percent-colored-status]` - Current | Percent with gradient coloring and status awareness
+  - Combines current health value and percentage (e.g., "100k | 85%") with gradient coloring
+  - Shows status icons (AFK/Dead/Offline/Ghost/DND) when applicable
+  - Includes absorb shield display
+- **NEW Tag**: `[mh-health-percent-current-colored-status]` - Percent | Current with gradient coloring and status awareness
+  - Combines percentage and current health (e.g., "85% | 100k") with gradient coloring
+  - Shows status icons (AFK/Dead/Offline/Ghost/DND) when applicable
+  - Includes absorb shield display
 
 ### Critical Stability Fixes
 
 - **Fixed decimal argument parsing bug**: `tonumber(args) or default` now correctly handles 0 decimals (previously treated 0 as falsy)
 - **Added comprehensive nil checks**: All 50+ tag functions now validate unit parameter to prevent nil dereferencing crashes
 - **Fixed health data nil handling**: `getHealthData()` now properly handles nil returns from `UnitHealth`/`UnitHealthMax` for invalid units, preventing "attempt to compare nil with number" errors
+- **Fixed absorb shield nil handling**: Both `getAbsorbText()` and `mh-absorb` tag now properly handle nil returns from `UnitGetTotalAbsorbs()` for transient or invalid unit states
 - **ElvUI 14.0+ tag alias compatibility**: Created internal tag registry to support legacy tag aliases without relying on ElvUI's internal `E.Tags.Methods` structure
 - **Implemented error boundaries**: All tags wrapped with pcall() to prevent errors from breaking ElvUI
 - **Added ElvUI API validation**: Startup check ensures all required ElvUI functions exist before proceeding

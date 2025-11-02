@@ -55,9 +55,11 @@ MHCT.registerTag(
 	"UNIT_ABSORB_AMOUNT_CHANGED",
 	function(unit)
 		if not unit then return "" end
-		local absorbAmount = UnitGetTotalAbsorbs(unit) or 0
-		-- Early return for common case
-		if absorbAmount == 0 then
+		
+		local absorbAmount = UnitGetTotalAbsorbs(unit)
+		
+		-- Defensive nil check - handle both nil and 0
+		if not absorbAmount or absorbAmount == 0 then
 			return ""
 		end
 

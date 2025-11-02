@@ -121,7 +121,7 @@ MHCT.DEFAULT_DECIMAL_PLACE = 0
 
 -- Debug mode: Set to true to see tag errors in chat
 -- Normal users should keep this false for silent error handling
-MHCT.DEBUG_MODE = false
+MHCT.DEBUG_MODE = true
 
 -- Status color constants
 local STATUS_COLOR = "D6BFA6"
