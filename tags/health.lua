@@ -76,7 +76,8 @@ local function getHealthData(unit)
 	local maxHp = UnitHealthMax(unit)
 	local currentHp = UnitHealth(unit)
 
-	if maxHp == 0 then
+	-- Handle nil values (invalid unit) or zero max health
+	if not maxHp or not currentHp or maxHp == 0 then
 		return 0, 0, 0
 	end
 

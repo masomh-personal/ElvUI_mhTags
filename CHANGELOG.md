@@ -22,6 +22,8 @@
 
 - **Fixed decimal argument parsing bug**: `tonumber(args) or default` now correctly handles 0 decimals (previously treated 0 as falsy)
 - **Added comprehensive nil checks**: All 50+ tag functions now validate unit parameter to prevent nil dereferencing crashes
+- **Fixed health data nil handling**: `getHealthData()` now properly handles nil returns from `UnitHealth`/`UnitHealthMax` for invalid units, preventing "attempt to compare nil with number" errors
+- **ElvUI 14.0+ tag alias compatibility**: Created internal tag registry to support legacy tag aliases without relying on ElvUI's internal `E.Tags.Methods` structure
 - **Implemented error boundaries**: All tags wrapped with pcall() to prevent errors from breaking ElvUI
 - **Added ElvUI API validation**: Startup check ensures all required ElvUI functions exist before proceeding
 - **ElvUI version compatibility check**: Soft warning for ElvUI versions below 13.0
