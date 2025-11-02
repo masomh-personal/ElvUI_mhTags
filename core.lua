@@ -102,12 +102,9 @@ end
 
 checkElvUIVersion()
 
-local ShortValue = E.ShortValue
-
 -- Export ElvUI references for tag modules to avoid duplicate unpacking
 MHCT.E = E
 MHCT.L = L
-MHCT.ShortValue = ShortValue
 
 -------------------------------------
 -- CONSTANTS
@@ -118,10 +115,6 @@ MHCT.DEFAULT_ICON_SIZE = 14
 MHCT.ABSORB_TEXT_COLOR = "ccff33"
 MHCT.DEFAULT_TEXT_LENGTH = 28
 MHCT.DEFAULT_DECIMAL_PLACE = 0
-
--- Debug mode: Set to true to see tag errors in chat
--- Normal users should keep this false for silent error handling
-MHCT.DEBUG_MODE = true
 
 -- Status color constants
 local STATUS_COLOR = "D6BFA6"
@@ -532,51 +525,26 @@ MHCT.formatHealthDeficit = function(unit)
 		return ""
 	end
 
-	return format("-%s", ShortValue(maxHp - currentHp))
+	return format("-%s", E:ShortValue(maxHp - currentHp))
 end
 
 -------------------------------------
--- ERROR HANDLING (Error Boundaries)
--------------------------------------
-
--- Safe wrapper that catches errors and prevents addon crashes
-local function safeTagWrapper(tagName, func)
-	return function(...)
-		local success, result = pcall(func, ...)
-
-		if not success then
-			-- Log error if debug mode is enabled
-			if MHCT.DEBUG_MODE then
-				print(format("|cffFF0000[mhTags Error]|r Tag '%s': %s", tagName, tostring(result)))
-			end
-
-			-- Return empty string as safe fallback
-			return ""
-		end
-
-		-- Return the result (handles nil gracefully)
-		return result or ""
-	end
-end
-
--------------------------------------
--- TAG REGISTRATION (with Error Boundaries)
+-- TAG REGISTRATION
 -------------------------------------
 
 -- Internal registry to track tag functions and events (needed for aliases in ElvUI 14.0+)
 local tagRegistry = {}
 
--- Optimized tag registration for ElvUI V14.0 with error boundaries
+-- Simple tag registration for ElvUI V14.0+
 MHCT.registerTag = function(name, subCategory, description, events, func)
 	local fullCategory = MHCT.TAG_CATEGORY_NAME .. " [" .. subCategory .. "]"
-	local wrappedFunc = safeTagWrapper(name, func)
 
 	E:AddTagInfo(name, fullCategory, description)
-	E:AddTag(name, events, wrappedFunc)
+	E:AddTag(name, events, func)
 
 	-- Store for alias creation (ElvUI 14.0+ doesn't expose tag methods)
 	tagRegistry[name] = {
-		func = wrappedFunc,
+		func = func,
 		events = events,
 		category = fullCategory,
 		description = description,
@@ -606,10 +574,7 @@ MHCT.registerTagAlias = function(oldName, newName)
 		return oldName
 	end
 
-	-- If new tag doesn't exist, log warning in debug mode
-	if MHCT.DEBUG_MODE then
-		print(format("|cffFF0000[mhTags]|r Cannot create alias '%s' -> '%s': target tag not found", oldName, newName))
-	end
+	-- If new tag doesn't exist, silently fail (developer error, should be caught during development)
 	return nil
 end
 
@@ -619,26 +584,7 @@ end
 
 SLASH_MHTAGS1 = "/mhtags"
 SlashCmdList["MHTAGS"] = function(msg)
-	msg = msg:lower():trim()
-
-	if msg == "debug" then
-		MHCT.DEBUG_MODE = not MHCT.DEBUG_MODE
-		print(
-			format(
-				"|cff0388fcElvUI_mhTags:|r Debug mode %s",
-				MHCT.DEBUG_MODE and "|cff00FF00enabled|r" or "|cffFF0000disabled|r"
-			)
-		)
-	elseif msg == "memory" then
-		UpdateAddOnMemoryUsage()
-		local memoryUsage = GetAddOnMemoryUsage("ElvUI_mhTags")
-		print(format("|cff0388fcElvUI_mhTags:|r Memory usage: |cffffcc00%.2f KB|r", memoryUsage))
-	elseif msg == "help" or msg == "" then
-		print("|cff0388fcElvUI_mhTags|r |cffccff33Commands:|r")
-		print("  |cffffcc00/mhtags debug|r - Toggle debug mode (shows tag errors)")
-		print("  |cffffcc00/mhtags memory|r - Display current memory usage")
-		print("  |cffffcc00/mhtags help|r - Show this help message")
-	else
-		print("|cff0388fcElvUI_mhTags:|r Unknown command. Type |cffffcc00/mhtags help|r for available commands.")
-	end
+	UpdateAddOnMemoryUsage()
+	local memoryUsage = GetAddOnMemoryUsage("ElvUI_mhTags")
+	print(format("|cff0388fcElvUI_mhTags:|r Memory usage: |cffffcc00%.2f KB|r", memoryUsage))
 end

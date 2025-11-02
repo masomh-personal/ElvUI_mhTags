@@ -11,7 +11,6 @@ local MHCT = ns.MHCT
 
 -- Get ElvUI references from core (shared to avoid duplicate unpacking)
 local E = MHCT.E
-local ShortValue = MHCT.ShortValue
 
 -- Localize Lua functions
 local format = string.format
@@ -93,13 +92,21 @@ local function getAbsorbText(unit)
 	end
 
 	local absorbAmount = UnitGetTotalAbsorbs(unit)
-	
-	-- Defensive nil check - UnitGetTotalAbsorbs can return nil for invalid units
-	if not absorbAmount or absorbAmount == 0 then
+
+	-- Guard: Must be a valid positive number
+	if not absorbAmount or type(absorbAmount) ~= "number" or absorbAmount <= 0 then
 		return ""
 	end
-	
-	return ABSORB_FORMAT_START .. ShortValue(absorbAmount) .. ABSORB_FORMAT_END
+
+	-- Use ElvUI's ShortValue (wrap in pcall for safety)
+	local success, result = pcall(function()
+		return E:ShortValue(absorbAmount)
+	end)
+	if success and result then
+		return ABSORB_FORMAT_START .. result .. ABSORB_FORMAT_END
+	end
+
+	return ""
 end
 
 -- Get gradient color based on health percentage
@@ -379,7 +386,7 @@ MHCT.registerTag(
 			return ""
 		end
 
-		return format(DEFICIT_FORMAT, ShortValue(maxHp - currentHp))
+		return format(DEFICIT_FORMAT, E:ShortValue(maxHp - currentHp))
 	end
 )
 
@@ -398,7 +405,7 @@ MHCT.registerTag(
 			return ""
 		end
 
-		return format(DEFICIT_FORMAT, ShortValue(maxHp - currentHp))
+		return format(DEFICIT_FORMAT, E:ShortValue(maxHp - currentHp))
 	end
 )
 
@@ -445,6 +452,12 @@ MHCT.registerTag(
 			return ""
 		end
 		local currentHp, maxHp, percent = getHealthData(unit)
+
+		-- Early exit for invalid health data
+		if not maxHp or maxHp == 0 then
+			return ""
+		end
+
 		local currentText = E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
 		local absorbText = getAbsorbText(unit)
 
@@ -472,6 +485,12 @@ MHCT.registerTag(
 			return ""
 		end
 		local currentHp, maxHp, percent = getHealthData(unit)
+
+		-- Early exit for invalid health data
+		if not maxHp or maxHp == 0 then
+			return ""
+		end
+
 		local currentText = E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
 		local absorbText = getAbsorbText(unit)
 
@@ -507,6 +526,12 @@ MHCT.registerTag(
 
 		-- Get health data
 		local currentHp, maxHp, percent = getHealthData(unit)
+
+		-- Early exit for invalid health data
+		if not maxHp or maxHp == 0 then
+			return ""
+		end
+
 		local currentText = E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
 		local absorbText = getAbsorbText(unit)
 
@@ -542,6 +567,12 @@ MHCT.registerTag(
 
 		-- Get health data
 		local currentHp, maxHp, percent = getHealthData(unit)
+
+		-- Early exit for invalid health data
+		if not maxHp or maxHp == 0 then
+			return ""
+		end
+
 		local currentText = E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
 		local absorbText = getAbsorbText(unit)
 
@@ -569,6 +600,12 @@ MHCT.registerTag(
 			return ""
 		end
 		local currentHp, maxHp, percent = getHealthData(unit)
+
+		-- Early exit for invalid health data
+		if not maxHp or maxHp == 0 then
+			return ""
+		end
+
 		local currentText = E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
 		local absorbText = getAbsorbText(unit)
 

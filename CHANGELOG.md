@@ -30,10 +30,9 @@
 
 - **Fixed decimal argument parsing bug**: `tonumber(args) or default` now correctly handles 0 decimals (previously treated 0 as falsy)
 - **Added comprehensive nil checks**: All 50+ tag functions now validate unit parameter to prevent nil dereferencing crashes
-- **Fixed health data nil handling**: `getHealthData()` now properly handles nil returns from `UnitHealth`/`UnitHealthMax` for invalid units, preventing "attempt to compare nil with number" errors
-- **Fixed absorb shield nil handling**: Both `getAbsorbText()` and `mh-absorb` tag now properly handle nil returns from `UnitGetTotalAbsorbs()` for transient or invalid unit states
+- **Fixed health data nil handling**: `getHealthData()` now properly handles nil returns from `UnitHealth`/`UnitHealthMax` for invalid units
+- **Fixed absorb shield nil handling**: Explicit type checking (`type() == "number"`) prevents nil values from reaching `ShortValue()` in both `getAbsorbText()` and `mh-absorb` tag
 - **ElvUI 14.0+ tag alias compatibility**: Created internal tag registry to support legacy tag aliases without relying on ElvUI's internal `E.Tags.Methods` structure
-- **Implemented error boundaries**: All tags wrapped with pcall() to prevent errors from breaking ElvUI
 - **Added ElvUI API validation**: Startup check ensures all required ElvUI functions exist before proceeding
 - **ElvUI version compatibility check**: Soft warning for ElvUI versions below 13.0
 
@@ -68,23 +67,20 @@
 
 ### Developer Experience
 
-- **Slash commands**: Added /mhtags command for debugging and monitoring
-  - `/mhtags debug` - Toggle debug mode (shows tag errors in chat)
-  - `/mhtags memory` - Display current memory usage
-  - `/mhtags help` - Show available commands
-- **Debug mode**: Can be toggled via slash command or by setting MHCT.DEBUG_MODE = true
+- **Slash command**: Added `/mhtags` command to display current memory usage
+- **Error transparency**: All errors bubble up naturally through WoW's error handler for easy bug reporting
 
 ### Technical Details
 
-- All tag functions protected with error boundaries using safeTagWrapper()
 - Raid roster cache automatically updates on GROUP_ROSTER_UPDATE and PLAYER_ENTERING_WORLD events
 - Status formatter cache pre-computed at load time (eliminates runtime string operations)
 - Tag aliases share exact function references (zero performance overhead)
-- All tag modules now use shared ElvUI references from `core.lua` instead of unpacking independently
+- All tag modules use shared ElvUI references from `core.lua` instead of unpacking independently
 - Format string optimization reduces string concatenation operations in frequently called tags
 - Added `_, args` parameter support to colored status tag for decimal configuration
 - Uses `formatPercent()` helper for optimized decimal formatting
 - Simplified tag registration uses only `MHCT.registerTag()` and `MHCT.registerTagAlias()`
+- Errors are not suppressed - they bubble up through WoW's error handler for visibility and bug reporting
 
 ### Expected Impact
 

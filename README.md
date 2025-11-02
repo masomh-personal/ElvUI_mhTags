@@ -55,12 +55,10 @@ A lightweight, performance-optimized ElvUI plugin providing an extensive collect
 [mh-power-percent{1}]                    Shows: 85.3 (with 1 decimal)
 ```
 
-### Slash Commands
+### Slash Command
 
 ```
-/mhtags debug    Toggle debug mode (shows tag errors in chat)
-/mhtags memory   Display current memory usage
-/mhtags help     Show available commands
+/mhtags    Display current memory usage in KB
 ```
 
 ## Features

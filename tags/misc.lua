@@ -6,7 +6,6 @@ local MHCT = ns.MHCT
 
 -- Get ElvUI references from core (shared to avoid duplicate unpacking)
 local E = MHCT.E
-local ShortValue = MHCT.ShortValue
 
 -- Localize Lua functions
 local format = string.format
@@ -58,12 +57,18 @@ MHCT.registerTag(
 		
 		local absorbAmount = UnitGetTotalAbsorbs(unit)
 		
-		-- Defensive nil check - handle both nil and 0
-		if not absorbAmount or absorbAmount == 0 then
+		-- Guard: Must be a valid positive number
+		if not absorbAmount or type(absorbAmount) ~= "number" or absorbAmount <= 0 then
 			return ""
 		end
-
-		return format("|cff%s(%s)|r", ABSORB_TEXT_COLOR, ShortValue(absorbAmount))
+		
+		-- Use ElvUI's ShortValue (wrap in pcall for safety)
+		local success, result = pcall(function() return E:ShortValue(absorbAmount) end)
+		if success and result then
+			return format("|cff%s(%s)|r", ABSORB_TEXT_COLOR, result)
+		end
+		
+		return ""
 	end
 )
 
