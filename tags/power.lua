@@ -76,19 +76,3 @@ MHCT.registerTag(
 		return formatPowerPercent(unit, MHCT.parseDecimalArg(args, DEFAULT_DECIMAL_PLACE))
 	end
 )
-
--- ===================================================================================
--- THROTTLED POWER PERCENT TAGS
--- ===================================================================================
-
--- Create throttled versions of the power percent tag with the new naming
-MHCT.registerMultiThrottledTag(
-	"mh-power-percent",
-	POWER_SUBCATEGORY,
-	"Simple power percent, updates every %throttle% seconds",
-	MHCT.THROTTLE_SETS.STANDARD,
-	function(unit)
-		if not unit then return "" end
-		return formatPowerPercent(unit, 0) -- Default to 0 decimal places for throttled versions
-	end
-)

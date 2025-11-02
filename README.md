@@ -69,9 +69,9 @@ A lightweight, performance-optimized ElvUI plugin providing an extensive collect
 
 - **Memory efficient**: Stable usage under 500 KB in 40-person raids
 - **CPU optimized**: Streamlined algorithms with minimal overhead
-- **Throttle options**: Multiple update rates (0.25s, 0.5s, 1.0s, 2.0s) for different scenarios
 - **No memory leaks**: Bounded caches, automatic cleanup
 - **Raid-optimized**: 93% performance improvement for name tags with group numbers
+- **ElvUI-native**: Leverages ElvUI 14.0+ performance enhancements
 
 ### Comprehensive Tag Library
 
@@ -83,7 +83,6 @@ A lightweight, performance-optimized ElvUI plugin providing an extensive collect
 - Deficit tracking: Missing health as numeric or percentage values
 - Gradient coloring: Red-yellow-green spectrum based on health percentage
 - Smart features: Hide-at-full options, absorb shields, status indicators
-- Throttled variants: Pre-configured update rates for raid performance
 
 #### Name Tags
 
@@ -103,7 +102,6 @@ A lightweight, performance-optimized ElvUI plugin providing an extensive collect
 #### Power Tags
 
 - Percentage displays with configurable decimals
-- Throttled variants for raid performance
 - Smart zero-power handling
 
 #### Status & Miscellaneous Tags
@@ -117,21 +115,21 @@ A lightweight, performance-optimized ElvUI plugin providing an extensive collect
 
 ### Raid Frames (25-40 units)
 
-Use throttled variants for optimal performance:
+All tags are optimized for raid performance with ElvUI 14.0+ native update system:
 
 ```
-[mh-health-current-percent-hidefull-1.0]    Updates every 1 second
-[mh-health-deficit-2.0]                     Updates every 2 seconds
-[mh-power-percent-1.0]                      Updates every 1 second
+[mh-health-current-percent-hidefull]        Clean health + percent display
+[mh-health-deficit]                         Shows missing health
+[mh-power-percent]                          Shows power percentage
 ```
 
 ### Party/Arena (5-10 units)
 
-Can use faster update rates:
+Same tags work efficiently for smaller groups:
 
 ```
-[mh-health-current-percent-0.5]             Updates every 0.5 seconds
-[mh-health-deficit-0.5]                     Updates every 0.5 seconds
+[mh-health-current-percent]                 Full-time health tracking
+[mh-health-deficit]                         Missing health display
 ```
 
 ### Player/Target (1-3 units)
@@ -186,7 +184,7 @@ Backward compatibility is maintained via tag aliases (zero performance overhead)
 - Centralized argument parsing
 - Event constant groups for maintainability
 - Tag alias system for legacy compatibility
-- Throttled tags now reference base implementations
+- Simplified architecture leveraging ElvUI 14.0+ performance
 
 ### Monitoring Performance
 
@@ -226,7 +224,6 @@ Complete health tag system with 8 organized sections:
 - Deficit tracking (numeric and percentage)
 - Gradient colored displays
 - Health color codes for custom styling
-- Throttled variants (0.25s to 2.0s)
 - Legacy compatibility tags
 
 ### Name (name)
@@ -253,7 +250,6 @@ Unit classification indicators:
 Resource display:
 
 - Percentage with configurable decimals
-- Throttled variants for raid performance
 - Smart handling of zero power
 
 ### Miscellaneous (misc)

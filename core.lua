@@ -572,39 +572,6 @@ MHCT.registerTag = function(name, subCategory, description, events, func)
 	return name
 end
 
--- Optimized throttled tag registration for ElvUI V14.0 with error boundaries
-MHCT.registerThrottledTag = function(name, subCategory, description, throttle, func)
-	local fullCategory = MHCT.TAG_CATEGORY_NAME .. " [" .. subCategory .. "]"
-	E:AddTagInfo(name, fullCategory, description)
-	-- Wrap function with error boundary to prevent crashes
-	E:AddTag(name, throttle, safeTagWrapper(name, func))
-	return name
-end
-
--- Optimized multi-throttled tag registration for ElvUI V14.0
-MHCT.registerMultiThrottledTag = function(namePattern, subCategory, descPattern, throttles, func)
-	local results = {}
-
-	-- Use predefined throttle set or default
-	if type(throttles) == "string" and MHCT.THROTTLE_SETS[throttles] then
-		throttles = MHCT.THROTTLE_SETS[throttles]
-	elseif not throttles then
-		throttles = MHCT.THROTTLE_SETS.STANDARD
-	end
-
-	for _, throttleInfo in ipairs(throttles) do
-		local throttleValue = throttleInfo.value
-		local throttleSuffix = throttleInfo.suffix or tostring(throttleValue)
-		local tagName = namePattern .. throttleSuffix
-		local desc = descPattern:gsub("%%throttle%%", throttleSuffix:gsub("^-", ""))
-
-		MHCT.registerThrottledTag(tagName, subCategory, desc, throttleValue, func)
-		tinsert(results, tagName)
-	end
-
-	return results
-end
-
 -- Create tag alias for backwards compatibility (shares function reference, no duplication)
 MHCT.registerTagAlias = function(oldName, newName)
 	-- Get the existing tag info and function from the new tag
@@ -629,49 +596,6 @@ MHCT.registerTagAlias = function(oldName, newName)
 	end
 	return nil
 end
-
--- Define standard throttle rates that can be used throughout the addon
-MHCT.THROTTLES = {
-	INSTANT = 0, -- Update every frame (use sparingly!)
-	QUARTER = 0.25, -- Update 4 times per second
-	HALF = 0.5, -- Update twice per second
-	ONE = 1.0, -- Update once per second
-	TWO = 2.0, -- Update every 2 seconds
-	FIVE = 5.0, -- Update every 5 seconds (for very low priority)
-}
-
--- Throttle configurations for batch registration
-MHCT.THROTTLE_CONFIGS = {
-	{ value = MHCT.THROTTLES.QUARTER, suffix = "-0.25" },
-	{ value = MHCT.THROTTLES.HALF, suffix = "-0.5" },
-	{ value = MHCT.THROTTLES.ONE, suffix = "-1.0" },
-	{ value = MHCT.THROTTLES.TWO, suffix = "-2.0" },
-}
-
--- Common throttle sets for different use cases
-MHCT.THROTTLE_SETS = {
-	-- Standard set (0.25, 0.5, 1.0, 2.0)
-	STANDARD = {
-		{ value = MHCT.THROTTLES.QUARTER, suffix = "-0.25" },
-		{ value = MHCT.THROTTLES.HALF, suffix = "-0.5" },
-		{ value = MHCT.THROTTLES.ONE, suffix = "-1.0" },
-		{ value = MHCT.THROTTLES.TWO, suffix = "-2.0" },
-	},
-
-	-- Fast set (0, 0.25, 0.5)
-	FAST = {
-		{ value = MHCT.THROTTLES.INSTANT, suffix = "-instant" },
-		{ value = MHCT.THROTTLES.QUARTER, suffix = "-0.25" },
-		{ value = MHCT.THROTTLES.HALF, suffix = "-0.5" },
-	},
-
-	-- Slow set (1.0, 2.0, 5.0)
-	SLOW = {
-		{ value = MHCT.THROTTLES.ONE, suffix = "-1.0" },
-		{ value = MHCT.THROTTLES.TWO, suffix = "-2.0" },
-		{ value = MHCT.THROTTLES.FIVE, suffix = "-5.0" },
-	},
-}
 
 -------------------------------------
 -- SLASH COMMANDS

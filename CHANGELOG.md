@@ -2,6 +2,14 @@
 
 ## <span style="color:cyan">[6.1.0] Major Stability, Performance & Code Quality Release (November 1, 2025)</span>
 
+### Breaking Changes
+
+- **REMOVED: Throttled Tag Variants** - All `-0.25`, `-0.5`, `-1.0`, `-2.0` suffixed tags removed
+  - ElvUI 14.0+ provides native performance optimizations that make manual throttling unnecessary
+  - Base tags now leverage ElvUI's native update system for optimal performance
+  - Migration: Simply remove the throttle suffix from your tags (e.g., `[mh-health-deficit-1.0]` → `[mh-health-deficit]`)
+  - Result: Simpler codebase, better maintainability, and compatibility with ElvUI 14.0+ performance enhancements
+
 ### New Features
 
 - **NEW Tag**: `[mh-health-percent-colored-status]` - Colored gradient health percent with dynamic decimals and status awareness
@@ -35,9 +43,11 @@
 
 ### Code Quality & Maintainability
 
-- **Eliminated 172+ lines of code duplication**:
-  - Refactored throttled tag generation to reference base implementations (85 lines eliminated)
+- **Eliminated 250+ lines of code**:
+  - Removed all throttled tag infrastructure (125+ lines)
+  - Eliminated throttled tag generation logic (85 lines)
   - Created tag alias system for legacy compatibility (87 lines eliminated)
+- **Simplified architecture**: Removed `registerThrottledTag` and `registerMultiThrottledTag` functions
 - **Centralized argument parsing**: Created MHCT.parseDecimalArg() helper used across all tag files
 - **Event constant groups**: Added EVENTS table with clear, reusable event string constants
 - **Fixed GetMaxPlayerLevel usage**: Clarified variable naming and improved documentation for max player level caching
@@ -59,20 +69,21 @@
 - Raid roster cache automatically updates on GROUP_ROSTER_UPDATE and PLAYER_ENTERING_WORLD events
 - Status formatter cache pre-computed at load time (eliminates runtime string operations)
 - Tag aliases share exact function references (zero performance overhead)
-- Throttled tags reference base tag implementations (single source of truth)
 - All tag modules now use shared ElvUI references from `core.lua` instead of unpacking independently
 - Format string optimization reduces string concatenation operations in frequently called tags
 - Added `_, args` parameter support to colored status tag for decimal configuration
 - Uses `formatPercent()` helper for optimized decimal formatting
+- Simplified tag registration uses only `MHCT.registerTag()` and `MHCT.registerTagAlias()`
 
 ### Expected Impact
 
 - 93% performance improvement for raid name tags with group numbers
 - 2-5% additional CPU reduction in raid scenarios
 - Zero tag-related crashes (all protected with error boundaries)
-- Significantly improved code maintainability (172+ fewer duplicate lines)
+- Significantly improved code maintainability (250+ fewer lines of code)
 - ~200 KB peak memory usage (no growth, bounded caches)
 - Better adherence to WoW Lua best practices
+- Native ElvUI 14.0+ performance optimizations fully leveraged
 
 ### Compatibility
 
@@ -128,9 +139,7 @@ Colored/Gradient tags:
 - `[mh-health-current:gradient-colored]` → `[mh-health-current-colored]`
 - `[mh-health-percent:gradient-colored]` → `[mh-health-percent-colored]`
 
-Throttled variants:
-
-- Old: `[mh-health:simple:percent-0.25]` → New: `[mh-health-percent-0.25]`
+**Note**: Throttled variants (tags ending in `-0.25`, `-0.5`, `-1.0`, `-2.0`) were available in v5.0.0-v6.0.1 but have been removed as of v6.1.0. Use base tag names instead for optimal performance with ElvUI 14.0+.
 
 ### Files Changed
 
@@ -143,7 +152,7 @@ Throttled variants:
 
 - Monitor memory: `/run print(GetAddOnMemoryUsage("ElvUI_mhTags"))`
 - Expected usage: <200KB initial, <500KB after 1 min, <1MB stable
-- Use throttled tags for raid frames (-1.0 or -2.0 suffix)
+- All tags are optimized for raid performance with ElvUI 14.0+
 
 ## <span style="color:white">[4.0.3] TOC/Patch Update 11.2 (August 5th, 2025)</span>.
 
