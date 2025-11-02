@@ -1,6 +1,14 @@
 # MH Custom Tags (ElvUI Plugin)
 
-## <span style="color:cyan">[6.1.0] Major Stability, Performance & Code Quality Release (January 2025)</span>
+## <span style="color:cyan">[6.1.0] Major Stability, Performance & Code Quality Release (November 1, 2025)</span>
+
+### New Features
+
+- **NEW Tag**: `[mh-health-percent-colored-status]` - Colored gradient health percent with dynamic decimals and status awareness
+  - Shows AFK/Dead/Offline/Ghost/DND status with icons when applicable
+  - Health percentage uses gradient coloring (green/yellow/red based on value)
+  - Configurable decimal places using `{N}` syntax (e.g., `{0}` for 85%, `{2}` for 85.12%)
+  - Perfect for group/raid frames when you want colored health with status checks
 
 ### Critical Stability Fixes
 
@@ -16,10 +24,14 @@
   - Before: 1,600 iterations per update in 40-person raid (40 units × 40 iterations each)
   - After: 40 O(1) cache lookups per update
   - Result: 93% performance improvement for raid name tags
+- **Optimized ElvUI unpacking**: Centralized ElvUI unpacking in `core.lua` and exported shared references to tag modules, eliminating 5 duplicate `unpack(ElvUI)` calls
 - **Pre-cached status formatters**: Eliminated strupper() and format() calls in hot path
 - **Expanded format pattern cache**: Now caches 0-5 decimal formats (was 0-2)
+- **Enhanced format string caching**: Added pre-built format strings for common decimal cases in power percent formatter
+- **Improved function lookups**: Replaced `E:ShortValue()` method calls with localized `ShortValue()` function references for faster lookups
 - **Optimized string operations**: Replaced format() with direct concatenation for 2-string operations
 - **Memory bounded**: Raid roster cache has hard 40-entry limit, wiped completely on every roster update
+- **Better memory efficiency**: Shared ElvUI references (`MHCT.E`, `MHCT.L`, `MHCT.ShortValue`) reduce memory overhead and improve cache locality
 
 ### Code Quality & Maintainability
 
@@ -28,7 +40,10 @@
   - Created tag alias system for legacy compatibility (87 lines eliminated)
 - **Centralized argument parsing**: Created MHCT.parseDecimalArg() helper used across all tag files
 - **Event constant groups**: Added EVENTS table with clear, reusable event string constants
-- **Improved documentation**: All major refactoring clearly commented
+- **Fixed GetMaxPlayerLevel usage**: Clarified variable naming and improved documentation for max player level caching
+- **Improved documentation**: Enhanced comments explaining function localization practices and performance optimizations
+- **Consistent patterns**: Standardized how constants and ElvUI functions are accessed across all tag files
+- **Early return optimization**: Added maxHp == 0 check in health tags to avoid unnecessary function calls
 
 ### Developer Experience
 
@@ -45,61 +60,25 @@
 - Status formatter cache pre-computed at load time (eliminates runtime string operations)
 - Tag aliases share exact function references (zero performance overhead)
 - Throttled tags reference base tag implementations (single source of truth)
+- All tag modules now use shared ElvUI references from `core.lua` instead of unpacking independently
+- Format string optimization reduces string concatenation operations in frequently called tags
+- Added `_, args` parameter support to colored status tag for decimal configuration
+- Uses `formatPercent()` helper for optimized decimal formatting
 
 ### Expected Impact
 
 - 93% performance improvement for raid name tags with group numbers
+- 2-5% additional CPU reduction in raid scenarios
 - Zero tag-related crashes (all protected with error boundaries)
 - Significantly improved code maintainability (172+ fewer duplicate lines)
 - ~200 KB peak memory usage (no growth, bounded caches)
-
----
-
-## <span style="color:cyan">[6.0.1] Performance Optimizations & Code Quality Improvements (January 2025)</span>
-
-### Performance Improvements
-
-- **Optimized ElvUI unpacking**: Centralized ElvUI unpacking in `core.lua` and exported shared references to tag modules, eliminating 5 duplicate `unpack(ElvUI)` calls
-- **Enhanced format string caching**: Added pre-built format strings for common decimal cases (0, 1, 2) in power percent formatter, reducing dynamic string building in hot paths
-- **Improved function lookups**: Replaced `E:ShortValue()` method calls with localized `ShortValue()` function references for faster lookups across all tag files
-- **Better memory efficiency**: Shared ElvUI references (`MHCT.E`, `MHCT.L`, `MHCT.ShortValue`) reduce memory overhead and improve cache locality
-
-### Code Quality & Organization
-
-- **Fixed GetMaxPlayerLevel usage**: Clarified variable naming and improved documentation for max player level caching
-- **Improved documentation**: Enhanced comments explaining function localization practices and performance optimizations
-- **Consistent patterns**: Standardized how constants and ElvUI functions are accessed across all tag files
-- **Early return optimization**: Added maxHp == 0 check in health tags to avoid unnecessary function calls
-
-### Technical Details
-
-- All tag modules now use shared ElvUI references from `core.lua` instead of unpacking independently
-- Format string optimization reduces string concatenation operations in frequently called power tags
-- No breaking changes - all improvements are backward compatible
-
-### Expected Impact
-
-- 2-5% CPU reduction in raid scenarios
-- Improved code maintainability and consistency
 - Better adherence to WoW Lua best practices
 
----
+### Compatibility
 
-## <span style="color:cyan">[6.0.0] New Status-Aware Colored Health Tag (January 2025)</span>
-
-### New Features
-
-- **NEW Tag**: `[mh-health-percent-colored-status]` - Colored gradient health percent with dynamic decimals and status awareness
-  - Shows AFK/Dead/Offline/Ghost/DND status with icons when applicable
-  - Health percentage uses gradient coloring (green/yellow/red based on value)
-  - Configurable decimal places using `{N}` syntax (e.g., `{0}` for 85%, `{2}` for 85.12%)
-  - Perfect for group/raid frames when you want colored health with status checks
-
-### Technical Details
-
-- Added `_, args` parameter support to colored status tag for decimal configuration
-- Uses `formatPercent()` helper for optimized decimal formatting
-- Maintains all existing gradient color functionality
+- WoW Retail: 11.2.5+
+- ElvUI: 13.0+
+- No breaking changes - all improvements are backward compatible
 
 ---
 
