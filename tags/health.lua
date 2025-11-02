@@ -493,7 +493,7 @@ MHCT.registerTag(
 	"mh-health-current-percent-colored-status",
 	HEALTH_SUBCATEGORY,
 	"Current | percent with gradient color and status check. Example: 100k | 85% or AFK/Dead/Offline",
-	EVENTS.HEALTH_STATUS_ABSORB,
+	EVENTS.HEALTH_ABSORB_STATUS,
 	function(unit)
 		if not unit then
 			return ""
@@ -528,7 +528,7 @@ MHCT.registerTag(
 	"mh-health-percent-current-colored-status",
 	HEALTH_SUBCATEGORY,
 	"Percent | current with gradient color and status check. Example: 85% | 100k or AFK/Dead/Offline",
-	EVENTS.HEALTH_STATUS_ABSORB,
+	EVENTS.HEALTH_ABSORB_STATUS,
 	function(unit)
 		if not unit then
 			return ""
