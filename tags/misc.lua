@@ -14,7 +14,7 @@ local format = string.format
 local UnitEffectiveLevel = UnitEffectiveLevel
 local UnitGetTotalAbsorbs = UnitGetTotalAbsorbs
 local strupper = strupper
-local UnitAura = UnitAura
+local C_UnitAuras = C_UnitAuras
 local IsInRaid = IsInRaid
 local IsInGroup = IsInGroup
 local UnitGroupRolesAssigned = UnitGroupRolesAssigned
@@ -184,17 +184,18 @@ local function isDrinking(unit)
 		return false
 	end
 
-	-- Scan all buffs (must be thorough since buffs can stack and drinks can appear anywhere)
+	-- Scan all buffs using modern C_UnitAuras API (WoW 10.0+)
 	for i = 1, 40 do
-		local name = UnitAura(unit, i, "HELPFUL")
-		if not name then
+		local auraData = C_UnitAuras.GetBuffDataByIndex(unit, i)
+		if not auraData then
 			break -- No more buffs
 		end
 
 		-- Modern retail WoW: Nearly all drink buffs contain "Drink" or "Refreshment" in the name
 		-- This covers: Water, Mage Food, Conjured items, vendor drinks, etc.
 		-- Examples: "Drink", "Food & Drink", "Refreshing Spring Water", "Conjured Mana Strudel"
-		if name:find("Drink") or name:find("Refreshment") then
+		local name = auraData.name
+		if name and (name:find("Drink") or name:find("Refreshment")) then
 			return true
 		end
 	end
