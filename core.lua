@@ -38,6 +38,10 @@ local UnitEffectiveLevel = UnitEffectiveLevel
 local UnitClassification = UnitClassification
 local GetCreatureDifficultyColor = GetCreatureDifficultyColor
 local GetMaxPlayerLevel = GetMaxPlayerLevel
+local GetNumGroupMembers = GetNumGroupMembers
+local GetRaidRosterInfo = GetRaidRosterInfo
+local IsInRaid = IsInRaid
+local wipe = wipe
 -- Cache max player level at load time (doesn't change during session)
 local MAX_PLAYER_LEVEL_VALUE = GetMaxPlayerLevel()
 
@@ -127,6 +131,48 @@ local GRADIENT_COLORS = {
 	0.92,
 	0.44, -- End color (green) at 100% health
 }
+
+-------------------------------------
+-- RAID ROSTER CACHE (Performance Optimization)
+-- This cache prevents O(n) iteration on every frame update
+-- Maximum size: 40 entries (hard limit by WoW)
+-- Wiped and rebuilt on every GROUP_ROSTER_UPDATE
+-------------------------------------
+local raidRosterCache = {}
+
+-- Update raid roster cache - wipes completely before rebuilding (no growth)
+local function updateRaidRosterCache()
+	-- Wipe cache completely to prevent accumulation
+	wipe(raidRosterCache)
+	
+	-- Only build cache if in a raid
+	if not IsInRaid() then
+		return
+	end
+	
+	-- Rebuild cache with current roster (max 40 entries)
+	local numMembers = GetNumGroupMembers()
+	for i = 1, numMembers do
+		local name, _, group = GetRaidRosterInfo(i)
+		if name then
+			raidRosterCache[name] = group
+		end
+	end
+end
+
+-- Export cache for use in name tags
+MHCT.raidRosterCache = raidRosterCache
+
+-- Create event frame for roster updates
+local rosterFrame = CreateFrame("Frame")
+rosterFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
+rosterFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+rosterFrame:SetScript("OnEvent", function(self, event)
+	updateRaidRosterCache()
+end)
+
+-- Initial cache build
+updateRaidRosterCache()
 
 -------------------------------------
 -- HELPER FUNCTIONS

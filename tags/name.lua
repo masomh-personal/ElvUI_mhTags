@@ -91,7 +91,7 @@ MHCT.registerTag(
 			return formatted
 		end
 
-		-- Look up group number
+		-- Build name-realm identifier
 		local nameRealm
 		local realm = select(2, UnitName(unit))
 		if realm and realm ~= "" then
@@ -100,11 +100,10 @@ MHCT.registerTag(
 			nameRealm = name
 		end
 
-		for i = 1, GetNumGroupMembers() do
-			local raidName, _, group = GetRaidRosterInfo(i)
-			if raidName == nameRealm then
-				return format("%s |cff00FFFF(%s)|r", formatted, group)
-			end
+		-- O(1) cache lookup instead of O(n) iteration
+		local group = MHCT.raidRosterCache[nameRealm]
+		if group then
+			return format("%s |cff00FFFF(%s)|r", formatted, group)
 		end
 
 		return formatted
