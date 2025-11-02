@@ -33,6 +33,7 @@ local PERCENT_FORMATS = {
 
 -- Optimized power percent formatter
 local function formatPowerPercent(unit, decimalPlaces)
+	if not unit then return "" end
 	local powerType = UnitPowerType(unit)
 	local maxPower = UnitPowerMax(unit, powerType)
 
@@ -71,6 +72,7 @@ MHCT.registerTag(
 	"Simple power percent, no percentage sign with dynamic number of decimals (dynamic number within {} of tag)",
 	"UNIT_DISPLAYPOWER UNIT_POWER_FREQUENT UNIT_MAXPOWER",
 	function(unit, _, args)
+		if not unit then return "" end
 		return formatPowerPercent(unit, tonumber(args) or DEFAULT_DECIMAL_PLACE)
 	end
 )
@@ -86,6 +88,7 @@ MHCT.registerMultiThrottledTag(
 	"Simple power percent, updates every %throttle% seconds",
 	MHCT.THROTTLE_SETS.STANDARD,
 	function(unit)
+		if not unit then return "" end
 		return formatPowerPercent(unit, 0) -- Default to 0 decimal places for throttled versions
 	end
 )

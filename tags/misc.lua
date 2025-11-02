@@ -32,6 +32,7 @@ MHCT.registerTag(
 	"Simple tag to show all unit levels if player is not max level. If max level, will show level of all non max level units",
 	"UNIT_LEVEL PLAYER_LEVEL_UP",
 	function(unit)
+		if not unit then return "" end
 		local unitLevel = UnitEffectiveLevel(unit)
 		local playerLevel = UnitEffectiveLevel("player")
 
@@ -53,6 +54,7 @@ MHCT.registerTag(
 	"Simple absorb tag in parentheses (with yellow text color)",
 	"UNIT_ABSORB_AMOUNT_CHANGED",
 	function(unit)
+		if not unit then return "" end
 		local absorbAmount = UnitGetTotalAbsorbs(unit) or 0
 		-- Early return for common case
 		if absorbAmount == 0 then
@@ -69,6 +71,7 @@ MHCT.registerTag(
 
 -- Helper function for difficulty level formatting
 local function formatDifficultyLevel(unit, hideAtMax)
+	if not unit then return "" end
 	local unitLevel = UnitEffectiveLevel(unit)
 	local playerLevel = UnitEffectiveLevel("player")
 
@@ -87,6 +90,7 @@ MHCT.registerTag(
 	"Traditional ElvUI difficulty color + level with more modern updates (will always show level)",
 	"UNIT_LEVEL PLAYER_LEVEL_UP",
 	function(unit)
+		if not unit then return "" end
 		return formatDifficultyLevel(unit, false) -- false = don't hide at max level
 	end
 )
@@ -97,6 +101,7 @@ MHCT.registerTag(
 	"Traditional ElvUI difficulty color + level with more modern updates (will always show level and only hide level when you reach max level and unit level is equal to player level)",
 	"UNIT_LEVEL PLAYER_LEVEL_UP",
 	function(unit)
+		if not unit then return "" end
 		return formatDifficultyLevel(unit, true) -- true = hide at max level
 	end
 )
@@ -112,6 +117,7 @@ MHCT.registerTag(
 	"Simple status tag that shows all the different flags: AFK, DND, OFFLINE, DEAD, or GHOST (with their own icons)",
 	"UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED",
 	function(unit)
+		if not unit then return "" end
 		return MHCT.formatWithStatusCheck(unit) or ""
 	end
 )
@@ -124,6 +130,7 @@ MHCT.registerTag(
 	"Simple status tag that shows all the different flags: AFK, DND, OFFLINE, DEAD, or GHOST (NO icon, text only)",
 	"UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED",
 	function(unit)
+		if not unit then return "" end
 		local status = MHCT.statusCheck(unit)
 		-- Early return for common case
 		if not status then

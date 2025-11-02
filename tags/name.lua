@@ -34,6 +34,7 @@ MHCT.registerTag(
 	"Shows unit name in all CAPS with a dynamic # of characters (dynamic number within {} of tag",
 	"UNIT_NAME_UPDATE",
 	function(unit, _, args)
+		if not unit then return "" end
 		local name = UnitName(unit)
 		-- Early return for common case
 		if not name or name == "" then
@@ -51,6 +52,7 @@ MHCT.registerTag(
 	"Shows unit name in all CAPS with a dynamic # of characters (dynamic number within {} of tag) - Example: [mh-dynamic:name:caps-statusicon{20}] will show name up to 20 characters",
 	"UNIT_NAME_UPDATE UNIT_CONNECTION PLAYER_FLAGS_CHANGED UNIT_HEALTH INSTANCE_ENCOUNTER_ENGAGE_UNIT",
 	function(unit, _, args)
+		if not unit then return "" end
 		-- Check for status first (less common case)
 		local statusFormatted = MHCT.formatWithStatusCheck(unit)
 		if statusFormatted then
@@ -75,6 +77,7 @@ MHCT.registerTag(
 	"Shows unit name in all CAPS with a dynamic # of characters + unit group number if in raid (dynamic number within {} of tag)",
 	"UNIT_NAME_UPDATE GROUP_ROSTER_UPDATE",
 	function(unit, _, args)
+		if not unit then return "" end
 		local name = UnitName(unit)
 		if not name or name == "" then
 			return ""
@@ -111,6 +114,7 @@ MHCT.registerTag(
 -- ===================================================================================
 -- Helper function for name abbreviation with configurable parameters
 local function formatAbbreviatedName(unit, reverse, lengthThreshold)
+	if not unit then return "" end
 	local name = UnitName(unit)
 	if not name then
 		return ""
@@ -135,6 +139,7 @@ MHCT.registerTag(
 	"Name abbreviation/shortener - Example: 'Cleave Training Dummy' => 'C.T. Dummy'",
 	"UNIT_NAME_UPDATE",
 	function(unit)
+		if not unit then return "" end
 		return formatAbbreviatedName(unit, false)
 	end
 )
@@ -145,6 +150,7 @@ MHCT.registerTag(
 	"Name abbreviation/shortener - Example: 'Cleave Training Dummy' => 'Cleave T.D.'",
 	"UNIT_NAME_UPDATE",
 	function(unit)
+		if not unit then return "" end
 		return formatAbbreviatedName(unit, true)
 	end
 )
@@ -155,6 +161,7 @@ MHCT.registerTag(
 	"Name abbreviation/shortener if greater than 25 characters - Example: 'Cleave Training Dummy' => 'C.T. Dummy'",
 	"UNIT_NAME_UPDATE",
 	function(unit, _, nameLen)
+		if not unit then return "" end
 		return formatAbbreviatedName(unit, false, tonumber(nameLen) or 25)
 	end
 )
@@ -165,6 +172,7 @@ MHCT.registerTag(
 	"Name abbreviation/shortener if greater than 25 characters - Example: 'Cleave Training Dummy' => 'Cleave T.D.'",
 	"UNIT_NAME_UPDATE",
 	function(unit, _, nameLen)
+		if not unit then return "" end
 		return formatAbbreviatedName(unit, true, tonumber(nameLen) or 25)
 	end
 )

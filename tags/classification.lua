@@ -32,6 +32,7 @@ MHCT.registerTag(
 	"Classification custom blp icons (elite, minibosses, bosses, rares, and rare elites)",
 	"UNIT_CLASSIFICATION_CHANGED",
 	function(unit, _, args)
+		if not unit then return "" end
 		local unitType = MHCT.classificationType(unit)
 		local baseIconSize = tonumber(args) or DEFAULT_ICON_SIZE
 
@@ -50,6 +51,7 @@ MHCT.registerTag(
 	"Classification custom blp icons (elite, minibosses, bosses, rares, and rare elites) - NON Dynamic sizing",
 	"UNIT_CLASSIFICATION_CHANGED",
 	function(unit)
+		if not unit then return "" end
 		local unitType = MHCT.classificationType(unit)
 
 		if unitType and MHCT.ICON_MAP[unitType] then
@@ -71,6 +73,7 @@ MHCT.registerTag(
 	"Unit classification as color-coded text (Boss, Elite, Rare, etc.)",
 	"UNIT_CLASSIFICATION_CHANGED",
 	function(unit)
+		if not unit then return "" end
 		local unitType = MHCT.classificationType(unit)
 
 		if not unitType then
@@ -97,6 +100,7 @@ MHCT.registerTag(
 	"Unit classification as compact colored symbols (B, E, R, R+, E+)",
 	"UNIT_CLASSIFICATION_CHANGED",
 	function(unit)
+		if not unit then return "" end
 		local unitType = MHCT.classificationType(unit)
 
 		if not unitType then
@@ -123,6 +127,7 @@ MHCT.registerTag(
 	"Full descriptive classification text without brackets",
 	"UNIT_CLASSIFICATION_CHANGED",
 	function(unit)
+		if not unit then return "" end
 		local unitType = MHCT.classificationType(unit)
 
 		if not unitType then
