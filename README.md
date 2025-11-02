@@ -46,8 +46,9 @@ Classification:
 Power:
 [mh-power-percent{1}]                    85.3 (mana/energy percent)
 
-Status:
+Status & Misc:
 [mh-status]                              AFK/Dead/Offline with icon
+[mh-healer-drinking]                     Drinking... (healers only, 5-man party)
 ```
 
 ### Utility Command
@@ -114,16 +115,17 @@ Status:
 | ----------------------- | -------------- | ------------------------------------- |
 | `[mh-power-percent{N}]` | `85` or `85.3` | Power percentage (mana, energy, etc.) |
 
-### Miscellaneous Tags (6)
+### Miscellaneous Tags (7)
 
-| Tag                               | Output Example | Description                  |
-| --------------------------------- | -------------- | ---------------------------- |
-| `[mh-smartlevel]`                 | `80`           | Smart level (hides at max)   |
-| `[mh-absorb]`                     | `(25k)`        | Absorb shield value          |
-| `[mh-difficultycolor:level]`      | `85`           | Level with difficulty color  |
-| `[mh-difficultycolor:level-hide]` | `85`           | Hides when both at max level |
-| `[mh-status]`                     | `AFK` + icon   | Status with icon             |
-| `[mh-status-noicon]`              | `AFK`          | Status text only             |
+| Tag                               | Output Example | Description                                    |
+| --------------------------------- | -------------- | ---------------------------------------------- |
+| `[mh-smartlevel]`                 | `80`           | Smart level (hides at max)                     |
+| `[mh-absorb]`                     | `(25k)`        | Absorb shield value                            |
+| `[mh-difficultycolor:level]`      | `85`           | Level with difficulty color                    |
+| `[mh-difficultycolor:level-hide]` | `85`           | Hides when both at max level                   |
+| `[mh-status]`                     | `AFK` + icon   | Status with icon                               |
+| `[mh-status-noicon]`              | `AFK`          | Status text only                               |
+| `[mh-healer-drinking]`            | `Drinking...`  | Shows only for healers drinking in 5-man party |
 
 ---
 

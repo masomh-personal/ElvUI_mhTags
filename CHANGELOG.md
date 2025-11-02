@@ -48,10 +48,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - `[mh-health-percent-nosign-colored-status{1}]` → `85.3` (gradient colored) or `AFK`
 
 - **Highlighted Tag**: `[mh-health-percent-nosign{N}]` - Health percentage without % sign (basic version)
+
   - Works like `[mh-health-percent{N}]` but omits the % symbol
   - Includes status checks but **no gradient coloring**
   - For colored version, use `[mh-health-percent-nosign-colored-status{N}]` above
   - Example: `[mh-health-percent-nosign{0}]` displays `85` instead of `85%`
+
+- **New Tag**: `[mh-healer-drinking]` - Healer drinking status for 5-man party content
+  - Shows `Drinking...` **only for healers** when drinking in **5-man party content**
+  - Does NOT work in raids (party only)
+  - Does NOT show power percentage - only displays when healer is actively drinking
+  - Returns empty string otherwise (combine with other tags for fallback display)
+  - **Highly optimized performance**:
+    - Early exit for non-healers (most units)
+    - Early exit when in combat (cannot drink in combat)
+    - Name-based detection (no spell ID checks needed)
+  - Uses `UnitGroupRolesAssigned()` to detect healer role
+  - Uses `UnitAffectingCombat()` to skip aura scanning when in combat
+  - Detects drink buffs by name matching ("Drink" or "Refreshment")
+  - Perfect for party healer frames to track mana recovery in dungeons
+  - Example: `[mh-healer-drinking]` → `Drinking...` (when healer drinking in party) or `` (empty)
 
 ### Fixed
 
