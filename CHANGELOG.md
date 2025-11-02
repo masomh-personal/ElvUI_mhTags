@@ -28,13 +28,16 @@
 
 ### Critical Stability Fixes
 
+- **Fixed ElvUI method call syntax**: Corrected all ElvUI method calls to use `:` (colon) instead of `.` (dot) for proper `self` context - this was the root cause of "attempt to compare nil with number" errors in `ShortValue()`
+- **Fixed absorb shield nil handling**: Added triple-layered protection (nil check, type validation, pcall wrapper) for `UnitGetTotalAbsorbs()` in both `getAbsorbText()` and `mh-absorb` tag
+- **Removed ElvUI method caching**: Eliminated local caching of `ShortValue` - now always called via `E:ShortValue()` to ensure proper method context
 - **Fixed decimal argument parsing bug**: `tonumber(args) or default` now correctly handles 0 decimals (previously treated 0 as falsy)
 - **Added comprehensive nil checks**: All 50+ tag functions now validate unit parameter to prevent nil dereferencing crashes
 - **Fixed health data nil handling**: `getHealthData()` now properly handles nil returns from `UnitHealth`/`UnitHealthMax` for invalid units
-- **Fixed absorb shield nil handling**: Explicit type checking (`type() == "number"`) prevents nil values from reaching `ShortValue()` in both `getAbsorbText()` and `mh-absorb` tag
 - **ElvUI 14.0+ tag alias compatibility**: Created internal tag registry to support legacy tag aliases without relying on ElvUI's internal `E.Tags.Methods` structure
 - **Added ElvUI API validation**: Startup check ensures all required ElvUI functions exist before proceeding
 - **ElvUI version compatibility check**: Soft warning for ElvUI versions below 13.0
+- **Removed debug mode infrastructure**: Simplified codebase - errors now propagate naturally to WoW's error handler for better bug reporting
 
 ### Performance Improvements
 
@@ -46,10 +49,10 @@
 - **Pre-cached status formatters**: Eliminated strupper() and format() calls in hot path
 - **Expanded format pattern cache**: Now caches 0-5 decimal formats (was 0-2)
 - **Enhanced format string caching**: Added pre-built format strings for common decimal cases in power percent formatter
-- **Improved function lookups**: Replaced `E:ShortValue()` method calls with localized `ShortValue()` function references for faster lookups
+- **Corrected ElvUI method calls**: Changed all `E.ShortValue()` to `E:ShortValue()` for proper Lua method syntax (colon passes implicit `self` parameter)
 - **Optimized string operations**: Replaced format() with direct concatenation for 2-string operations
 - **Memory bounded**: Raid roster cache has hard 40-entry limit, wiped completely on every roster update
-- **Better memory efficiency**: Shared ElvUI references (`MHCT.E`, `MHCT.L`, `MHCT.ShortValue`) reduce memory overhead and improve cache locality
+- **Better memory efficiency**: Shared ElvUI table reference (`MHCT.E`, `MHCT.L`) reduces memory overhead
 
 ### Code Quality & Maintainability
 
