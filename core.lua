@@ -83,6 +83,25 @@ end
 -- Validate ElvUI API before proceeding
 validateElvUIAPI()
 
+-- Check ElvUI version compatibility (soft warning)
+local function checkElvUIVersion()
+	local minVersion = 13.0
+	local currentVersion = tonumber(E.version) or 0
+
+	if currentVersion > 0 and currentVersion < minVersion then
+		print(
+			format(
+				"|cffFFFF00[ElvUI_mhTags Warning]|r This addon is designed for ElvUI %.1f or higher. "
+					.. "Current version: %.1f. Some features may not work correctly.",
+				minVersion,
+				currentVersion
+			)
+		)
+	end
+end
+
+checkElvUIVersion()
+
 local ShortValue = E.ShortValue
 
 -- Export ElvUI references for tag modules to avoid duplicate unpacking
@@ -120,8 +139,8 @@ local FORMAT_PATTERNS = {
 	DECIMAL_WITHOUT_PERCENT = {}, -- Stores patterns like "%.0f", "%.1f", etc.
 }
 
--- Only cache the most commonly used patterns (0-2 decimals)
-for i = 0, 2 do
+-- Cache all reasonable decimal patterns (0-5 decimals)
+for i = 0, 5 do
 	FORMAT_PATTERNS.DECIMAL_WITH_PERCENT[i] = format("%%.%df%%%%", i)
 	FORMAT_PATTERNS.DECIMAL_WITHOUT_PERCENT[i] = format("%%.%df", i)
 end
@@ -158,6 +177,12 @@ local STATUS_ICON_MAP = {
 	[L["Ghost"]] = "ghostIcon",
 	[L["Offline"]] = "offlineIcon",
 }
+
+-- Pre-cached formatted status text (avoids strupper() and format() in hot path)
+local FORMATTED_STATUS_CACHE = {}
+for status, _ in pairs(STATUS_ICON_MAP) do
+	FORMATTED_STATUS_CACHE[status] = format("|cff%s%s|r", STATUS_COLOR, strupper(status))
+end
 
 -- Static color sequence for gradient
 local GRADIENT_COLORS = {
@@ -218,7 +243,18 @@ updateRaidRosterCache()
 -- HELPER FUNCTIONS
 -------------------------------------
 
--- Removed - not used anywhere in the codebase
+-- Centralized argument parsing for decimal places
+-- Handles nil, 0, and invalid values correctly
+MHCT.parseDecimalArg = function(args, default)
+	if not args then
+		return default or 0
+	end
+	local parsed = tonumber(args)
+	if parsed == nil then
+		return default or 0
+	end
+	return parsed
+end
 
 -- Optimized RGB to hex conversion
 MHCT.rgbToHex = function(r, g, b)
@@ -332,7 +368,7 @@ MHCT.difficultyLevelFormatter = function(unit, unitLevel)
 	end
 end
 
--- Format status text with icon
+-- Format status text with icon (uses pre-cached formatted text for performance)
 MHCT.statusFormatter = function(status, size, reverse)
 	if not status then
 		return nil
@@ -340,13 +376,13 @@ MHCT.statusFormatter = function(status, size, reverse)
 
 	local iconSize = size or MHCT.DEFAULT_ICON_SIZE
 	local iconName = STATUS_ICON_MAP[status]
-	local formattedStatus = format("|cff%s%s|r", STATUS_COLOR, strupper(status))
+	local formattedStatus = FORMATTED_STATUS_CACHE[status] -- O(1) lookup, no strupper() or format()
 	local icon = MHCT.getFormattedIcon(iconName, iconSize)
 
 	if reverse then
-		return format("%s%s", icon, formattedStatus)
+		return icon .. formattedStatus
 	else
-		return format("%s%s", formattedStatus, icon)
+		return formattedStatus .. icon
 	end
 end
 
@@ -569,6 +605,31 @@ MHCT.registerMultiThrottledTag = function(namePattern, subCategory, descPattern,
 	return results
 end
 
+-- Create tag alias for backwards compatibility (shares function reference, no duplication)
+MHCT.registerTagAlias = function(oldName, newName)
+	-- Get the existing tag info and function from the new tag
+	local tagInfo = E.TagInfo[newName]
+	local tagFunction = E.Tags.Methods[newName]
+
+	if tagInfo and tagFunction then
+		-- Register alias with deprecation notice
+		E:AddTagInfo(
+			oldName,
+			tagInfo.category,
+			tagInfo.description .. " (DEPRECATED - Use [" .. newName .. "] instead)"
+		)
+		-- Share the exact same function reference (no duplication)
+		E.Tags.Methods[oldName] = tagFunction
+		return oldName
+	end
+
+	-- If new tag doesn't exist, log warning in debug mode
+	if MHCT.DEBUG_MODE then
+		print(format("|cffFF0000[mhTags]|r Cannot create alias '%s' -> '%s': target tag not found", oldName, newName))
+	end
+	return nil
+end
+
 -- Define standard throttle rates that can be used throughout the addon
 MHCT.THROTTLES = {
 	INSTANT = 0, -- Update every frame (use sparingly!)
@@ -611,3 +672,33 @@ MHCT.THROTTLE_SETS = {
 		{ value = MHCT.THROTTLES.FIVE, suffix = "-5.0" },
 	},
 }
+
+-------------------------------------
+-- SLASH COMMANDS
+-------------------------------------
+
+SLASH_MHTAGS1 = "/mhtags"
+SlashCmdList["MHTAGS"] = function(msg)
+	msg = msg:lower():trim()
+
+	if msg == "debug" then
+		MHCT.DEBUG_MODE = not MHCT.DEBUG_MODE
+		print(
+			format(
+				"|cff0388fcElvUI_mhTags:|r Debug mode %s",
+				MHCT.DEBUG_MODE and "|cff00FF00enabled|r" or "|cffFF0000disabled|r"
+			)
+		)
+	elseif msg == "memory" then
+		UpdateAddOnMemoryUsage()
+		local memoryUsage = GetAddOnMemoryUsage("ElvUI_mhTags")
+		print(format("|cff0388fcElvUI_mhTags:|r Memory usage: |cffffcc00%.2f KB|r", memoryUsage))
+	elseif msg == "help" or msg == "" then
+		print("|cff0388fcElvUI_mhTags|r |cffccff33Commands:|r")
+		print("  |cffffcc00/mhtags debug|r - Toggle debug mode (shows tag errors)")
+		print("  |cffffcc00/mhtags memory|r - Display current memory usage")
+		print("  |cffffcc00/mhtags help|r - Show this help message")
+	else
+		print("|cff0388fcElvUI_mhTags:|r Unknown command. Type |cffffcc00/mhtags help|r for available commands.")
+	end
+end

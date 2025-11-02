@@ -34,7 +34,7 @@ MHCT.registerTag(
 	function(unit, _, args)
 		if not unit then return "" end
 		local unitType = MHCT.classificationType(unit)
-		local baseIconSize = tonumber(args) or DEFAULT_ICON_SIZE
+		local baseIconSize = MHCT.parseDecimalArg(args, DEFAULT_ICON_SIZE)
 
 		if unitType and MHCT.ICON_MAP[unitType] then
 			return MHCT.getFormattedIcon(MHCT.ICON_MAP[unitType], baseIconSize)

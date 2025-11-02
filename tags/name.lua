@@ -41,7 +41,7 @@ MHCT.registerTag(
 			return ""
 		end
 
-		local length = tonumber(args) or DEFAULT_TEXT_LENGTH
+		local length = MHCT.parseDecimalArg(args, DEFAULT_TEXT_LENGTH)
 		return E:ShortenString(strupper(name), length)
 	end
 )
@@ -64,7 +64,7 @@ MHCT.registerTag(
 			return ""
 		end
 
-		local length = tonumber(args) or DEFAULT_TEXT_LENGTH
+		local length = MHCT.parseDecimalArg(args, DEFAULT_TEXT_LENGTH)
 		return E:ShortenString(strupper(name), length)
 	end
 )
@@ -83,7 +83,7 @@ MHCT.registerTag(
 			return ""
 		end
 
-		local length = tonumber(args) or DEFAULT_TEXT_LENGTH
+		local length = MHCT.parseDecimalArg(args, DEFAULT_TEXT_LENGTH)
 		local formatted = E:ShortenString(strupper(name), length)
 
 		-- Only do raid group lookup if actually in a raid (common case optimization)

@@ -73,7 +73,7 @@ MHCT.registerTag(
 	"UNIT_DISPLAYPOWER UNIT_POWER_FREQUENT UNIT_MAXPOWER",
 	function(unit, _, args)
 		if not unit then return "" end
-		return formatPowerPercent(unit, tonumber(args) or DEFAULT_DECIMAL_PLACE)
+		return formatPowerPercent(unit, MHCT.parseDecimalArg(args, DEFAULT_DECIMAL_PLACE))
 	end
 )
 
