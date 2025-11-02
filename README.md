@@ -7,6 +7,19 @@
 
 A high-performance ElvUI plugin providing 39 custom tags for unit frames, nameplates, and other UI elements. Designed for minimal memory footprint and maximum flexibility.
 
+> **⚠️ Development Status Notice**
+>
+> Future development of this addon is currently on hold pending the **World of Warcraft: Midnight** expansion. Significant changes to the WoW addon API in Midnight may require substantial rewrites, and this addon's functionality is directly dependent on ElvUI's compatibility with those changes.
+>
+> **What This Means:**
+>
+> - The addon remains fully functional for current retail (11.2.5+)
+> - Bug fixes and critical issues will be addressed as needed
+> - New features and major updates are paused until Midnight's API is finalized
+> - Continued support depends on ElvUI's update timeline for the expansion
+>
+> Some legacy tags from earlier versions have been removed to improve maintainability and performance. I appreciate your understanding as I balance ongoing support with the realities of major API transitions. Thank you to everyone who has used and supported this addon.
+
 ## Installation
 
 1. Download from [CurseForge](https://www.curseforge.com/wow/addons/mh-custom-tags-elvui-plugin) or [GitHub Releases](https://github.com/masomh-personal/ElvUI_mhTags/releases)
