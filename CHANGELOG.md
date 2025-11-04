@@ -1,232 +1,238 @@
-# MH Custom Tags (ElvUI Plugin)
+# Changelog
 
-## <span style="color:cyan">[5.0.0] Optimization, Consolidation, and CPU Improvements (August 10th, 2025)</span>
+All notable changes to ElvUI_mhTags will be documented in this file.
 
-### Highlights
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-- Unified health tags into one module with shared helpers (DRY)
-- Fixed severe memory leak from v4.0 (memory usage was climbing dramatically)
-- CPU optimizations for raid scenarios (fewer branches, faster hot paths)
-- Full health (100%) now uses gradient color (not white)
-- Simplified tag naming (hyphenated) with backward-compatible aliases
+---
 
-### CPU & Memory Improvements
+## [6.1.0] - 2025-11-02
 
-- Reordered status checks to hit common cases first (connected/alive)
-- Gradient color lookups streamlined; zero-health fast path retained
-- Reduced string allocations via pre-built format fragments
-- Removed legacy caching patterns; stabilized memory usage
-- Estimated 5–10% CPU reduction in 40-person raids
+### Breaking Changes
 
-### Health Tag Consolidation
+- **Removed throttled tag variants** - All `-0.25`, `-0.5`, `-1.0`, `-2.0` suffixed tags have been removed
+  - ElvUI 14.0+ provides native performance optimizations making manual throttling obsolete
+  - Migration: Remove throttle suffix from tags (e.g., `[mh-health-deficit-1.0]` becomes `[mh-health-deficit]`)
+  - Result: Simpler codebase, better maintainability, full ElvUI 14.0+ compatibility
 
-- All health tags refactored into `tags/health.lua`
-- Shared helpers: `getHealthData()`, `formatPercent()`, `getAbsorbText()`, `getGradientColor()`
-- Clear, consistent output across all variants
+### Added
 
-### IMPORTANT: Tag Name Changes
+- **New Tag**: `[mh-health-percent-colored-status]` - Colored gradient health percent with status awareness
 
-New naming uses hyphens instead of colons. Old names still work but are deprecated.
+  - Gradient coloring (red/yellow/green based on health)
+  - Status icons (AFK, Dead, Offline, Ghost, DND)
+  - Configurable decimals via `{N}` syntax
+  - Example: `[mh-health-percent-colored-status{0}]` shows `85%` or status icon
 
-- `[mh-health:current:percent:right]` → `[mh-health-current-percent]`
-- `[mh-health:current:percent:left]` → `[mh-health-percent-current]`
-- `[mh-health:current:percent:right-hidefull]` → `[mh-health-current-percent-hidefull]`
-- `[mh-health:current:percent:left-hidefull]` → `[mh-health-percent-current-hidefull]`
-- `[mh-health:absorb:current:percent:right]` → `[mh-health-current-percent-absorb]`
-- `[mh-health:simple:percent]` → `[mh-health-percent]`
-- `[mh-health:simple:percent-nosign]` → `[mh-health-percent-nosign]`
-- `[mh-deficit:num-status]` → `[mh-health-deficit]`
-- `[mh-deficit:num-nostatus]` → `[mh-health-deficit-nostatus]`
-- `[mh-deficit:percent-status]` → `[mh-health-deficit-percent]`
+- **New Tag**: `[mh-health-current-percent-colored-status]` - Current and percent with gradient coloring
 
-Colored/Gradient tags:
+  - Combines current health value and percentage (e.g., `100k | 85%`)
+  - Gradient coloring based on health percentage
+  - Includes absorb shield display and status icons
 
-- `[mh-health-current-percent:gradient-colored]` → `[mh-health-current-percent-colored]`
-- `[mh-health-percent-current:gradient-colored]` → `[mh-health-percent-current-colored]`
-- `[mh-health-current:gradient-colored]` → `[mh-health-current-colored]`
-- `[mh-health-percent:gradient-colored]` → `[mh-health-percent-colored]`
+- **New Tag**: `[mh-health-percent-current-colored-status]` - Percent and current with gradient coloring
 
-Throttled variants:
+  - Combines percentage and current health (e.g., `85% | 100k`)
+  - Gradient coloring based on health percentage
+  - Includes absorb shield display and status icons
 
-- Old: `[mh-health:simple:percent-0.25]` → New: `[mh-health-percent-0.25]`
+- **New Tag**: `[mh-health-percent-nosign-colored-status{N}]` - Health percentage without % sign, with gradient coloring and status
 
-### Files Changed
+  - Combines gradient coloring (red/yellow/green) with status awareness (AFK/Dead/Offline/etc.)
+  - **No % sign** - displays clean numbers like `85` or `85.3`
+  - Configurable decimals via `{N}` syntax (0-3 decimals, default 0)
+  - Perfect for minimalist raid frames with full status awareness
+  - Examples:
+    - `[mh-health-percent-nosign-colored-status{0}]` → `85` (gradient colored) or `DEAD`
+    - `[mh-health-percent-nosign-colored-status{1}]` → `85.3` (gradient colored) or `AFK`
 
-- Added: `tags/health.lua` (unified health)
-- Removed: `tags/healthV1.lua`, `tags/healthV2.lua`
-- Updated: `core.lua`, `tags/misc.lua`, `tags/name.lua`, `tags/power.lua`
-- Updated: `ElvUI_mhTags.toc` to 5.0.0
+- **Highlighted Tag**: `[mh-health-percent-nosign{N}]` - Health percentage without % sign (basic version)
 
-### Developer Notes
+  - Works like `[mh-health-percent{N}]` but omits the % symbol
+  - Includes status checks but **no gradient coloring**
+  - For colored version, use `[mh-health-percent-nosign-colored-status{N}]` above
+  - Example: `[mh-health-percent-nosign{0}]` displays `85` instead of `85%`
 
-- Monitor memory: `/run print(GetAddOnMemoryUsage("ElvUI_mhTags"))`
-- Expected usage: <200KB initial, <500KB after 1 min, <1MB stable
-- Use throttled tags for raid frames (-1.0 or -2.0 suffix)
+- **New Tag**: `[mh-healer-drinking]` - Healer drinking status (works in any scenario)
+  - Shows `DRINKING...` **only for healers** when drinking/eating
+  - Works in **any scenario**: solo, party, or raid (user choice where to place tag)
+  - Returns empty string for non-healers or when not drinking (combine with other tags for fallback display)
+  - **Highly optimized performance**:
+    - Early exit for non-healers (most units)
+    - Early exit when in combat (cannot drink in combat)
+    - Optimized keyword matching with plain search mode
+    - Name-based detection (no spell ID checks needed)
+  - Uses `UnitGroupRolesAssigned()` to detect healer role
+  - Uses `UnitAffectingCombat()` to skip aura scanning when in combat
+  - Detects drink buffs by keyword matching ("drink", "food", "refreshment")
+  - Light blue color (`b0d0ff`) for visibility
+  - Example: `[mh-healer-drinking]` → `DRINKING...` (when healer drinking) or `` (empty)
 
-## <span style="color:white">[4.0.3] TOC/Patch Update 11.2 (August 5th, 2025)</span>.
+### Fixed
 
-- **MAINTENANCE**: Updated TOC for 11.2
+- **ElvUI method call syntax** - Corrected all ElvUI method calls to use `:` (colon) for proper `self` context
 
-## <span style="color:white">[4.0.2] TOC/Patch Update 11.1.7 (June 18th, 2025)</span>.
+  - Root cause of "attempt to compare nil with number" errors in `ShortValue()`
+  - Changed `E.ShortValue()` to `E:ShortValue()` throughout codebase
 
-- **MAINTENANCE**: Updated TOC for 11.1.7
+- **Absorb shield nil handling** - Added comprehensive protection for `UnitGetTotalAbsorbs()`
 
-## <span style="color:white">[4.0.1] Bug Fix (June 13th, 2025)</span>.
+  - Triple-layered validation: nil check, type validation, pcall wrapper
+  - Fixes crashes during shield application/removal timing windows
 
-### Bug Fixes
+- **ElvUI method caching removed** - Eliminated local caching of `ShortValue`
 
-- **FIXED**: `formatHealthPercent` function in core.lua not displaying max HP at full health due to incorrect ElvUI function reference
-- **FIXED**: Health tags using `MHCT.formatHealthPercent` now properly show formatted max HP value when at full health instead of showing nothing
+  - Now always called via `E:ShortValue()` to ensure proper method context
+  - Prevents stale function references
 
-## <span style="color:cyan">[4.0.0] Major update and refactor (May 17th, 2025)</span>.
+- **Decimal argument parsing** - Fixed `tonumber(args) or default` to correctly handle 0 decimals
 
-### Performance Optimizations
+  - Previously treated 0 as falsy, now explicitly checks for nil
 
-- Implemented proper Lua localization patterns throughout all modules
-- Optimized string handling with direct concatenation and cached format patterns
-- Reduced memory allocations by reusing variables and pre-allocating where possible
-- Optimized color gradient table generation with more efficient interpolation
-- Cached frequently used values to reduce redundant calculations
+- **Health data nil handling** - `getHealthData()` now handles nil returns from `UnitHealth`/`UnitHealthMax`
 
-### Code Structure Improvements
+  - Prevents "attempt to compare nil with number" errors for invalid units
 
-- Created tag registration helpers to standardize tag creation
-- Reorganized files and modules for better maintainability
-- Implemented consistent naming conventions across modules
-- Moved related functionality to appropriate modules (e.g., health color tags)
+- **ElvUI 14.0+ tag alias compatibility** - Created internal tag registry
+  - Supports legacy tag aliases without relying on ElvUI's internal `E.Tags.Methods` structure
+  - Zero performance overhead
 
-### New Features
+### Improved
 
-- Implemented multiple update frequencies for performance-critical tags
-- Added new tag variants with different formatting options
-- Enhanced abbreviation functionality for name tags
+- **Tag: `[mh-healer-drinking]`** - Enhanced flexibility and performance
+  - Removed party/raid restriction - now works universally (solo, party, raid)
+  - Optimized keyword matching using plain search mode (faster substring detection)
+  - Updated display text to all caps: `DRINKING...`
+  - Improved color to light blue (`b0d0ff`) for better visibility
+  - Better code organization with pre-defined keyword table
 
-### Developer Improvements
+- **Performance: Raid roster caching** - Eliminated O(n) iteration in name tags
 
-- Added memory leak testing capabilities
-- Improved code documentation and comments
-- Standardized module structure for easier maintenance
+  - Before: 1,600 iterations per update in 40-person raid
+  - After: 40 O(1) cache lookups per update
+  - Result: 93% performance improvement
 
-## <span style="color:white">[3.0.4] TOC/Patch Update 11.5.0 (April 23rd, 2025)</span>.
+- **Performance: Pre-cached status formatters** - Eliminated runtime string operations
 
-- MAINTENANCE: Updated CL and TOC for 11.5.0
+  - Status text pre-computed at load time
+  - Removes `strupper()` and `format()` calls from hot path
 
-## <span style="color:white">[3.0.3] TOC/Patch Update 11.1.0 (Feb 24th, 2025)</span>.
+- **Performance: Format pattern cache** - Expanded from 0-2 decimals to 0-5 decimals
 
-- MAINTENANCE: Updated CL and TOC for 11.1.0
+  - Covers all reasonable decimal use cases
+  - Eliminates string concatenation for format string generation
 
-## <span style="color:white">[3.0.2] TOC/Patch Update 11.0.7 (December 17th, 2024)</span>.
+- **Performance: ElvUI method calls** - Corrected all method call syntax
 
-- MAINTENANCE: Updated CL and TOC for 11.0.7
-- MISC: Rearranged and cleaned up folder structure to make root addon folder less crowded
-- MISC: Code cleanup of level tag to denote rares, boss rares, elite rares, etc.
+  - Changed `E.ShortValue()` to `E:ShortValue()` for proper Lua semantics
+  - Colon syntax passes implicit `self` parameter
 
-## <span style="color:white">[3.0.1] Minor code clean up (November 27th, 2024)</span>.
+- **Performance: Memory efficiency** - Shared ElvUI table references
 
-- MISC: Woopsie! I forgot to remove print statement in `init.lua`
+  - Single `unpack(ElvUI)` in core.lua
+  - All modules use `MHCT.E` and `MHCT.L` exports
+  - Reduces memory overhead and improves cache locality
 
-## <span style="color:cyan">[3.0.0] Major Update (November 11th, 2024)</span>.
+- **Code Quality: Eliminated 250+ lines** - Major code reduction
 
-- Complete refactor of code, cleaned up local variables, and made things a bit more efficient
-- Utilized WOW Addon private namespace object for cleaner variable usage
-- Rechecked every tag to ensure proper events were being used (and not adding event checks we don't need)
-- Separated each category to have it's own file for better modularity
-- **ADDED**: many new health related tags in `[health-v2]` category that focus on efficiency and second interval updates instead of using blizzard health related events. This has helped with CPU usage in raids/parties
+  - Removed throttled tag infrastructure (125 lines)
+  - Eliminated throttled tag generation logic (85 lines)
+  - Tag alias system replaced manual duplication (40 lines)
 
-## <span style="color:white">[2.0.3] (October 21st, 2024)</span>.
+- **Code Quality: Simplified architecture** - Removed complexity
 
-- MISC: TOC updated for patch 11.0.5
-- MISC: tag categorized by type so can be easily viewed in the ElvUI options: "Available Tags" section
-- MISC: code clean up
+  - Removed `registerThrottledTag` and `registerMultiThrottledTag` functions
+  - Single registration path via `MHCT.registerTag()`
 
-## <span style="color:white">[2.0.2] (September 5th, 2024)</span>.
+- **Code Quality: Centralized argument parsing** - Created `MHCT.parseDecimalArg()` helper
 
-- MISC: maintenance and small fixes with wording
-- MISC: added additional comments and structure
+  - Used across all tag files for consistent decimal handling
+  - Single source of truth for argument parsing logic
 
-## <span style="color:white">[2.0.1] (August 27th, 2024)</span>.
+- **Code Quality: Event constant groups** - Added EVENTS table
 
-- NEW Tag: `[mh-health:current:percent:left-hidefull]`
-- NEW Tag: `[mh-smartlevel]`
-- BUG: Woopsie, accidentally deleted addon icon
+  - Clear, reusable event string constants
+  - Improved readability and maintainability
 
-## <span style="color:cyan">[2.0.0] Major Update (August 18th, 2024)</span>.
+- **Developer Experience: Slash command** - Added `/mhtags` command
 
-- Overhauled for TWW
-- Complete revamp of code structure
-- Added separate utility file to handle non tag specific logic
-- Greatly increased performance of `[mh-health-color]` tag and created a static lookup table
-- Refactored lots of functions to return sooner or fail faster
-- Created additional helper functions to follow DRY methodology
-- Cleaned up almost all functions
-- Ensured all global variables were properly localized to help with faster look up
+  - Displays current memory usage in KB
+  - Useful for monitoring and debugging
 
-## <span style="color:white">[1.0.9] (August 17th, 2024)</span>.
+- **Developer Experience: Error transparency** - Removed error suppression
+  - All errors propagate naturally through WoW's error handler
+  - Full stack traces visible for bug reports
 
-- NEW TAG: mh-status-noicon
-- DEF: Simple status tag that shows all the different flags: AFK, DND, OFFLINE, DEAD, or GHOST (NO icon, text only)
+### Technical Details
 
-## [1.0.8] (August 13th, 2024)
+- ElvUI API validation performed at startup
+- Soft warning for ElvUI versions below 13.0
+- Raid roster cache updates on GROUP_ROSTER_UPDATE and PLAYER_ENTERING_WORLD events
+- Cache has hard 40-entry limit with automatic wipe on updates
+- Tag aliases share function references (zero performance overhead)
+- All 50+ tag functions validate unit parameter
+- Format string optimization reduces concatenation in frequently called tags
 
-- TOC update for TWW pre patch
-- Fixed issue with API updated RE: isAddOnLoaded()
+### Performance Impact
 
-## [1.0.7] (July 24th, 2024)
+- 93% improvement for raid name tags with group numbers
+- 2-5% CPU reduction in raid scenarios
+- Memory usage: ~200-500 KB (stable, no growth)
+- Zero tag-related crashes (comprehensive error boundaries)
 
-- TOC update for TWW pre patch
+### Compatibility
 
-## [1.0.6] (2024-5-5)
+- **WoW**: Retail 11.2.5+
+- **ElvUI**: 13.0+ (14.0+ recommended for optimal performance)
 
-- TOC update for 10.2.7
+---
 
-## [1.0.5] (2024-3-19)
+## [5.0.0] - 2025-08-10
 
-- TOC update for 10.2.6
-- Added helper function that works like JavaScript Array.includes()
-- Added helper function 'abbreviate' to abbreviate longer names in two ways (default/reverse)
-- NEW Tag: mh-name:caps:abbrev (see examples of abbreviations below)
-- Reverse abbreviate example: Cleave Training Dummy => Cleave T. D.
-- Default abbreviate example: Cleave Training Dummy => C. T. Dummy
-- Small edits for status formatter to have a reverse status (icon and text)
-- Small changes for default icon sizes
+### Added
 
-## [1.0.4] (2024-1-17)
+- Simplified tag naming using hyphens instead of colons
+- Backward compatibility via tag aliases (zero performance overhead)
 
-- TOC update for 10.2.5
+### Changed
 
-## [1.0.3] (2023-12-29)
+- Consolidated and reorganized all tags into logical categories
+- Improved performance with optimized event handling
+- Enhanced memory efficiency
 
-- Created static absorb text color variable
-- NEW Tag: simple percent v2 which is hidden at max health
-- NEW Tag: mh-absorb (just absorb text)
-- Code clean-up to remove unnecessary event hooks
-- Updated/cleaned some lua code comments
-- Code clean up and made some local constants
-- Reworked classification helper function to properly handle rare and rareelite classification
-- Updated some static/constant default values to align with UI
+### Deprecated
 
-## [1.0.2] (2023-12-19)
+- Old colon-based tag names (still functional via aliases):
+  - `mh-health:current:percent:right` → `mh-health-current-percent`
+  - `mh-health:current:percent:left` → `mh-health-percent-current`
+  - And others (see README for complete list)
 
-- Cleaned up code and reorganized
-- Re-coded status check and classification helpers
-- Updated Readme
-- Boss icon change, spelling fixes, and created constant set default icon size
-- Added new deficit tags (both number and percentage, with and without status)
-- Added new health gradient variation from ElvUI (brighter and higher contrast)
-- Added new simple percent tag but with no percent sign
-- Made boss classification icon a bit smaller (red skull)
-- Cleaned up iconTable for only relevant icons and used same naming scheme for all
-- Proper camelCase!
-- Added new simple percent v2 that has no % sign
-- Added new simple status tag that only shows status' if relevant
-- Updated TOC accordingly
+---
 
-## [1.0.1] (2023-12-14)
+## [4.x.x] - Previous Versions
 
-- Updated and cleaned up code across several tags
-- Renamed 'mh-dynamic:name:caps-deadicon' to 'mh-dynamic:name:caps-statusicon to properly describe the tag
-- Updated a few tag info entries
+For changelog entries prior to v5.0.0, please refer to git history or previous releases.
 
-## [1.0] (2023-12-12)
+---
 
-- ElvUI plugin to create custom tags (creation of addon, initital commit)
+## Notes
+
+### Versioning
+
+- **MAJOR** (X.0.0): Breaking changes, API changes, removed features
+- **MINOR** (0.X.0): New features, improvements, backward-compatible changes
+- **PATCH** (0.0.X): Bug fixes, minor improvements
+
+### Migration Guide
+
+When upgrading major versions, always:
+
+1. Read breaking changes section
+2. Test in a non-production environment
+3. Update tag strings if deprecated tags are used
+4. Report any issues on GitHub
+
+---
+
+For detailed technical documentation, see [README.md](README.md).

@@ -4,6 +4,9 @@
 local _, ns = ...
 local MHCT = ns.MHCT
 
+-- Get ElvUI references from core (shared to avoid duplicate unpacking)
+local E = MHCT.E
+
 -- Localize Lua functions
 local tonumber = tonumber
 local format = string.format
@@ -29,8 +32,9 @@ MHCT.registerTag(
 	"Classification custom blp icons (elite, minibosses, bosses, rares, and rare elites)",
 	"UNIT_CLASSIFICATION_CHANGED",
 	function(unit, _, args)
+		if not unit then return "" end
 		local unitType = MHCT.classificationType(unit)
-		local baseIconSize = tonumber(args) or DEFAULT_ICON_SIZE
+		local baseIconSize = MHCT.parseDecimalArg(args, DEFAULT_ICON_SIZE)
 
 		if unitType and MHCT.ICON_MAP[unitType] then
 			return MHCT.getFormattedIcon(MHCT.ICON_MAP[unitType], baseIconSize)
@@ -47,6 +51,7 @@ MHCT.registerTag(
 	"Classification custom blp icons (elite, minibosses, bosses, rares, and rare elites) - NON Dynamic sizing",
 	"UNIT_CLASSIFICATION_CHANGED",
 	function(unit)
+		if not unit then return "" end
 		local unitType = MHCT.classificationType(unit)
 
 		if unitType and MHCT.ICON_MAP[unitType] then
@@ -68,6 +73,7 @@ MHCT.registerTag(
 	"Unit classification as color-coded text (Boss, Elite, Rare, etc.)",
 	"UNIT_CLASSIFICATION_CHANGED",
 	function(unit)
+		if not unit then return "" end
 		local unitType = MHCT.classificationType(unit)
 
 		if not unitType then
@@ -94,6 +100,7 @@ MHCT.registerTag(
 	"Unit classification as compact colored symbols (B, E, R, R+, E+)",
 	"UNIT_CLASSIFICATION_CHANGED",
 	function(unit)
+		if not unit then return "" end
 		local unitType = MHCT.classificationType(unit)
 
 		if not unitType then
@@ -120,6 +127,7 @@ MHCT.registerTag(
 	"Full descriptive classification text without brackets",
 	"UNIT_CLASSIFICATION_CHANGED",
 	function(unit)
+		if not unit then return "" end
 		local unitType = MHCT.classificationType(unit)
 
 		if not unitType then

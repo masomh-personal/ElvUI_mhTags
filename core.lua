@@ -8,10 +8,9 @@ local _, ns = ...
 ns.MHCT = {}
 local MHCT = ns.MHCT
 
--- No global unpacking of ElvUI here - we'll do it locally where needed
-
 -------------------------------------
--- Direct function references for internal use
+-- FUNCTION LOCALIZATION
+-- Localizing all functions improves performance by avoiding global lookups
 -------------------------------------
 -- Lua functions
 local floor = math.floor
@@ -38,17 +37,80 @@ local UnitIsPlayer = UnitIsPlayer
 local UnitEffectiveLevel = UnitEffectiveLevel
 local UnitClassification = UnitClassification
 local GetCreatureDifficultyColor = GetCreatureDifficultyColor
-local GetMaxPlayerLevel = GetMaxPlayerLevel()
+local GetMaxPlayerLevel = GetMaxPlayerLevel
+local GetNumGroupMembers = GetNumGroupMembers
+local GetRaidRosterInfo = GetRaidRosterInfo
+local IsInRaid = IsInRaid
+local wipe = wipe
+-- Cache max player level at load time (doesn't change during session)
+local MAX_PLAYER_LEVEL_VALUE = GetMaxPlayerLevel()
 
--- ElvUI references - treated like any other API
+-- ElvUI references - unpack once and share references
 local E, L = unpack(ElvUI)
-local ShortValue = E.ShortValue
+
+-------------------------------------
+-- ELVUI API VALIDATION
+-- Validates required ElvUI functions exist to prevent runtime errors
+-------------------------------------
+local function validateElvUIAPI()
+	local requiredFunctions = {
+		"AddTag",
+		"AddTagInfo",
+		"GetFormattedText",
+		"ShortValue",
+		"ShortenString",
+	}
+
+	local missing = {}
+	for _, funcName in ipairs(requiredFunctions) do
+		if not E[funcName] then
+			tinsert(missing, funcName)
+		end
+	end
+
+	if #missing > 0 then
+		local missingList = concat(missing, ", ")
+		error(
+			format(
+				"ElvUI_mhTags: Required ElvUI functions not found: %s\n"
+					.. "This may indicate an incompatible ElvUI version. Please update both addons.",
+				missingList
+			)
+		)
+	end
+end
+
+-- Validate ElvUI API before proceeding
+validateElvUIAPI()
+
+-- Check ElvUI version compatibility (soft warning)
+local function checkElvUIVersion()
+	local minVersion = 13.0
+	local currentVersion = tonumber(E.version) or 0
+
+	if currentVersion > 0 and currentVersion < minVersion then
+		print(
+			format(
+				"|cffFFFF00[ElvUI_mhTags Warning]|r This addon is designed for ElvUI %.1f or higher. "
+					.. "Current version: %.1f. Some features may not work correctly.",
+				minVersion,
+				currentVersion
+			)
+		)
+	end
+end
+
+checkElvUIVersion()
+
+-- Export ElvUI references for tag modules to avoid duplicate unpacking
+MHCT.E = E
+MHCT.L = L
 
 -------------------------------------
 -- CONSTANTS
 -------------------------------------
 MHCT.TAG_CATEGORY_NAME = "|cff0388fcmh|r|cffccff33Tags|r"
-MHCT.MAX_PLAYER_LEVEL = GetMaxPlayerLevel
+MHCT.MAX_PLAYER_LEVEL = MAX_PLAYER_LEVEL_VALUE
 MHCT.DEFAULT_ICON_SIZE = 14
 MHCT.ABSORB_TEXT_COLOR = "ccff33"
 MHCT.DEFAULT_TEXT_LENGTH = 28
@@ -70,8 +132,8 @@ local FORMAT_PATTERNS = {
 	DECIMAL_WITHOUT_PERCENT = {}, -- Stores patterns like "%.0f", "%.1f", etc.
 }
 
--- Only cache the most commonly used patterns (0-2 decimals)
-for i = 0, 2 do
+-- Cache all reasonable decimal patterns (0-5 decimals)
+for i = 0, 5 do
 	FORMAT_PATTERNS.DECIMAL_WITH_PERCENT[i] = format("%%.%df%%%%", i)
 	FORMAT_PATTERNS.DECIMAL_WITHOUT_PERCENT[i] = format("%%.%df", i)
 end
@@ -109,6 +171,12 @@ local STATUS_ICON_MAP = {
 	[L["Offline"]] = "offlineIcon",
 }
 
+-- Pre-cached formatted status text (avoids strupper() and format() in hot path)
+local FORMATTED_STATUS_CACHE = {}
+for status, _ in pairs(STATUS_ICON_MAP) do
+	FORMATTED_STATUS_CACHE[status] = format("|cff%s%s|r", STATUS_COLOR, strupper(status))
+end
+
 -- Static color sequence for gradient
 local GRADIENT_COLORS = {
 	0.996,
@@ -123,10 +191,63 @@ local GRADIENT_COLORS = {
 }
 
 -------------------------------------
+-- RAID ROSTER CACHE (Performance Optimization)
+-- This cache prevents O(n) iteration on every frame update
+-- Maximum size: 40 entries (hard limit by WoW)
+-- Wiped and rebuilt on every GROUP_ROSTER_UPDATE
+-------------------------------------
+local raidRosterCache = {}
+
+-- Update raid roster cache - wipes completely before rebuilding (no growth)
+local function updateRaidRosterCache()
+	-- Wipe cache completely to prevent accumulation
+	wipe(raidRosterCache)
+
+	-- Only build cache if in a raid
+	if not IsInRaid() then
+		return
+	end
+
+	-- Rebuild cache with current roster (max 40 entries)
+	local numMembers = GetNumGroupMembers()
+	for i = 1, numMembers do
+		local name, _, group = GetRaidRosterInfo(i)
+		if name then
+			raidRosterCache[name] = group
+		end
+	end
+end
+
+-- Export cache for use in name tags
+MHCT.raidRosterCache = raidRosterCache
+
+-- Create event frame for roster updates
+local rosterFrame = CreateFrame("Frame")
+rosterFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
+rosterFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+rosterFrame:SetScript("OnEvent", function(self, event)
+	updateRaidRosterCache()
+end)
+
+-- Initial cache build
+updateRaidRosterCache()
+
+-------------------------------------
 -- HELPER FUNCTIONS
 -------------------------------------
 
--- Removed - not used anywhere in the codebase
+-- Centralized argument parsing for decimal places
+-- Handles nil, 0, and invalid values correctly
+MHCT.parseDecimalArg = function(args, default)
+	if not args then
+		return default or 0
+	end
+	local parsed = tonumber(args)
+	if parsed == nil then
+		return default or 0
+	end
+	return parsed
+end
 
 -- Optimized RGB to hex conversion
 MHCT.rgbToHex = function(r, g, b)
@@ -136,47 +257,48 @@ end
 
 -- Removed - not used anywhere in the codebase
 
--- Check unit status (AFK, DND, Dead, etc.)
--- Optimized: Check most common cases first (connected & alive)
+-- Optimized unit status check for ElvUI V14.0
 MHCT.statusCheck = function(unit)
 	if not unit then
 		return nil
 	end
 
-	-- Most common case: unit is connected
-	if UnitIsConnected(unit) then
-		-- Most units are alive, check death states first
-		if UnitIsDead(unit) and not UnitIsFeignDeath(unit) then
-			return L["Dead"]
-		elseif UnitIsGhost(unit) then
-			return L["Ghost"]
-		-- Then check less common statuses
-		elseif UnitIsAFK(unit) then
-			return L["AFK"]
-		elseif UnitIsDND(unit) then
-			return L["DND"]
-		end
-		return nil
-	else
-		-- Offline is relatively rare
+	-- Fast path: check connection first (most common case)
+	if not UnitIsConnected(unit) then
 		return L["Offline"]
 	end
+
+	-- Check death states (common in combat)
+	if UnitIsDead(unit) and not UnitIsFeignDeath(unit) then
+		return L["Dead"]
+	elseif UnitIsGhost(unit) then
+		return L["Ghost"]
+	end
+
+	-- Check status flags (less common)
+	if UnitIsAFK(unit) then
+		return L["AFK"]
+	elseif UnitIsDND(unit) then
+		return L["DND"]
+	end
+
+	return nil
 end
 
 -- Get formatted icon with size and offset
 MHCT.getFormattedIcon = function(name, size, x, y)
 	local iconName = name or "default"
 	local iconSize = size or MHCT.DEFAULT_ICON_SIZE
-	local xOffSet = x or 0
-	local yOffSet = y or 0
+	local xOffset = x or 0
+	local yOffset = y or 0
 
 	-- Validate icon exists
 	local iconFormat = MHCT.iconTable[iconName] or MHCT.iconTable["default"]
 
-	return format(iconFormat, iconSize, iconSize, xOffSet, yOffSet)
+	return format(iconFormat, iconSize, iconSize, xOffset, yOffset)
 end
 
--- Determine unit classification (boss, elite, rare, etc.)
+-- Optimized unit classification for ElvUI V14.0
 MHCT.classificationType = function(unit)
 	if not unit or UnitIsPlayer(unit) then
 		return nil
@@ -185,15 +307,18 @@ MHCT.classificationType = function(unit)
 	local unitLevel = UnitEffectiveLevel(unit)
 	local classification = UnitClassification(unit)
 
+	-- Fast path for rare types
 	if classification == "rare" or classification == "rareelite" then
 		return classification
 	end
 
+	-- Boss detection
 	if unitLevel == -1 or classification == "boss" or classification == "worldboss" then
 		return "boss"
 	end
 
-	if unitLevel > MHCT.MAX_PLAYER_LEVEL then
+	-- Elite+ detection (unit level exceeds max player level)
+	if unitLevel > MAX_PLAYER_LEVEL_VALUE then
 		return "eliteplus"
 	end
 
@@ -236,7 +361,7 @@ MHCT.difficultyLevelFormatter = function(unit, unitLevel)
 	end
 end
 
--- Format status text with icon
+-- Format status text with icon (uses pre-cached formatted text for performance)
 MHCT.statusFormatter = function(status, size, reverse)
 	if not status then
 		return nil
@@ -244,13 +369,13 @@ MHCT.statusFormatter = function(status, size, reverse)
 
 	local iconSize = size or MHCT.DEFAULT_ICON_SIZE
 	local iconName = STATUS_ICON_MAP[status]
-	local formattedStatus = format("|cff%s%s|r", STATUS_COLOR, strupper(status))
+	local formattedStatus = FORMATTED_STATUS_CACHE[status] -- O(1) lookup, no strupper() or format()
 	local icon = MHCT.getFormattedIcon(iconName, iconSize)
 
 	if reverse then
-		return format("%s%s", icon, formattedStatus)
+		return icon .. formattedStatus
 	else
-		return format("%s%s", formattedStatus, icon)
+		return formattedStatus .. icon
 	end
 end
 
@@ -358,7 +483,7 @@ MHCT.formatWithStatusCheck = function(unit)
 	return nil
 end
 
--- Format health percent with configurable decimal places - simplified
+-- Optimized health percent formatter for ElvUI V14.0
 MHCT.formatHealthPercent = function(unit, decimalPlaces, showSign)
 	if not unit then
 		return ""
@@ -374,30 +499,20 @@ MHCT.formatHealthPercent = function(unit, decimalPlaces, showSign)
 		return E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
 	end
 
-	local numDecimals = tonumber(decimalPlaces) or MHCT.DEFAULT_DECIMAL_PLACE
+	local decimals = tonumber(decimalPlaces) or MHCT.DEFAULT_DECIMAL_PLACE
 	local percent = (currentHp / maxHp) * 100
 
-	-- Direct formatting based on common cases
+	-- Use cached format patterns for better performance
+	local fmt = FORMAT_PATTERNS.DECIMAL_WITHOUT_PERCENT[decimals] or format("%%.%df", decimals)
+
 	if showSign then
-		if numDecimals == 0 then
-			return format("%.0f%%", percent)
-		elseif numDecimals == 1 then
-			return format("%.1f%%", percent)
-		else
-			return format("%%.%df%%%%", numDecimals):format(percent)
-		end
+		return format(fmt .. "%%", percent)
 	else
-		if numDecimals == 0 then
-			return format("%.0f", percent)
-		elseif numDecimals == 1 then
-			return format("%.1f", percent)
-		else
-			return format("%%.%df", numDecimals):format(percent)
-		end
+		return format(fmt, percent)
 	end
 end
 
--- Format health deficit
+-- Optimized health deficit formatter for ElvUI V14.0
 MHCT.formatHealthDeficit = function(unit)
 	if not unit then
 		return ""
@@ -410,106 +525,66 @@ MHCT.formatHealthDeficit = function(unit)
 		return ""
 	end
 
-	return format("-%s", ShortValue(maxHp - currentHp))
+	return format("-%s", E:ShortValue(maxHp - currentHp))
 end
 
--- Standard tag registration helper
+-------------------------------------
+-- TAG REGISTRATION
+-------------------------------------
+
+-- Internal registry to track tag functions and events (needed for aliases in ElvUI 14.0+)
+local tagRegistry = {}
+
+-- Simple tag registration for ElvUI V14.0+
 MHCT.registerTag = function(name, subCategory, description, events, func)
-	-- Create the full category name with the provided subcategory
 	local fullCategory = MHCT.TAG_CATEGORY_NAME .. " [" .. subCategory .. "]"
 
-	-- Register the tag info and the tag itself in one clean function
 	E:AddTagInfo(name, fullCategory, description)
 	E:AddTag(name, events, func)
 
-	-- Return the name for potential chaining or reference
+	-- Store for alias creation (ElvUI 14.0+ doesn't expose tag methods)
+	tagRegistry[name] = {
+		func = func,
+		events = events,
+		category = fullCategory,
+		description = description,
+	}
+
 	return name
 end
 
--- Throttled tag registration helper
-MHCT.registerThrottledTag = function(name, subCategory, description, throttle, func)
-	-- Create the full category name with the provided subcategory
-	local fullCategory = MHCT.TAG_CATEGORY_NAME .. " [" .. subCategory .. "]"
+-- Create tag alias for backwards compatibility (shares function reference, no duplication)
+MHCT.registerTagAlias = function(oldName, newName)
+	-- Get the existing tag from our internal registry
+	local tagData = tagRegistry[newName]
+	local tagInfo = E.TagInfo[newName]
 
-	-- Register the tag info and the throttled tag
-	E:AddTagInfo(name, fullCategory, description)
-	E:AddTag(name, throttle, func)
+	if tagData and tagInfo then
+		-- Register alias with deprecation notice, using the same wrapped function
+		E:AddTagInfo(
+			oldName,
+			tagInfo.category,
+			tagInfo.description .. " (DEPRECATED - Use [" .. newName .. "] instead)"
+		)
+		-- Use the same wrapped function reference (no duplication)
+		E:AddTag(oldName, tagData.events, tagData.func)
 
-	-- Return the name for potential chaining or reference
-	return name
-end
-
--- Enhanced multi-throttled tag registration
-MHCT.registerMultiThrottledTag = function(namePattern, subCategory, descPattern, throttles, func)
-	local results = {}
-
-	-- Allow passing a predefined set by name
-	if type(throttles) == "string" and MHCT.THROTTLE_SETS[throttles] then
-		throttles = MHCT.THROTTLE_SETS[throttles]
-	-- Default to standard throttle set if not specified
-	elseif not throttles then
-		throttles = MHCT.THROTTLE_SETS.STANDARD
+		-- Store alias in registry too (in case someone aliases an alias)
+		tagRegistry[oldName] = tagData
+		return oldName
 	end
 
-	for _, throttleInfo in ipairs(throttles) do
-		local throttleValue = throttleInfo.value
-		local throttleSuffix = throttleInfo.suffix or tostring(throttleValue)
-
-		-- Generate the tag name with the throttle suffix
-		local tagName = namePattern .. throttleSuffix
-
-		-- Generate the description with the throttle information
-		local desc = descPattern:gsub("%%throttle%%", throttleSuffix:gsub("^-", ""))
-
-		-- Register the tag with this throttle value
-		MHCT.registerThrottledTag(tagName, subCategory, desc, throttleValue, func)
-
-		-- Store the result
-		table.insert(results, tagName)
-	end
-
-	return results -- Return all registered tag names
+	-- If new tag doesn't exist, silently fail (developer error, should be caught during development)
+	return nil
 end
 
--- Define standard throttle rates that can be used throughout the addon
-MHCT.THROTTLES = {
-	INSTANT = 0, -- Update every frame (use sparingly!)
-	QUARTER = 0.25, -- Update 4 times per second
-	HALF = 0.5, -- Update twice per second
-	ONE = 1.0, -- Update once per second
-	TWO = 2.0, -- Update every 2 seconds
-	FIVE = 5.0, -- Update every 5 seconds (for very low priority)
-}
+-------------------------------------
+-- SLASH COMMANDS
+-------------------------------------
 
--- Throttle configurations for batch registration
-MHCT.THROTTLE_CONFIGS = {
-	{ value = MHCT.THROTTLES.QUARTER, suffix = "-0.25" },
-	{ value = MHCT.THROTTLES.HALF, suffix = "-0.5" },
-	{ value = MHCT.THROTTLES.ONE, suffix = "-1.0" },
-	{ value = MHCT.THROTTLES.TWO, suffix = "-2.0" },
-}
-
--- Common throttle sets for different use cases
-MHCT.THROTTLE_SETS = {
-	-- Standard set (0.25, 0.5, 1.0, 2.0)
-	STANDARD = {
-		{ value = MHCT.THROTTLES.QUARTER, suffix = "-0.25" },
-		{ value = MHCT.THROTTLES.HALF, suffix = "-0.5" },
-		{ value = MHCT.THROTTLES.ONE, suffix = "-1.0" },
-		{ value = MHCT.THROTTLES.TWO, suffix = "-2.0" },
-	},
-
-	-- Fast set (0, 0.25, 0.5)
-	FAST = {
-		{ value = MHCT.THROTTLES.INSTANT, suffix = "-instant" },
-		{ value = MHCT.THROTTLES.QUARTER, suffix = "-0.25" },
-		{ value = MHCT.THROTTLES.HALF, suffix = "-0.5" },
-	},
-
-	-- Slow set (1.0, 2.0, 5.0)
-	SLOW = {
-		{ value = MHCT.THROTTLES.ONE, suffix = "-1.0" },
-		{ value = MHCT.THROTTLES.TWO, suffix = "-2.0" },
-		{ value = MHCT.THROTTLES.FIVE, suffix = "-5.0" },
-	},
-}
+SLASH_MHTAGS1 = "/mhtags"
+SlashCmdList["MHTAGS"] = function(msg)
+	UpdateAddOnMemoryUsage()
+	local memoryUsage = GetAddOnMemoryUsage("ElvUI_mhTags")
+	print(format("|cff0388fcElvUI_mhTags:|r Memory usage: |cffffcc00%.2f KB|r", memoryUsage))
+end

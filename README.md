@@ -1,322 +1,310 @@
-# ElvUI_mhTags - High-Performance Custom Tags for ElvUI
+# ElvUI_mhTags
 
-[![Version](https://img.shields.io/badge/Version-5.0.0-brightgreen)](https://github.com/masomh-personal/ElvUI_mhTags)
+[![Version](https://img.shields.io/badge/Version-6.1.0-brightgreen)](https://github.com/masomh-personal/ElvUI_mhTags)
 [![ElvUI](https://img.shields.io/badge/Requires-ElvUI-blue)](https://www.tukui.org/download.php?ui=elvui)
-[![WoW](https://img.shields.io/badge/WoW-11.0.2-orange)](https://worldofwarcraft.com)
+[![WoW](https://img.shields.io/badge/WoW-11.2.5-orange)](https://worldofwarcraft.com)
 [![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
 
-A lightweight, performance-optimized ElvUI plugin that provides an extensive collection of custom tags for unit frames, nameplates, and other UI elements.
+A high-performance ElvUI plugin providing 39 custom tags for unit frames, nameplates, and other UI elements. Designed for minimal memory footprint and maximum flexibility.
 
-## Purpose & Philosophy
-
-As a long-time ElvUI user, I found myself constantly wanting more flexibility and options for displaying unit information. While ElvUI provides a solid foundation, I needed tags that could:
-
-- **Display information exactly how I wanted** - with precise formatting control
-- **Perform efficiently in high-stress scenarios** - 40-person raids, large battlegrounds
-- **Provide visual clarity** - through color gradients, icons, and smart formatting
-- **Adapt to different contexts** - raid frames vs target frames vs nameplates
-
-This addon fills those gaps while maintaining a **zero-tolerance policy on performance degradation**. Every tag is optimized to run efficiently, even when called hundreds of times per second across multiple frames.
-
-## Key Features
-
-### Performance-First Design
-
-- **Memory-efficient**: Stable usage under 1MB even in 40-person raids
-- **CPU-optimized**: Streamlined algorithms with minimal overhead
-- **Throttle options**: Multiple update frequencies (0.25s, 0.5s, 1.0s, 2.0s) for different use cases
-- **No memory leaks**: v5.0 completely eliminated all caching-related memory issues
-- **DRY principles**: v5.0 consolidated all health tags with shared helper functions
-
-### Rich Tag Collection
-
-#### Health Tags (Unified System)
-
-- **Basic Display**: Current health values with smart formatting
-- **Percentages**: Configurable decimal places, with or without % sign
-- **Combined Views**: Current + percentage in various orders
-- **Deficit Tracking**: Missing health as numeric or percentage
-- **Gradient Coloring**: Full red-yellow-green spectrum based on health
-- **Smart Features**: Hide-at-full options, absorb shields, status indicators
-- **Throttled Variants**: Pre-configured update rates for performance
-
-#### Name Tags
-
-- Dynamic character limits
-- Smart abbreviation (e.g., "Cleave Training Dummy" becomes "C.T. Dummy")
-- ALL CAPS formatting options
-- Raid group number integration
-- Boss/rare unit special handling
-
-#### Classification Tags
-
-- Custom icons for elite, rare, boss units
-- Colored text indicators
-- Difficulty-based coloring
-- Smart level display
-
-#### Power Tags
-
-- Percentage displays with configurable decimals
-- Multiple throttle options for performance
-- Smart zero-power handling
+> **⚠️ Development Status Notice**
+>
+> Future development of this addon is currently on hold pending the **World of Warcraft: Midnight** expansion. Significant changes to the WoW addon API in Midnight may require substantial rewrites, and this addon's functionality is directly dependent on ElvUI's compatibility with those changes.
+>
+> **What This Means:**
+>
+> - The addon remains fully functional for current retail (11.2.5+)
+> - Bug fixes and critical issues will be addressed as needed
+> - New features and major updates are paused until Midnight's API is finalized
+> - Continued support depends on ElvUI's update timeline for the expansion
+>
+> Some legacy tags from earlier versions have been removed to improve maintainability and performance. I appreciate your understanding as I balance ongoing support with the realities of major API transitions. Thank you to everyone who has used and supported this addon.
 
 ## Installation
 
-### Requirements
+1. Download from [CurseForge](https://www.curseforge.com/wow/addons/mh-custom-tags-elvui-plugin) or [GitHub Releases](https://github.com/masomh-personal/ElvUI_mhTags/releases)
+2. Extract to `World of Warcraft/_retail_/Interface/AddOns/`
+3. Restart WoW or type `/reload`
 
-- **ElvUI** (Required) - [Download from TukUI](https://www.tukui.org/download.php?ui=elvui)
-- **World of Warcraft** - Retail (11.0.2+)
+## Quick Start
 
-### Install Methods
+### Accessing Tags
 
-#### CurseForge (Recommended)
-
-Download from: [MH Custom Tags on CurseForge](https://www.curseforge.com/wow/addons/mh-custom-tags-elvui-plugin)
-
-#### Manual Installation
-
-1. Download the latest release from [GitHub Releases](https://github.com/masomh-personal/ElvUI_mhTags/releases)
-2. Extract to: `World of Warcraft/_retail_/Interface/AddOns/`
-3. Restart WoW or `/reload`
-
-## Important: Tag Name Changes in v5.0.0
-
-### Simplified Naming Convention
-
-Version 5.0.0 introduced a simplified, consistent naming convention for all tags. If you're upgrading from older versions, you'll need to update your tag names:
-
-#### Old Format (v5.0 and earlier)
-
-- Used colons (`:`) as separators
-- Inconsistent naming patterns
-- Examples: `[mh-health:current:percent:right]`, `[mh-deficit:num-status]`
-
-#### New Format (v5.0.0+)
-
-- Uses hyphens (`-`) consistently
-- Clearer, more intuitive names
-- Examples: `[mh-health-current-percent]`, `[mh-health-deficit]`
-
-#### Common Tag Migrations
-
-| Old Tag Name                                   | New Tag Name                           |
-| ---------------------------------------------- | -------------------------------------- |
-| `[mh-health:current:percent:right]`            | `[mh-health-current-percent]`          |
-| `[mh-health:current:percent:left]`             | `[mh-health-percent-current]`          |
-| `[mh-health:current:percent:right-hidefull]`   | `[mh-health-current-percent-hidefull]` |
-| `[mh-health:current:percent:gradient-colored]` | `[mh-health-current-percent-colored]`  |
-| `[mh-deficit:num-status]`                      | `[mh-health-deficit]`                  |
-| `[mh-deficit:percent-status]`                  | `[mh-health-deficit-percent]`          |
-| `[mh-health:simple:percent]`                   | `[mh-health-percent]`                  |
-
-**Note**: Old tag names still work for backwards compatibility but are marked as deprecated. We recommend updating to the new names.
-
-## Usage Guide
-
-### Basic Usage
-
-1. Open ElvUI config: `/ec`
-2. Navigate to any unit frame (Player, Target, Raid, etc.)
+1. Open ElvUI configuration: `/ec`
+2. Navigate to any unit frame (Player, Target, Party, Raid, etc.)
 3. Find the "Custom Texts" section
-4. Create a new text or edit existing
-5. Browse available tags under "mhTags" categories
+4. Click "Create New Text" or edit existing text
+5. Browse available tags under **mhTags** categories
 
-### Performance Guidelines
+### Common Examples
 
-#### For Raid Frames (25-40 units)
+**Health Display:**
 
-Use throttled variants for better performance:
+| Tag                                            | Output Example   | Notes                                                   |
+| ---------------------------------------------- | ---------------- | ------------------------------------------------------- |
+| `[mh-health-current-percent]`                  | `100k \| 85%`    | Current health and percentage                           |
+| `[mh-health-percent{1}]`                       | `85.3%`          | `{1}` = show 1 decimal place                            |
+| `[mh-health-percent-nosign{1}]`                | `85.3`           | `{1}` = 1 decimal; no % sign; basic styling             |
+| `[mh-health-percent-nosign-colored-status{1}]` | `85.3` or `DEAD` | `{1}` = 1 decimal; no % sign; gradient colored + status |
+| `[mh-health-percent-colored-status{0}]`        | `85%` or `AFK`   | `{0}` = no decimals; with % sign; colored + status      |
+| `[mh-health-deficit]`                          | `-15k`           | Shows missing health; hides at full                     |
 
-```lua
-[mh-health-current-percent-hidefull-1.0]  -- Updates every 1 second
-[mh-health-deficit-2.0]                    -- Updates every 2 seconds
+**Name Display:**
+
+| Tag                                           | Output Example      | Notes                                     |
+| --------------------------------------------- | ------------------- | ----------------------------------------- |
+| `[mh-dynamic:name:caps{20}]`                  | `PLAYERNAME`        | `{20}` = max 20 characters; uppercase     |
+| `[mh-dynamic:name:caps-statusicon{20}]`       | `PLAYERNAME` + icon | `{20}` = max 20 chars; with AFK/Dead icon |
+| `[mh-player:frame:name:caps-groupnumber{15}]` | `PLAYERNAME (5)`    | `{15}` = max 15 chars; shows raid group # |
+
+**Classification:**
+
+| Tag                          | Output Example | Notes                       |
+| ---------------------------- | -------------- | --------------------------- |
+| `[mh-classification:icon]`   | 🛡️             | Elite/Rare/Boss custom icon |
+| `[mh-difficultycolor:level]` | `80`           | Level colored by difficulty |
+
+**Power:**
+
+| Tag                     | Output Example | Notes                                    |
+| ----------------------- | -------------- | ---------------------------------------- |
+| `[mh-power-percent{1}]` | `85.3`         | `{1}` = 1 decimal place; mana/energy/etc |
+
+**Status & Misc:**
+
+| Tag                    | Output Example | Notes                                       |
+| ---------------------- | -------------- | ------------------------------------------- |
+| `[mh-status]`          | `AFK` + icon   | AFK/Dead/Offline with status icon           |
+| `[mh-healer-drinking]` | `DRINKING...`  | Only shows for healers (works in any scenario) |
+
+### Utility Command
+
 ```
-
-#### For Party/Arena (5-10 units)
-
-Can use faster updates:
-
-```lua
-[mh-health-current-percent-hidefull-0.5]  -- Updates every 0.5 seconds
-[mh-health-deficit-0.5]                    -- Updates every 0.5 seconds
+/mhtags    Display memory usage
 ```
-
-#### For Player/Target (1-3 units)
-
-Can use real-time or fast updates:
-
-```lua
-[mh-health-current-percent-colored]  -- Real-time updates with gradient
-[mh-health-deficit-0.25]             -- Updates every 0.25 seconds
-```
-
-### Popular Tag Combinations
-
-#### Minimalist Health Display
-
-```lua
-[mh-health-current-percent-hidefull-1.0]
-```
-
-Shows "100k | 85%" but only "100k" at full health
-
-#### Raid Frame Deficit Tracker
-
-```lua
-[mh-health-deficit-1.0]
-```
-
-Shows "-15k" when damaged, or status icons when dead/offline
-
-#### Colored Health with Absorbs
-
-```lua
-[mh-health-current-percent-colored]
-```
-
-Full gradient coloring with absorb shield display
-
-#### Smart Name Abbreviation
-
-```lua
-[mh-name-caps-abbrev-V2{20}]
-```
-
-Abbreviates names longer than 20 characters
-
-## Technical Details
-
-### Recent Optimizations
-
-#### Version 5.1.1 - CPU Performance Optimizations
-
-- **Optimized status checks** - Reordered to check most common cases first
-- **Fast path gradient colors** - Skip lookups for 100% and 0% health
-- **Reduced string operations** - Pre-built format strings in hot paths
-- **5-10% CPU reduction** - Measurable improvement in raid scenarios
-
-#### Version 5.1.0 - Health Tag Consolidation
-
-- **Unified health system** - All health tags now in single organized file
-- **DRY principles applied** - Shared helper functions eliminate code duplication
-- **Simplified naming** - Intuitive tag names (e.g., `mh-health-current-percent`)
-- **Smart throttling** - Automated creation of performance variants
-- **60% code reduction** - Consolidated from 2 files to 1 with better organization
-
-#### Version 5.0.0 - Memory Optimization
-
-- **Removed all caching mechanisms** - Direct formatting prevents memory accumulation
-- **Local variable scoping** - All variables scoped within functions
-- **Simplified algorithms** - Gradient calculation reduced from complex interpolation to 3-step
-- **Eliminated string concatenation overhead** - Using table.concat where appropriate
-
-### Monitoring Performance
-
-Check memory usage:
-
-```lua
-/run print(GetAddOnMemoryUsage("ElvUI_mhTags").." KB")
-```
-
-Check CPU usage:
-
-```lua
-/run print(GetAddOnCPUUsage("ElvUI_mhTags").." ms")
-```
-
-Expected values:
-
-- Initial load: 100-200 KB
-- After 1 minute: < 500 KB
-- Stable state: < 1 MB
-
-## Tag Categories
-
-The addon organizes tags into logical categories within ElvUI's tag system:
-
-### Health Tags (Unified)
-
-Complete health tag system with 8 organized sections:
-
-- Basic health display values
-- Percentage displays with configurable decimals
-- Combined current + percentage views
-- Deficit tracking for missing health
-- Gradient colored displays
-- Health color codes for custom styling
-- Throttled variants for performance
-- Legacy tags for backwards compatibility
-
-### Classification Tags
-
-Tags for displaying unit classification (elite, rare, boss) with custom icons or text.
-
-### Name Tags
-
-Advanced name formatting with abbreviation, capitalization, and group number support.
-
-### Power Tags
-
-Mana/Energy/Rage percentage displays with configurable update rates.
-
-### Miscellaneous Tags
-
-Additional utility tags including absorb shields, status indicators, and smart level display.
-
-## Future Development
-
-### Planned Features
-
-- Additional gradient color schemes
-- More abbreviation patterns for names
-- Custom icon sets for different UI styles
-- Further performance optimizations for massive raid scenarios
-
-### Performance Goals
-
-- Maintain sub-1MB memory usage
-- Further optimize for 40+ unit scenarios
-- Reduce CPU usage by additional 10-15%
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit pull requests or open issues for:
-
-- Bug reports
-- Feature requests
-- Performance improvements
-- New tag ideas
-
-### Development Guidelines
-
-1. **Performance first** - Every tag must be optimized
-2. **No global namespace pollution** - Use addon namespace
-3. **Memory efficiency** - Avoid persistent caching
-4. **Clear naming** - Tags should be self-descriptive
-
-## Support
-
-- **Bug Reports**: [GitHub Issues](https://github.com/masomh-personal/ElvUI_mhTags/issues)
-- **Feature Requests**: [GitHub Discussions](https://github.com/masomh-personal/ElvUI_mhTags/discussions)
-- **CurseForge Comments**: [Addon Page](https://www.curseforge.com/wow/addons/mh-custom-tags-elvui-plugin)
-
-## Screenshots
-
-![Tag Examples](https://github.com/masomh-personal/ElvUI_mhTags/assets/94949987/d5b72d1c-6789-48b4-ae45-798b829c840d)
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Acknowledgments
-
-- **ElvUI Team** - For creating an amazing UI framework
-- **WoW Community** - For feedback and testing
-- **Contributors** - For helping improve the addon
 
 ---
 
-**Created for the WoW community by mhDesigns**
+## Complete Tag Reference
 
-_If you find this addon useful, consider leaving a review on CurseForge!_
+### Health Tags (21)
+
+| Tag                                            | Output Example          | Description                                           |
+| ---------------------------------------------- | ----------------------- | ----------------------------------------------------- |
+| `[mh-health-current]`                          | `100k`                  | Current health value                                  |
+| `[mh-health-current-absorb]`                   | `(25k) 100k`            | Current health with absorb shield                     |
+| `[mh-health-percent{N}]`                       | `85.2%` or `DEAD`       | Health percentage with status (configurable decimals) |
+| `[mh-health-percent-nosign{N}]`                | `85.2`                  | Health percent without % sign (basic)                 |
+| `[mh-health-percent-nosign-colored-status{N}]` | `85.2` or `DEAD`        | Health percent without % sign (gradient + status)     |
+| `[mh-health-current-percent]`                  | `100k \| 85%`           | Current and percentage                                |
+| `[mh-health-percent-current]`                  | `85% \| 100k`           | Percentage and current                                |
+| `[mh-health-current-percent-hidefull]`         | `100k \| 85%`           | Hides percent at full health                          |
+| `[mh-health-percent-current-hidefull]`         | `85% \| 100k`           | Hides percent at full health                          |
+| `[mh-health-current-percent-absorb]`           | `(25k) 100k \| 85%`     | All metrics combined                                  |
+| `[mh-health-deficit]`                          | `-15k` or `DEAD`        | Missing health or status                              |
+| `[mh-health-deficit-nostatus]`                 | `-15k`                  | Missing health only                                   |
+| `[mh-health-deficit-percent{N}]`               | `-15%` or `AFK`         | Missing health as percentage                          |
+| `[mh-health-current-percent-colored]`          | `100k \| 85%`           | Gradient colored (red/yellow/green)                   |
+| `[mh-health-percent-current-colored]`          | `85% \| 100k`           | Gradient colored (red/yellow/green)                   |
+| `[mh-health-current-percent-colored-status]`   | `100k \| 85%` or `AFK`  | Colored with status check                             |
+| `[mh-health-percent-current-colored-status]`   | `85% \| 100k` or `DEAD` | Colored with status check                             |
+| `[mh-health-current-colored]`                  | `100k`                  | Current only, gradient colored                        |
+| `[mh-health-percent-colored]`                  | `85%`                   | Percent only, gradient colored                        |
+| `[mh-health-percent-colored-status{N}]`        | `85%` or `GHOST`        | Colored percent with status                           |
+| `[mh-healthcolor]`                             | `\|cffRRGGBB`           | Color code for custom composition                     |
+
+### Name Tags (7)
+
+| Tag                                          | Output Example      | Description                                    |
+| -------------------------------------------- | ------------------- | ---------------------------------------------- |
+| `[mh-dynamic:name:caps{N}]`                  | `PLAYERNAME`        | Name in ALL CAPS (N = max characters)          |
+| `[mh-dynamic:name:caps-statusicon{N}]`       | `PLAYERNAME` + icon | Name with status icon                          |
+| `[mh-player:frame:name:caps-groupnumber{N}]` | `PLAYERNAME (5)`    | Name with raid group number                    |
+| `[mh-name:caps:abbrev]`                      | `C.T. Dummy`        | Abbreviated name                               |
+| `[mh-name:caps:abbrev-reverse]`              | `Cleave T.D.`       | Abbreviated name (reverse)                     |
+| `[mh-name-caps-abbrev-V2{N}]`                | `C.T. Dummy`        | Smart abbreviation (if name > N chars)         |
+| `[mh-name-caps-abbrev-reverse-V2{N}]`        | `Cleave T.D.`       | Smart abbreviation reverse (if name > N chars) |
+
+### Classification Tags (5)
+
+| Tag                                | Output Example | Description                    |
+| ---------------------------------- | -------------- | ------------------------------ |
+| `[mh-classification:icon]`         | Icon           | Elite/Rare/Boss custom icon    |
+| `[mh-classification:icon-V2]`      | Icon           | Fixed-size classification icon |
+| `[mh-classification:text]`         | `[Elite]`      | Colored text with brackets     |
+| `[mh-classification:text-compact]` | `E`            | Single letter (E/R/B)          |
+| `[mh-classification:text-full]`    | `Elite`        | Full text without brackets     |
+
+### Power Tags (1)
+
+| Tag                     | Output Example | Description                           |
+| ----------------------- | -------------- | ------------------------------------- |
+| `[mh-power-percent{N}]` | `85` or `85.3` | Power percentage (mana, energy, etc.) |
+
+### Miscellaneous Tags (7)
+
+| Tag                               | Output Example | Description                                           |
+| --------------------------------- | -------------- | ----------------------------------------------------- |
+| `[mh-smartlevel]`                 | `80`           | Smart level (hides at max)                            |
+| `[mh-absorb]`                     | `(25k)`        | Absorb shield value                                   |
+| `[mh-difficultycolor:level]`      | `85`           | Level with difficulty color                           |
+| `[mh-difficultycolor:level-hide]` | `85`           | Hides when both at max level                          |
+| `[mh-status]`                     | `AFK` + icon   | Status with icon                                      |
+| `[mh-status-noicon]`              | `AFK`          | Status text only                                      |
+| `[mh-healer-drinking]`            | `DRINKING...`  | Shows only for healers drinking (works in any scenario) |
+
+---
+
+## Special Syntax
+
+### Configurable Decimals: `{N}`
+
+Use `{N}` to specify decimal places (0-5):
+
+```
+With % sign:
+[mh-health-percent{0}]            85%
+[mh-health-percent{1}]            85.3%
+[mh-health-percent{2}]            85.34%
+
+Without % sign (basic):
+[mh-health-percent-nosign{0}]     85
+[mh-health-percent-nosign{1}]     85.3
+
+Without % sign (colored + status):
+[mh-health-percent-nosign-colored-status{0}]     85 (gradient colored)
+[mh-health-percent-nosign-colored-status{1}]     85.3 (gradient colored)
+```
+
+### Dynamic Length: `{N}`
+
+Specify maximum characters for name tags:
+
+```
+[mh-dynamic:name:caps{15}]     Max 15 characters
+[mh-dynamic:name:caps{25}]     Max 25 characters
+```
+
+---
+
+## Performance
+
+### Benchmarks
+
+- **Memory Usage**: 300-500 KB stable (40-person raid)
+- **CPU**: < 1ms per update cycle
+- **Raid Performance**: 93% faster name tag lookups vs v6.0.1
+
+### Optimizations
+
+- Pre-computed gradient color tables (101 entries)
+- Cached format patterns for decimals (0-5)
+- O(1) raid roster lookups (vs O(n) iteration)
+- Bounded memory with automatic cleanup
+- Zero memory leaks (validated)
+
+### Recommended Usage
+
+**Raid Frames (25-40 units):**
+
+```
+[mh-health-current-percent-hidefull]
+[mh-health-deficit]
+[mh-power-percent]
+```
+
+**Party/Arena (5-10 units):**
+
+```
+[mh-health-current-percent]
+[mh-health-deficit]
+```
+
+**Player/Target (1-3 units):**
+
+```
+[mh-health-current-percent-colored]
+[mh-health-current-absorb]
+```
+
+---
+
+## Compatibility
+
+- **WoW**: Retail 11.2.5+
+- **ElvUI**: 13.0+ (14.0+ recommended)
+- **Performance**: Optimized for ElvUI 14.0+ native update system
+
+---
+
+## Migrating from v4.x
+
+Version 5.0.0+ simplified tag naming. Old tags still work via aliases:
+
+| Old Tag (v4.x)                               | New Tag (v5.0+)                        |
+| -------------------------------------------- | -------------------------------------- |
+| `[mh-health:current:percent:right]`          | `[mh-health-current-percent]`          |
+| `[mh-health:current:percent:left]`           | `[mh-health-percent-current]`          |
+| `[mh-health:current:percent:right-hidefull]` | `[mh-health-current-percent-hidefull]` |
+| `[mh-health:current:percent:left-hidefull]`  | `[mh-health-percent-current-hidefull]` |
+
+Aliases have zero performance overhead. Migration recommended but not required.
+
+---
+
+## Support
+
+- **Issues**: [GitHub Issues](https://github.com/masomh-personal/ElvUI_mhTags/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/masomh-personal/ElvUI_mhTags/discussions)
+- **CurseForge**: [Addon Page](https://www.curseforge.com/wow/addons/mh-custom-tags-elvui-plugin)
+
+When reporting bugs, please include:
+
+1. WoW and ElvUI versions
+2. Full error message with stack trace
+3. Steps to reproduce
+
+---
+
+## Contributing
+
+Contributions welcome. Please ensure:
+
+1. Performance-first approach (test in 40-person raids)
+2. No global namespace pollution
+3. Memory efficiency (no unbounded caching)
+4. Clear, self-descriptive naming
+5. Update CHANGELOG.md
+
+---
+
+## Technical Details
+
+### Architecture
+
+- **Core**: `core.lua` - Shared utilities, constants, helpers
+- **Modules**: 5 tag modules (health, power, name, classification, misc)
+- **Registry**: Internal tag registry for ElvUI 14.0+ compatibility
+- **Events**: Optimized event handling with grouped constants
+
+### Key Features
+
+- Raid roster caching for O(1) lookups
+- Pre-computed gradients and format strings
+- Triple-layered error protection (nil checks, type validation, pcall)
+- Automatic memory cleanup with bounded caches
+- ElvUI 14.0+ native performance integration
+
+For complete technical details, see [CHANGELOG.md](CHANGELOG.md).
+
+---
+
+## Acknowledgments
+
+- **ElvUI Team** - For the outstanding UI framework
+- **WoW Community** - For feedback and testing
+- **Contributors** - For improvements and bug reports
+
+---
+
+**Created by mhDesigns for the World of Warcraft community**
