@@ -54,20 +54,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - For colored version, use `[mh-health-percent-nosign-colored-status{N}]` above
   - Example: `[mh-health-percent-nosign{0}]` displays `85` instead of `85%`
 
-- **New Tag**: `[mh-healer-drinking]` - Healer drinking status for 5-man party content
-  - Shows `Drinking...` **only for healers** when drinking in **5-man party content**
-  - Does NOT work in raids (party only)
-  - Does NOT show power percentage - only displays when healer is actively drinking
-  - Returns empty string otherwise (combine with other tags for fallback display)
+- **New Tag**: `[mh-healer-drinking]` - Healer drinking status (works in any scenario)
+  - Shows `DRINKING...` **only for healers** when drinking/eating
+  - Works in **any scenario**: solo, party, or raid (user choice where to place tag)
+  - Returns empty string for non-healers or when not drinking (combine with other tags for fallback display)
   - **Highly optimized performance**:
     - Early exit for non-healers (most units)
     - Early exit when in combat (cannot drink in combat)
+    - Optimized keyword matching with plain search mode
     - Name-based detection (no spell ID checks needed)
   - Uses `UnitGroupRolesAssigned()` to detect healer role
   - Uses `UnitAffectingCombat()` to skip aura scanning when in combat
-  - Detects drink buffs by name matching ("Drink" or "Refreshment")
-  - Perfect for party healer frames to track mana recovery in dungeons
-  - Example: `[mh-healer-drinking]` → `Drinking...` (when healer drinking in party) or `` (empty)
+  - Detects drink buffs by keyword matching ("drink", "food", "refreshment")
+  - Light blue color (`b0d0ff`) for visibility
+  - Example: `[mh-healer-drinking]` → `DRINKING...` (when healer drinking) or `` (empty)
 
 ### Fixed
 
@@ -99,6 +99,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Zero performance overhead
 
 ### Improved
+
+- **Tag: `[mh-healer-drinking]`** - Enhanced flexibility and performance
+  - Removed party/raid restriction - now works universally (solo, party, raid)
+  - Optimized keyword matching using plain search mode (faster substring detection)
+  - Updated display text to all caps: `DRINKING...`
+  - Improved color to light blue (`b0d0ff`) for better visibility
+  - Better code organization with pre-defined keyword table
 
 - **Performance: Raid roster caching** - Eliminated O(n) iteration in name tags
 

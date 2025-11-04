@@ -72,10 +72,10 @@ A high-performance ElvUI plugin providing 39 custom tags for unit frames, namepl
 
 **Status & Misc:**
 
-| Tag                    | Output Example | Notes                                 |
-| ---------------------- | -------------- | ------------------------------------- |
-| `[mh-status]`          | `AFK` + icon   | AFK/Dead/Offline with status icon     |
-| `[mh-healer-drinking]` | `Drinking...`  | Only shows for healers in 5-man party |
+| Tag                    | Output Example | Notes                                       |
+| ---------------------- | -------------- | ------------------------------------------- |
+| `[mh-status]`          | `AFK` + icon   | AFK/Dead/Offline with status icon           |
+| `[mh-healer-drinking]` | `DRINKING...`  | Only shows for healers (works in any scenario) |
 
 ### Utility Command
 
@@ -143,15 +143,15 @@ A high-performance ElvUI plugin providing 39 custom tags for unit frames, namepl
 
 ### Miscellaneous Tags (7)
 
-| Tag                               | Output Example | Description                                    |
-| --------------------------------- | -------------- | ---------------------------------------------- |
-| `[mh-smartlevel]`                 | `80`           | Smart level (hides at max)                     |
-| `[mh-absorb]`                     | `(25k)`        | Absorb shield value                            |
-| `[mh-difficultycolor:level]`      | `85`           | Level with difficulty color                    |
-| `[mh-difficultycolor:level-hide]` | `85`           | Hides when both at max level                   |
-| `[mh-status]`                     | `AFK` + icon   | Status with icon                               |
-| `[mh-status-noicon]`              | `AFK`          | Status text only                               |
-| `[mh-healer-drinking]`            | `Drinking...`  | Shows only for healers drinking in 5-man party |
+| Tag                               | Output Example | Description                                           |
+| --------------------------------- | -------------- | ----------------------------------------------------- |
+| `[mh-smartlevel]`                 | `80`           | Smart level (hides at max)                            |
+| `[mh-absorb]`                     | `(25k)`        | Absorb shield value                                   |
+| `[mh-difficultycolor:level]`      | `85`           | Level with difficulty color                           |
+| `[mh-difficultycolor:level-hide]` | `85`           | Hides when both at max level                          |
+| `[mh-status]`                     | `AFK` + icon   | Status with icon                                      |
+| `[mh-status-noicon]`              | `AFK`          | Status text only                                      |
+| `[mh-healer-drinking]`            | `DRINKING...`  | Shows only for healers drinking (works in any scenario) |
 
 ---
 
