@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [6.1.1] - 2025-11-07
+
+### Changed
+
+- **`[mh-healer-drinking]` tag optimizations**:
+  - Added combat check to prevent unnecessary buff scanning (units cannot drink in combat)
+  - Changed text color from light blue (`b0d0ff`) to more vibrant blue (`1f6bff`) for better visibility on unit frames
+  - Optimized buff detection using keyword substring matching (`"drink"`, `"food"`, `"refreshment"`, `"eating"`)
+  - Pre-built `DRINKING_TEXT` constant to avoid string allocation on every call
+  - Removed redundant combat check (now only happens in `isDrinking()` helper)
+  - Simplified code structure for better maintainability
+  - Added note about localization (works best with English client; other locales may need additional keywords)
+  - Better code documentation and performance comments
+
+### Technical Notes
+
+- **Localization Consideration**: The tag uses English buff name keywords for detection. While this works reliably for English clients (majority of users), non-English locales may have varying results. Alternative approaches were researched (spell IDs, textures, buff categories) but all require unmaintainable lists or aren't supported by the WoW API. Name-based detection offers the best balance of simplicity, performance, and maintainability.
+
+---
+
 ## [6.1.0] - 2025-11-02
 
 ### Breaking Changes

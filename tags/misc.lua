@@ -172,35 +172,12 @@ MHCT.registerTag(
 -- HEALER DRINKING TAG
 -- ===================================================================================
 
--- Exact match lookup for common drinking/food buffs (fastest path)
-local DRINK_EXACT_MATCHES = {
-	["drink"] = true,
-	["food"] = true,
-	["food & drink"] = true,
-	["refreshment"] = true,
-}
-
--- Fallback substring keywords for variations (e.g., "Refreshing Spring Water")
-local DRINK_SUBSTRING_KEYWORDS = { "drink", "food", "refreshment" }
+-- Keywords to detect drinking/food buffs (optimized for performance)
+-- Note: Works best with English client; localization may require additional keywords
+local DRINK_KEYWORDS = { "drink", "food", "refreshment", "eating" }
 
 -- Pre-built drinking text constant (avoid allocating on every call)
 local DRINKING_TEXT = "|cff1f6bffDRINKING...|r"
-
--- Check if name contains any drink/food keywords (optimized)
-local function containsDrinkKeyword(nameLower)
-	-- Fast path: exact match lookup (O(1))
-	if DRINK_EXACT_MATCHES[nameLower] then
-		return true
-	end
-
-	-- Fallback: substring search for variations
-	for _, keyword in ipairs(DRINK_SUBSTRING_KEYWORDS) do
-		if nameLower:find(keyword, 1, true) then -- true = plain search (faster)
-			return true
-		end
-	end
-	return false
-end
 
 -- Check if unit is drinking (optimized for retail WoW 11.2.5+)
 local function isDrinking(unit)
@@ -220,14 +197,14 @@ local function isDrinking(unit)
 			break -- No more buffs
 		end
 
-		-- Modern retail WoW: Nearly all drink/food buffs contain "Drink", "Food", or "Refreshment" in the name
-		-- This covers: Water, Mage Food, Conjured items, vendor drinks, food items, etc.
-		-- Examples: "Drink", "Food", "Food & Drink", "Refreshing Spring Water", "Conjured Mana Strudel"
+		-- Check buff name for drink/food keywords
 		local name = auraData.name
 		if name then
 			local nameLower = lower(name)
-			if containsDrinkKeyword(nameLower) then
-				return true
+			for _, keyword in ipairs(DRINK_KEYWORDS) do
+				if nameLower:find(keyword, 1, true) then -- true = plain search (faster)
+					return true
+				end
 			end
 		end
 	end
