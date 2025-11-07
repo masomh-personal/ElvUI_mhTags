@@ -169,15 +169,32 @@ MHCT.registerTag(
 )
 
 -- ===================================================================================
--- HEALER DRINKING TAG (5-MAN PARTY ONLY)
+-- HEALER DRINKING TAG
 -- ===================================================================================
 
--- Keywords to detect drinking/food buffs (pre-defined for performance)
-local DRINK_KEYWORDS = { "drink", "food", "refreshment" }
+-- Exact match lookup for common drinking/food buffs (fastest path)
+local DRINK_EXACT_MATCHES = {
+	["drink"] = true,
+	["food"] = true,
+	["food & drink"] = true,
+	["refreshment"] = true,
+}
+
+-- Fallback substring keywords for variations (e.g., "Refreshing Spring Water")
+local DRINK_SUBSTRING_KEYWORDS = { "drink", "food", "refreshment" }
+
+-- Pre-built drinking text constant (avoid allocating on every call)
+local DRINKING_TEXT = "|cff1f6bffDRINKING...|r"
 
 -- Check if name contains any drink/food keywords (optimized)
 local function containsDrinkKeyword(nameLower)
-	for _, keyword in ipairs(DRINK_KEYWORDS) do
+	-- Fast path: exact match lookup (O(1))
+	if DRINK_EXACT_MATCHES[nameLower] then
+		return true
+	end
+
+	-- Fallback: substring search for variations
+	for _, keyword in ipairs(DRINK_SUBSTRING_KEYWORDS) do
 		if nameLower:find(keyword, 1, true) then -- true = plain search (faster)
 			return true
 		end
@@ -207,8 +224,11 @@ local function isDrinking(unit)
 		-- This covers: Water, Mage Food, Conjured items, vendor drinks, food items, etc.
 		-- Examples: "Drink", "Food", "Food & Drink", "Refreshing Spring Water", "Conjured Mana Strudel"
 		local name = auraData.name
-		if name and containsDrinkKeyword(lower(name)) then
-			return true
+		if name then
+			local nameLower = lower(name)
+			if containsDrinkKeyword(nameLower) then
+				return true
+			end
 		end
 	end
 
@@ -232,9 +252,9 @@ MHCT.registerTag(
 			return ""
 		end
 
-		-- Check if drinking/eating
+		-- Check if drinking/eating (combat check happens inside isDrinking)
 		if isDrinking(unit) then
-			return "|cffb0d0ffDRINKING...|r"
+			return DRINKING_TEXT
 		end
 
 		return ""
