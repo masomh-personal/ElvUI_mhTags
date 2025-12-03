@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [7.0.0] - 2025-12-03
+
+### Changed
+
+- **`[mh-healer-drinking]` tag rewritten for accuracy**:
+  - Switched from substring keyword matching to exact buff name matching
+  - Now uses a lookup table for O(1) performance instead of O(n) iteration with substring search
+  - Detects only active drinking/eating states: `"Drink"`, `"Food"`, `"Food & Drink"`, `"Refreshment"`
+  - Avoids false positives from stat food buffs (e.g., "Well Fed" no longer triggers)
+  - Moved combat check to tag function for better guard ordering (cheapest checks first)
+  - Removed `"eating"` keyword (WoW uses "Food" buff, not "Eating")
+
+### Compatibility
+
+- **WoW**: Retail 11.2.7+
+- **ElvUI**: 13.0+ (14.0+ recommended)
+- **Localization**: `[mh-healer-drinking]` tag uses English buff names only. Non-English clients may have inconsistent results.
+
+---
+
 ## [6.1.1] - 2025-11-07
 
 ### Changed

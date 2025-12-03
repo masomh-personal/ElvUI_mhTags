@@ -172,21 +172,21 @@ MHCT.registerTag(
 -- HEALER DRINKING TAG
 -- ===================================================================================
 
--- Keywords to detect drinking/food buffs (optimized for performance)
--- Note: Works best with English client; localization may require additional keywords
-local DRINK_KEYWORDS = { "drink", "food", "refreshment", "eating" }
+-- Exact match buffs that indicate drinking/eating (case-insensitive)
+-- These are the actual active drinking states, not persistent stat buffs
+local DRINKING_BUFFS = {
+	["drink"] = true,
+	["food"] = true,
+	["food & drink"] = true,
+	["refreshment"] = true,
+}
 
 -- Pre-built drinking text constant (avoid allocating on every call)
 local DRINKING_TEXT = "|cff1f6bffDRINKING...|r"
 
--- Check if unit is drinking (optimized for retail WoW 11.2.5+)
+-- Check if unit has a drinking/eating buff
 local function isDrinking(unit)
 	if not unit then
-		return false
-	end
-
-	-- CRITICAL: Cannot drink in combat - early exit (massive performance gain)
-	if UnitAffectingCombat(unit) then
 		return false
 	end
 
@@ -197,14 +197,11 @@ local function isDrinking(unit)
 			break -- No more buffs
 		end
 
-		-- Check buff name for drink/food keywords
 		local name = auraData.name
 		if name then
 			local nameLower = lower(name)
-			for _, keyword in ipairs(DRINK_KEYWORDS) do
-				if nameLower:find(keyword, 1, true) then -- true = plain search (faster)
-					return true
-				end
+			if DRINKING_BUFFS[nameLower] then
+				return true
 			end
 		end
 	end
@@ -219,21 +216,28 @@ MHCT.registerTag(
 	"Shows 'DRINKING...' only for healers drinking/eating (works in any scenario: solo, party, or raid). Example: DRINKING...",
 	"UNIT_AURA UNIT_POWER_UPDATE",
 	function(unit)
+		-- Guard: Unit must exist
 		if not unit then
 			return ""
 		end
 
-		-- Early exit: Only show for healers (most units won't be healers)
+		-- Guard: Cannot drink in combat (check FIRST before other checks)
+		if UnitAffectingCombat(unit) then
+			return ""
+		end
+
+		-- Guard: Only show for healers (most units won't be healers)
 		local role = UnitGroupRolesAssigned(unit)
 		if role ~= "HEALER" then
 			return ""
 		end
 
-		-- Check if drinking/eating (combat check happens inside isDrinking)
+		-- Check if drinking/eating (all guards passed)
 		if isDrinking(unit) then
 			return DRINKING_TEXT
 		end
 
+		-- Default: return empty (not drinking or guards failed)
 		return ""
 	end
 )
