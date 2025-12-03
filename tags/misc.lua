@@ -169,30 +169,24 @@ MHCT.registerTag(
 )
 
 -- ===================================================================================
--- HEALER DRINKING TAG (5-MAN PARTY ONLY)
+-- HEALER DRINKING TAG
 -- ===================================================================================
 
--- Keywords to detect drinking/food buffs (pre-defined for performance)
-local DRINK_KEYWORDS = { "drink", "food", "refreshment" }
+-- Exact match buffs that indicate drinking/eating (case-insensitive)
+-- These are the actual active drinking states, not persistent stat buffs
+local DRINKING_BUFFS = {
+	["drink"] = true,
+	["food"] = true,
+	["food & drink"] = true,
+	["refreshment"] = true,
+}
 
--- Check if name contains any drink/food keywords (optimized)
-local function containsDrinkKeyword(nameLower)
-	for _, keyword in ipairs(DRINK_KEYWORDS) do
-		if nameLower:find(keyword, 1, true) then -- true = plain search (faster)
-			return true
-		end
-	end
-	return false
-end
+-- Pre-built drinking text constant (avoid allocating on every call)
+local DRINKING_TEXT = "|cff1f6bffDRINKING...|r"
 
--- Check if unit is drinking (optimized for retail WoW 11.2.5+)
+-- Check if unit has a drinking/eating buff
 local function isDrinking(unit)
 	if not unit then
-		return false
-	end
-
-	-- CRITICAL: Cannot drink in combat - early exit (massive performance gain)
-	if UnitAffectingCombat(unit) then
 		return false
 	end
 
@@ -203,12 +197,12 @@ local function isDrinking(unit)
 			break -- No more buffs
 		end
 
-		-- Modern retail WoW: Nearly all drink/food buffs contain "Drink", "Food", or "Refreshment" in the name
-		-- This covers: Water, Mage Food, Conjured items, vendor drinks, food items, etc.
-		-- Examples: "Drink", "Food", "Food & Drink", "Refreshing Spring Water", "Conjured Mana Strudel"
 		local name = auraData.name
-		if name and containsDrinkKeyword(lower(name)) then
-			return true
+		if name then
+			local nameLower = lower(name)
+			if DRINKING_BUFFS[nameLower] then
+				return true
+			end
 		end
 	end
 
@@ -222,21 +216,28 @@ MHCT.registerTag(
 	"Shows 'DRINKING...' only for healers drinking/eating (works in any scenario: solo, party, or raid). Example: DRINKING...",
 	"UNIT_AURA UNIT_POWER_UPDATE",
 	function(unit)
+		-- Guard: Unit must exist
 		if not unit then
 			return ""
 		end
 
-		-- Early exit: Only show for healers (most units won't be healers)
+		-- Guard: Cannot drink in combat (check FIRST before other checks)
+		if UnitAffectingCombat(unit) then
+			return ""
+		end
+
+		-- Guard: Only show for healers (most units won't be healers)
 		local role = UnitGroupRolesAssigned(unit)
 		if role ~= "HEALER" then
 			return ""
 		end
 
-		-- Check if drinking/eating
+		-- Check if drinking/eating (all guards passed)
 		if isDrinking(unit) then
-			return "|cffb0d0ffDRINKING...|r"
+			return DRINKING_TEXT
 		end
 
+		-- Default: return empty (not drinking or guards failed)
 		return ""
 	end
 )
