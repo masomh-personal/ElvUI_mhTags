@@ -80,17 +80,19 @@ end
 
 -- Get health values and calculate percentage
 -- Uses MHCT.GetUnitHealthPercent() which leverages 12.0 APIs when available
+-- WoW 12.0+: Avoids comparisons on potentially secret values
 local function getHealthData(unit)
-	local maxHp = UnitHealthMax(unit)
-	local currentHp = UnitHealth(unit)
-
-	-- Handle nil values (invalid unit) or zero max health
-	if not maxHp or not currentHp or maxHp == 0 then
-		return 0, 0, 0
-	end
-
-	-- Use optimized percentage calculation (uses 12.0 API when available)
+	-- Use our wrapper which handles secret values internally
+	-- Returns 0 if unit is invalid or has no health
 	local percent = GetUnitHealthPercent(unit)
+
+	-- If percent is 0, could be dead or invalid - get raw values for display only
+	-- Note: In 12.0+, these may be secret values but can still be passed to display functions
+	local currentHp = UnitHealth(unit)
+	local maxHp = UnitHealthMax(unit)
+
+	-- Return values - percent is safe to compare (our wrapper returns a number)
+	-- currentHp/maxHp are for display purposes only (passed to E:GetFormattedText)
 	return currentHp, maxHp, percent
 end
 
@@ -147,8 +149,9 @@ MHCT.registerTag(
 		if not unit then
 			return ""
 		end
-		local currentHp, maxHp = getHealthData(unit)
-		if maxHp == 0 then
+		local currentHp, maxHp, percent = getHealthData(unit)
+		-- Use percent for validity check (safe to compare, not a secret value)
+		if percent == 0 then
 			return ""
 		end
 		return E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
@@ -194,8 +197,8 @@ MHCT.registerTag(
 
 		local currentHp, maxHp, percent = getHealthData(unit)
 
-		-- Show max health value at full
-		if currentHp == maxHp then
+		-- Show max health value at full (use percent >= 100, safe to compare)
+		if percent >= 100 then
 			return E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
 		end
 
@@ -222,8 +225,8 @@ MHCT.registerTag(
 
 		local currentHp, maxHp, percent = getHealthData(unit)
 
-		-- Show max health value at full
-		if currentHp == maxHp then
+		-- Show max health value at full (use percent >= 100, safe to compare)
+		if percent >= 100 then
 			return E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
 		end
 
@@ -304,7 +307,8 @@ MHCT.registerTag(
 		local currentHp, maxHp, percent = getHealthData(unit)
 		local currentText = E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
 
-		if currentHp == maxHp then
+		-- Use percent >= 100 instead of currentHp == maxHp (safe to compare)
+		if percent >= 100 then
 			return currentText
 		end
 
@@ -332,7 +336,8 @@ MHCT.registerTag(
 		local currentHp, maxHp, percent = getHealthData(unit)
 		local currentText = E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
 
-		if currentHp == maxHp then
+		-- Use percent >= 100 instead of currentHp == maxHp (safe to compare)
+		if percent >= 100 then
 			return currentText
 		end
 
@@ -361,7 +366,8 @@ MHCT.registerTag(
 		local currentText = E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
 		local absorbText = getAbsorbText(unit)
 
-		if currentHp == maxHp then
+		-- Use percent >= 100 instead of currentHp == maxHp (safe to compare)
+		if percent >= 100 then
 			return absorbText .. currentText
 		end
 
@@ -468,8 +474,8 @@ MHCT.registerTag(
 		end
 		local currentHp, maxHp, percent = getHealthData(unit)
 
-		-- Early exit for invalid health data
-		if not maxHp or maxHp == 0 then
+		-- Early exit for invalid health data (use percent, safe to compare)
+		if percent == 0 then
 			return ""
 		end
 
@@ -477,7 +483,7 @@ MHCT.registerTag(
 		local absorbText = getAbsorbText(unit)
 
 		-- Use gradient color (green) at full health for consistency
-		if currentHp == maxHp then
+		if percent >= 100 then
 			return absorbText .. getGradientColor(100) .. currentText .. COLOR_END
 		end
 
@@ -501,8 +507,8 @@ MHCT.registerTag(
 		end
 		local currentHp, maxHp, percent = getHealthData(unit)
 
-		-- Early exit for invalid health data
-		if not maxHp or maxHp == 0 then
+		-- Early exit for invalid health data (use percent, safe to compare)
+		if percent == 0 then
 			return ""
 		end
 
@@ -510,7 +516,7 @@ MHCT.registerTag(
 		local absorbText = getAbsorbText(unit)
 
 		-- Use gradient color (green) at full health for consistency
-		if currentHp == maxHp then
+		if percent >= 100 then
 			return absorbText .. getGradientColor(100) .. currentText .. COLOR_END
 		end
 
@@ -542,8 +548,8 @@ MHCT.registerTag(
 		-- Get health data
 		local currentHp, maxHp, percent = getHealthData(unit)
 
-		-- Early exit for invalid health data
-		if not maxHp or maxHp == 0 then
+		-- Early exit for invalid health data (use percent, safe to compare)
+		if percent == 0 then
 			return ""
 		end
 
@@ -551,7 +557,7 @@ MHCT.registerTag(
 		local absorbText = getAbsorbText(unit)
 
 		-- Use gradient color (green) at full health for consistency
-		if currentHp == maxHp then
+		if percent >= 100 then
 			return absorbText .. getGradientColor(100) .. currentText .. COLOR_END
 		end
 
@@ -583,8 +589,8 @@ MHCT.registerTag(
 		-- Get health data
 		local currentHp, maxHp, percent = getHealthData(unit)
 
-		-- Early exit for invalid health data
-		if not maxHp or maxHp == 0 then
+		-- Early exit for invalid health data (use percent, safe to compare)
+		if percent == 0 then
 			return ""
 		end
 
@@ -592,7 +598,7 @@ MHCT.registerTag(
 		local absorbText = getAbsorbText(unit)
 
 		-- Use gradient color (green) at full health for consistency
-		if currentHp == maxHp then
+		if percent >= 100 then
 			return absorbText .. getGradientColor(100) .. currentText .. COLOR_END
 		end
 
@@ -616,8 +622,8 @@ MHCT.registerTag(
 		end
 		local currentHp, maxHp, percent = getHealthData(unit)
 
-		-- Early exit for invalid health data
-		if not maxHp or maxHp == 0 then
+		-- Early exit for invalid health data (use percent, safe to compare)
+		if percent == 0 then
 			return ""
 		end
 
@@ -625,7 +631,7 @@ MHCT.registerTag(
 		local absorbText = getAbsorbText(unit)
 
 		-- Use gradient color (green) at full health for consistency
-		if currentHp == maxHp then
+		if percent >= 100 then
 			return absorbText .. getGradientColor(100) .. currentText .. COLOR_END
 		end
 
@@ -644,10 +650,10 @@ MHCT.registerTag(
 		if not unit then
 			return ""
 		end
-		local currentHp, maxHp, percent = getHealthData(unit)
+		local _, _, percent = getHealthData(unit)
 
 		-- Use gradient color (green) at full health for consistency
-		if currentHp == maxHp then
+		if percent >= 100 then
 			return getGradientColor(100) .. "100%" .. COLOR_END
 		end
 
@@ -675,11 +681,11 @@ MHCT.registerTag(
 			return statusFormatted
 		end
 
-		-- Get health data
-		local currentHp, maxHp, percent = getHealthData(unit)
+		-- Get health data (percent is safe to compare)
+		local _, _, percent = getHealthData(unit)
 
-		-- Handle edge case: dead/offline units
-		if maxHp == 0 then
+		-- Handle edge case: dead/offline units (use percent, safe to compare)
+		if percent == 0 then
 			return ""
 		end
 
@@ -719,11 +725,11 @@ MHCT.registerTag(
 			return statusFormatted
 		end
 
-		-- Get health data
-		local currentHp, maxHp, percent = getHealthData(unit)
+		-- Get health data (percent is safe to compare)
+		local _, _, percent = getHealthData(unit)
 
-		-- Handle edge case: dead/offline units
-		if maxHp == 0 then
+		-- Handle edge case: dead/offline units (use percent, safe to compare)
+		if percent == 0 then
 			return ""
 		end
 
@@ -759,9 +765,10 @@ MHCT.registerTag(
 		if not unit then
 			return ""
 		end
-		local currentHp, maxHp, percent = getHealthData(unit)
+		-- Only need percent for color lookup (safe to compare)
+		local _, _, percent = getHealthData(unit)
 
-		if maxHp == 0 then
+		if percent == 0 then
 			return DEAD_OR_DC_COLOR
 		end
 
