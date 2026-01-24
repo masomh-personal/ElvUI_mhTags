@@ -28,6 +28,9 @@ local UnitHealthMissing = UnitHealthMissing
 local UnitGetTotalAbsorbs = UnitGetTotalAbsorbs
 local issecretvalue = issecretvalue
 
+-- CurveConstants.ScaleTo100 makes UnitHealthPercent return 0-100 instead of 0-1
+local SCALE_TO_100 = CurveConstants.ScaleTo100
+
 -- ===================================================================================
 -- CONSTANTS
 -- ===================================================================================
@@ -96,21 +99,6 @@ local function getAbsorbText(unit)
 	return ""
 end
 
--- Safe wrapper for E:GetFormattedText that handles secret values
--- Returns formatted text or nil if values are secret
-local function safeGetFormattedText(formatType, currentHp, maxHp)
-	if issecretvalue(currentHp) or issecretvalue(maxHp) then
-		return nil
-	end
-	local ok, result = pcall(E.GetFormattedText, E, formatType, currentHp, maxHp, nil, true)
-	return ok and result or nil
-end
-
--- Check if any health value is secret
-local function isHealthDataSecret(currentHp, maxHp, percent)
-	return issecretvalue(currentHp) or issecretvalue(maxHp) or (percent and issecretvalue(percent))
-end
-
 -- Local format helper using shared PERCENT_FORMATS from core.lua
 local function formatPercentValue(value, decimals)
 	local fmt = PERCENT_FORMATS[decimals]
@@ -126,28 +114,25 @@ end
 -- ===================================================================================
 -- These tags show current health value with various formatting options
 
--- Current health value only (uses ElvUI's smart formatting)
+-- Current health value only (uses secret-safe formatting)
 MHCT.registerTag(
 	"mh-health-current",
 	HEALTH_SUBCATEGORY,
-	"Current health using ElvUI formatting. Example: 100k",
+	"Current health formatted. Example: 100k",
 	EVENTS.HEALTH_ONLY,
 	function(unit)
 		if not unit then
 			return ""
 		end
+		
 		local currentHp = UnitHealth(unit)
-		local maxHp = UnitHealthMax(unit)
 
-		-- Secret values: show fallback
-		local currentText = safeGetFormattedText("CURRENT", currentHp, maxHp)
+		-- Use secret-safe formatting
+		local currentText = FormatLargeNumber(currentHp)
 		if not currentText then
 			return SECRET_FALLBACK_TEXT
 		end
 
-		if maxHp == 0 then
-			return ""
-		end
 		return currentText
 	end
 )
@@ -162,12 +147,12 @@ MHCT.registerTag(
 		if not unit then
 			return ""
 		end
+		
 		local currentHp = UnitHealth(unit)
-		local maxHp = UnitHealthMax(unit)
 		local absorbText = getAbsorbText(unit)
 
-		-- Secret values: show fallback
-		local currentText = safeGetFormattedText("CURRENT", currentHp, maxHp)
+		-- Use secret-safe formatting for current health
+		local currentText = FormatLargeNumber(currentHp)
 		if not currentText then
 			return absorbText .. SECRET_FALLBACK_TEXT
 		end
@@ -197,20 +182,13 @@ MHCT.registerTag(
 			return statusFormatted
 		end
 
-		local currentHp = UnitHealth(unit)
-		local maxHp = UnitHealthMax(unit)
-		local percent = UnitHealthPercent(unit)
-
-		-- Secret value: show fallback
-		if isHealthDataSecret(currentHp, maxHp, percent) then
+		-- Get percent (0-100 range) - works even for secret values
+		local percent = UnitHealthPercent(unit, false, SCALE_TO_100)
+		if not percent then
 			return SECRET_FALLBACK_TEXT
 		end
 
-		-- At full health: show formatted health value
-		if percent >= 100 then
-			return E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
-		end
-
+		-- Format with requested decimals - string.format works on secret values
 		local decimals = MHCT.parseDecimalArg(args, 1)
 		return formatPercentValue(percent, decimals) .. "%"
 	end
@@ -232,20 +210,13 @@ MHCT.registerTag(
 			return statusFormatted
 		end
 
-		local currentHp = UnitHealth(unit)
-		local maxHp = UnitHealthMax(unit)
-		local percent = UnitHealthPercent(unit)
-
-		-- Secret value: show fallback
-		if isHealthDataSecret(currentHp, maxHp, percent) then
+		-- Get percent (0-100 range) - works even for secret values
+		local percent = UnitHealthPercent(unit, false, SCALE_TO_100)
+		if not percent then
 			return SECRET_FALLBACK_TEXT
 		end
 
-		-- At full health: show formatted health value
-		if percent >= 100 then
-			return E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
-		end
-
+		-- Format with requested decimals - string.format works on secret values
 		local decimals = MHCT.parseDecimalArg(args, 1)
 		return formatPercentValue(percent, decimals)
 	end
@@ -256,11 +227,11 @@ MHCT.registerTag(
 -- ===================================================================================
 -- Tags that show both current health and percentage in various formats
 
--- Current | Percent (shows both always)
+-- Current | Percent (hides percent at full health when possible)
 MHCT.registerTag(
 	"mh-health-current-percent",
 	HEALTH_SUBCATEGORY,
-	"Current and percent. Example: 100k | 85%",
+	"Current and percent. Hides percent at full health. Example: 100k | 85%",
 	EVENTS.HEALTH_STATUS,
 	function(unit)
 		if not unit then
@@ -273,25 +244,31 @@ MHCT.registerTag(
 		end
 
 		local currentHp = UnitHealth(unit)
-		local maxHp = UnitHealthMax(unit)
-		local percent = UnitHealthPercent(unit)
+		local percent = UnitHealthPercent(unit, false, SCALE_TO_100)
 
-		-- Secret value: show fallback
-		if isHealthDataSecret(currentHp, maxHp, percent) then
+		if not percent then
 			return SECRET_FALLBACK_TEXT
 		end
 
-		local currentText = E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
+		-- Use secret-safe formatting
+		local currentText = FormatLargeNumber(currentHp)
+		
+		-- Try to hide percent at full health (pcall handles secret values gracefully)
+		local ok, isFull = pcall(function() return percent >= 100 end)
+		if ok and isFull then
+			return currentText
+		end
+
 		local percentText = format(PERCENT_FORMAT, percent)
 		return currentText .. VERTICAL_SEPARATOR .. percentText
 	end
 )
 
--- Percent | Current (shows both always)
+-- Percent | Current (hides percent at full health when possible)
 MHCT.registerTag(
 	"mh-health-percent-current",
 	HEALTH_SUBCATEGORY,
-	"Percent and current. Example: 85% | 100k",
+	"Percent and current. Hides percent at full health. Example: 85% | 100k",
 	EVENTS.HEALTH_STATUS,
 	function(unit)
 		if not unit then
@@ -304,86 +281,18 @@ MHCT.registerTag(
 		end
 
 		local currentHp = UnitHealth(unit)
-		local maxHp = UnitHealthMax(unit)
-		local percent = UnitHealthPercent(unit)
+		local percent = UnitHealthPercent(unit, false, SCALE_TO_100)
 
-		-- Secret value: show fallback
-		if isHealthDataSecret(currentHp, maxHp, percent) then
+		if not percent then
 			return SECRET_FALLBACK_TEXT
 		end
 
-		local currentText = E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
-		local percentText = format(PERCENT_FORMAT, percent)
-		return percentText .. VERTICAL_SEPARATOR .. currentText
-	end
-)
-
--- Current | Percent (hides percent at full health)
-MHCT.registerTag(
-	"mh-health-current-percent-hidefull",
-	HEALTH_SUBCATEGORY,
-	"Current | percent; hides percent at full. Example: 100k | 85%",
-	EVENTS.HEALTH_STATUS,
-	function(unit)
-		if not unit then
-			return ""
-		end
-
-		local statusFormatted = MHCT.formatWithStatusCheck(unit)
-		if statusFormatted then
-			return statusFormatted
-		end
-
-		local currentHp = UnitHealth(unit)
-		local maxHp = UnitHealthMax(unit)
-		local percent = UnitHealthPercent(unit)
-
-		-- Secret value: show fallback
-		if isHealthDataSecret(currentHp, maxHp, percent) then
-			return SECRET_FALLBACK_TEXT
-		end
-
-		local currentText = E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
-
-		-- Full health: show only current
-		if percent >= 100 then
-			return currentText
-		end
-
-		local percentText = format(PERCENT_FORMAT, percent)
-		return currentText .. VERTICAL_SEPARATOR .. percentText
-	end
-)
-
--- Percent | Current (hides percent at full health)
-MHCT.registerTag(
-	"mh-health-percent-current-hidefull",
-	HEALTH_SUBCATEGORY,
-	"Percent | current; hides percent at full. Example: 85% | 100k",
-	EVENTS.HEALTH_STATUS,
-	function(unit)
-		if not unit then
-			return ""
-		end
-
-		local statusFormatted = MHCT.formatWithStatusCheck(unit)
-		if statusFormatted then
-			return statusFormatted
-		end
-
-		local currentHp = UnitHealth(unit)
-		local maxHp = UnitHealthMax(unit)
-		local percent = UnitHealthPercent(unit)
-
-		-- Secret value: show fallback
-		if isHealthDataSecret(currentHp, maxHp, percent) then
-			return SECRET_FALLBACK_TEXT
-		end
-
-		local currentText = E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
-
-		-- Full health: show only current
-		if percent >= 100 then
+		-- Use secret-safe formatting
+		local currentText = FormatLargeNumber(currentHp)
+		
+		-- Try to hide percent at full health (pcall handles secret values gracefully)
+		local ok, isFull = pcall(function() return percent >= 100 end)
+		if ok and isFull then
 			return currentText
 		end
 
@@ -392,11 +301,11 @@ MHCT.registerTag(
 	end
 )
 
--- Current | Percent with absorb shield
+-- Current | Percent with absorb shield (hides percent at full health when possible)
 MHCT.registerTag(
 	"mh-health-current-percent-absorb",
 	HEALTH_SUBCATEGORY,
-	"Absorb + current | percent. Example: (25k) 100k | 85%",
+	"Absorb + current | percent. Hides percent at full health. Example: (25k) 100k | 85%",
 	EVENTS.HEALTH_ABSORB_STATUS,
 	function(unit)
 		if not unit then
@@ -409,19 +318,19 @@ MHCT.registerTag(
 		end
 
 		local currentHp = UnitHealth(unit)
-		local maxHp = UnitHealthMax(unit)
-		local percent = UnitHealthPercent(unit)
+		local percent = UnitHealthPercent(unit, false, SCALE_TO_100)
 		local absorbText = getAbsorbText(unit)
 
-		-- Secret value: show fallback
-		if isHealthDataSecret(currentHp, maxHp, percent) then
+		if not percent then
 			return absorbText .. SECRET_FALLBACK_TEXT
 		end
 
-		local currentText = E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
-
-		-- Full health: show only current with absorb
-		if percent >= 100 then
+		-- Use secret-safe formatting
+		local currentText = FormatLargeNumber(currentHp)
+		
+		-- Try to hide percent at full health (pcall handles secret values gracefully)
+		local ok, isFull = pcall(function() return percent >= 100 end)
+		if ok and isFull then
 			return absorbText .. currentText
 		end
 
@@ -486,6 +395,7 @@ MHCT.registerTag(
 )
 
 -- Percentage deficit with status
+-- Note: For secret values, we show the formatted percent as-is (can't calculate deficit)
 MHCT.registerTag(
 	"mh-health-deficit-percent",
 	HEALTH_SUBCATEGORY,
@@ -501,16 +411,24 @@ MHCT.registerTag(
 			return statusFormatted
 		end
 
-		local percent = UnitHealthPercent(unit)
-
-		-- Secret value or full health: no deficit to show
-		if issecretvalue(percent) or percent >= 100 then
+		local percent = UnitHealthPercent(unit, false, SCALE_TO_100)
+		if not percent then
 			return ""
 		end
 
+		-- For secret values, we can format but not do arithmetic
+		-- Show as deficit format: display 100 - percent as "-X%"
+		-- Since we can't do 100 - secret, we format the raw percent
 		local decimals = MHCT.parseDecimalArg(args, 1)
-		local deficit = 100 - percent
-		return "-" .. formatPercentValue(deficit, decimals) .. "%"
+		
+		-- Use pcall to safely attempt arithmetic (will fail for secrets)
+		local ok, deficit = pcall(function() return 100 - percent end)
+		if ok and deficit > 0 then
+			return "-" .. formatPercentValue(deficit, decimals) .. "%"
+		end
+		
+		-- At full health or secret: no deficit to show
+		return ""
 	end
 )
 
@@ -529,13 +447,11 @@ MHCT.registerTag(
 -- ===================================================================================
 
 -- ===================================================================================
--- SECTION 8: LEGACY/COMPATIBILITY TAGS
+-- SECTION 6: LEGACY/COMPATIBILITY TAGS
 -- ===================================================================================
 -- These maintain backwards compatibility with old tag names using aliases
 -- Aliases share the same function reference (zero performance overhead, no duplication)
 
 MHCT.registerTagAlias("mh-health:current:percent:right", "mh-health-current-percent")
 MHCT.registerTagAlias("mh-health:current:percent:left", "mh-health-percent-current")
-MHCT.registerTagAlias("mh-health:current:percent:right-hidefull", "mh-health-current-percent-hidefull")
-MHCT.registerTagAlias("mh-health:current:percent:left-hidefull", "mh-health-percent-current-hidefull")
 

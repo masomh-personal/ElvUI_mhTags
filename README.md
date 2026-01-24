@@ -5,7 +5,7 @@
 [![WoW](https://img.shields.io/badge/WoW-12.0.0%20Midnight+-orange)](https://worldofwarcraft.com)
 [![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
 
-**32 custom tags for ElvUI unit frames.** Lightweight, performant, and WoW 12.0 (Midnight) optimized.
+**30 custom tags for ElvUI unit frames.** Lightweight, performant, and WoW 12.0 (Midnight) optimized.
 
 > **⚠️ Important**: This addon requires **WoW 12.0+ (Midnight)** and **ElvUI 14.0+**. Health gradient coloring has been removed due to Blizzard's secret value restrictions - see [WoW 12.0 Limitations](#wow-120-midnight-limitations) for details.
 
@@ -30,26 +30,24 @@
 | `[mh-classification:icon]`      | 🛡️             | Elite/Rare/Boss icon          |
 | `[mh-status]`                   | `AFK` + icon   | Status indicator              |
 
-## Complete Tag Reference (32 Tags)
+## Complete Tag Reference (30 Tags)
 
-### Health Tags (12)
+### Health Tags (10)
 
 | Tag | Example Output | Description |
 |-----|----------------|-------------|
-| `[mh-health-current]` | `100k` | Current health with ElvUI formatting |
+| `[mh-health-current]` | `100k` | Current health formatted |
 | `[mh-health-current-absorb]` | `(25k) 100k` | Absorb shield + current health |
 | `[mh-health-percent{N}]` | `85.2%` | Health percent, `{N}` = decimals (default 1) |
 | `[mh-health-percent-nosign{N}]` | `85.2` | Health percent without % sign |
-| `[mh-health-current-percent]` | `100k \| 85%` | Current health and percent combined |
-| `[mh-health-percent-current]` | `85% \| 100k` | Percent and current (reversed order) |
-| `[mh-health-current-percent-hidefull]` | `100k \| 85%` | Hides percent when at full health |
-| `[mh-health-percent-current-hidefull]` | `85% \| 100k` | Hides percent when at full (reversed) |
-| `[mh-health-current-percent-absorb]` | `(25k) 100k \| 85%` | Absorb + current + percent |
+| `[mh-health-current-percent]` | `100k \| 85%` | Current + percent; hides % at full |
+| `[mh-health-percent-current]` | `85% \| 100k` | Percent + current; hides % at full |
+| `[mh-health-current-percent-absorb]` | `(25k) 100k \| 85%` | Absorb + current + percent; hides % at full |
 | `[mh-health-deficit]` | `-15k` or `DEAD` | Missing health with status check |
 | `[mh-health-deficit-nostatus]` | `-15k` | Missing health only (no status) |
 | `[mh-health-deficit-percent{N}]` | `-15%` | Missing health as percent |
 
-> **⚠️ Removed in v9.0**: All colored/gradient health tags were removed due to WoW 12.0 secret value restrictions. See [WoW 12.0 Limitations](#wow-120-midnight-limitations).
+> **⚠️ Removed in v9.0**: Colored/gradient health tags and "hidefull" variants were removed due to WoW 12.0 secret value restrictions. See [WoW 12.0 Limitations](#wow-120-midnight-limitations).
 
 ### Name Tags (7)
 
@@ -175,7 +173,9 @@ When health/power values are "secret," they carry a C-level taint that **cannot 
 - **All colored health tags** - Gradient coloring requires table lookups (`colors[floor(percent)]`) which are blocked
 - **Health color tag** (`mh-healthcolor`) - Cannot return dynamic color codes for secret values
 
-**Removed Tags:**
+**Removed Tags (v9.0):**
+
+*Colored/Gradient Tags (9):*
 - `mh-health-current-percent-colored`
 - `mh-health-percent-current-colored`
 - `mh-health-current-percent-colored-status`
@@ -186,9 +186,16 @@ When health/power values are "secret," they carry a C-level taint that **cannot 
 - `mh-health-percent-nosign-colored-status`
 - `mh-healthcolor`
 
+*"Hide at Full" Tags (2):*
+- `mh-health-current-percent-hidefull`
+- `mh-health-percent-current-hidefull`
+
+> These required comparing `percent >= 100` which is blocked for secret values.
+
 **What Still Works:**
 - All non-colored health tags display values correctly
-- Formatting with `string.format()` shows percentages/numbers
+- Decimal formatting works (e.g., `{2}` for 2 decimal places)
+- `string.format()` displays percentages/numbers even for secret values
 - `AbbreviateNumbers()` formats large values (e.g., `2.5M`)
 - Status checks (AFK, Dead, Offline) work normally
 - Absorb shields display correctly (when not secret)
