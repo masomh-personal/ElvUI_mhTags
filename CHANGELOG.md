@@ -7,6 +7,64 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [9.0] - January 23, 2026
+
+### Added
+
+- **WoW 12.0 API Wrappers** - New optimized API wrapper functions in core.lua:
+  - `MHCT.GetUnitHealthPercent(unit)` - Uses native `UnitHealthPercent()` in 12.0+
+  - `MHCT.GetUnitHealthMissing(unit)` - Uses native `UnitHealthMissing()` in 12.0+
+  - `MHCT.GetUnitPowerPercent(unit, powerType)` - Uses native `UnitPowerPercent()` in 12.0+
+  - `MHCT.GetUnitPowerMissing(unit, powerType)` - Uses native `UnitPowerMissing()` in 12.0+
+  - All wrappers automatically fall back to manual calculation on pre-12.0 clients
+
+- **Version Compatibility Checks** - Enhanced startup validation:
+  - Detects WoW 12.0+ and warns if ElvUI version is below 14.0
+  - Shows error if ElvUI version is below minimum required (13.0)
+  - Stores debug info accessible via `/mhtags debug`
+
+- **Enhanced Slash Commands**:
+  - `/mhtags` - Shows memory usage (default)
+  - `/mhtags debug` - Shows version info, WoW interface version, and 12.0 API availability
+  - `/mhtags help` - Shows available commands
+
+### Changed
+
+- **Updated for WoW 12.0 (Midnight)** - Interface version bumped to 120000
+- **Modernized TOC metadata**:
+  - Added `## Category: Unit Frames` for addon list categorization (WoW 11.1.0+)
+  - Added `## Group: ElvUI` for addon grouping in list
+  - Added `## X-Category` for backwards compatibility
+  - Added `## X-License: MIT`
+  - Added `## X-Localizations: enUS`
+  - Fixed `IconTexture` path capitalization
+
+- **Health Tags Optimized** - All health percentage and deficit calculations now use 12.0 native APIs when available:
+  - `[mh-health-percent]` and variants
+  - `[mh-health-deficit]` and variants
+  - `[mh-health-deficit-percent]`
+  - Provides better performance and proper handling of WoW 12.0's "secret values"
+
+- **Power Tags Optimized** - Power percentage calculations now use `UnitPowerPercent()` in 12.0+:
+  - `[mh-power-percent]` now uses native API when available
+
+- **Code Documentation** - Added WoW 12.0 compatibility notes to all tag files
+
+### Technical Details
+
+- **WoW 12.0 Secret Values**: The new API wrappers handle WoW 12.0's "secret value" system internally. Secret values are returned by combat APIs to prevent addon automation, but can still be displayed via ElvUI's FontString system.
+
+- **API Detection**: At load time, the addon checks for availability of new 12.0 APIs (`UnitHealthPercent`, etc.) and stores this in `MHCT.debugInfo` for troubleshooting.
+
+- **Backwards Compatibility**: All changes are backwards compatible. The addon will work on both pre-12.0 and 12.0+ clients seamlessly.
+
+### Compatibility
+
+- **WoW**: Retail 12.0.0+ (Midnight) - Also compatible with 11.x clients
+- **ElvUI**: 13.0+ required, 14.0+ recommended for WoW 12.0
+
+---
+
 ## [7.0.0] - 2025-12-03
 
 ### Changed

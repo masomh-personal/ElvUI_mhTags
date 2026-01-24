@@ -9,6 +9,12 @@ ns.MHCT = {}
 local MHCT = ns.MHCT
 
 -------------------------------------
+-- ADDON VERSION INFO
+-------------------------------------
+MHCT.ADDON_VERSION = "9.0"
+MHCT.ADDON_NAME = "ElvUI_mhTags"
+
+-------------------------------------
 -- FUNCTION LOCALIZATION
 -- Localizing all functions improves performance by avoiding global lookups
 -------------------------------------
@@ -23,8 +29,10 @@ local sub = string.sub
 local tinsert = table.insert
 local concat = table.concat
 local strupper = strupper
+local select = select
+local type = type
 
--- WoW API functions
+-- WoW API functions (standard)
 local UnitIsAFK = UnitIsAFK
 local UnitIsDND = UnitIsDND
 local UnitIsFeignDeath = UnitIsFeignDeath
@@ -42,6 +50,137 @@ local GetNumGroupMembers = GetNumGroupMembers
 local GetRaidRosterInfo = GetRaidRosterInfo
 local IsInRaid = IsInRaid
 local wipe = wipe
+local GetBuildInfo = GetBuildInfo
+
+-------------------------------------
+-- WOW VERSION DETECTION
+-- Detect WoW 12.0+ for new API availability
+-------------------------------------
+local WOW_INTERFACE_VERSION = select(4, GetBuildInfo())
+local IS_WOW_12_0_OR_LATER = WOW_INTERFACE_VERSION >= 120000
+
+-- Export version info for debugging
+MHCT.WOW_INTERFACE_VERSION = WOW_INTERFACE_VERSION
+MHCT.IS_WOW_12_0_OR_LATER = IS_WOW_12_0_OR_LATER
+
+-------------------------------------
+-- WOW 12.0 API DETECTION AND WRAPPERS
+-- New APIs in 12.0: UnitHealthPercent, UnitHealthMissing, UnitPowerPercent, UnitPowerMissing
+-- These APIs handle secret values internally and are more performant
+-------------------------------------
+
+-- Check for new 12.0 APIs availability (they may not exist in all 12.0 builds)
+local HAS_UNIT_HEALTH_PERCENT = type(UnitHealthPercent) == "function"
+local HAS_UNIT_HEALTH_MISSING = type(UnitHealthMissing) == "function"
+local HAS_UNIT_POWER_PERCENT = type(UnitPowerPercent) == "function"
+local HAS_UNIT_POWER_MISSING = type(UnitPowerMissing) == "function"
+
+-- Export API availability for tag files
+MHCT.HAS_UNIT_HEALTH_PERCENT = HAS_UNIT_HEALTH_PERCENT
+MHCT.HAS_UNIT_HEALTH_MISSING = HAS_UNIT_HEALTH_MISSING
+MHCT.HAS_UNIT_POWER_PERCENT = HAS_UNIT_POWER_PERCENT
+MHCT.HAS_UNIT_POWER_MISSING = HAS_UNIT_POWER_MISSING
+
+-- Localize new APIs if available
+local _UnitHealthPercent = HAS_UNIT_HEALTH_PERCENT and UnitHealthPercent or nil
+local _UnitHealthMissing = HAS_UNIT_HEALTH_MISSING and UnitHealthMissing or nil
+local _UnitPowerPercent = HAS_UNIT_POWER_PERCENT and UnitPowerPercent or nil
+local _UnitPowerMissing = HAS_UNIT_POWER_MISSING and UnitPowerMissing or nil
+
+-------------------------------------
+-- API WRAPPER FUNCTIONS
+-- Use new 12.0 APIs when available, fallback to legacy calculation
+-- These wrappers provide a consistent interface across WoW versions
+-------------------------------------
+
+-- Get health percentage (0-100)
+-- Uses UnitHealthPercent in 12.0+, falls back to manual calculation
+MHCT.GetUnitHealthPercent = function(unit)
+	if not unit then
+		return 0
+	end
+
+	if HAS_UNIT_HEALTH_PERCENT then
+		local percent = _UnitHealthPercent(unit)
+		return percent or 0
+	end
+
+	-- Fallback for pre-12.0
+	local maxHp = UnitHealthMax(unit)
+	if not maxHp or maxHp == 0 then
+		return 0
+	end
+	local currentHp = UnitHealth(unit)
+	return (currentHp / maxHp) * 100
+end
+
+-- Get health deficit (positive number representing missing health)
+-- Uses UnitHealthMissing in 12.0+, falls back to manual calculation
+MHCT.GetUnitHealthMissing = function(unit)
+	if not unit then
+		return 0
+	end
+
+	if HAS_UNIT_HEALTH_MISSING then
+		local missing = _UnitHealthMissing(unit)
+		return missing or 0
+	end
+
+	-- Fallback for pre-12.0
+	local maxHp = UnitHealthMax(unit)
+	local currentHp = UnitHealth(unit)
+	if not maxHp or not currentHp then
+		return 0
+	end
+	return maxHp - currentHp
+end
+
+-- Get power percentage (0-100)
+-- Uses UnitPowerPercent in 12.0+, falls back to manual calculation
+MHCT.GetUnitPowerPercent = function(unit, powerType)
+	if not unit then
+		return 0
+	end
+
+	if HAS_UNIT_POWER_PERCENT then
+		local percent = _UnitPowerPercent(unit, powerType)
+		return percent or 0
+	end
+
+	-- Fallback for pre-12.0
+	local UnitPower = UnitPower
+	local UnitPowerMax = UnitPowerMax
+	local maxPower = UnitPowerMax(unit, powerType)
+	if not maxPower or maxPower == 0 then
+		return 0
+	end
+	local currentPower = UnitPower(unit, powerType)
+	return (currentPower / maxPower) * 100
+end
+
+-- Get power deficit (positive number representing missing power)
+-- Uses UnitPowerMissing in 12.0+, falls back to manual calculation
+MHCT.GetUnitPowerMissing = function(unit, powerType)
+	if not unit then
+		return 0
+	end
+
+	if HAS_UNIT_POWER_MISSING then
+		local missing = _UnitPowerMissing(unit, powerType)
+		return missing or 0
+	end
+
+	-- Fallback for pre-12.0
+	local UnitPower = UnitPower
+	local UnitPowerMax = UnitPowerMax
+	local maxPower = UnitPowerMax(unit, powerType)
+	local currentPower = UnitPower(unit, powerType)
+	if not maxPower or not currentPower then
+		return 0
+	end
+	return maxPower - currentPower
+end
+
 -- Cache max player level at load time (doesn't change during session)
 local MAX_PLAYER_LEVEL_VALUE = GetMaxPlayerLevel()
 
@@ -83,24 +222,52 @@ end
 -- Validate ElvUI API before proceeding
 validateElvUIAPI()
 
--- Check ElvUI version compatibility (soft warning)
-local function checkElvUIVersion()
-	local minVersion = 13.0
-	local currentVersion = tonumber(E.version) or 0
+-------------------------------------
+-- VERSION COMPATIBILITY CHECKS
+-- Validates ElvUI version and provides WoW 12.0 guidance
+-------------------------------------
+local function checkCompatibility()
+	local minElvUIVersion = 13.0
+	local recommendedElvUIVersion = 14.0
+	local currentElvUIVersion = tonumber(E.version) or 0
 
-	if currentVersion > 0 and currentVersion < minVersion then
-		print(
-			format(
-				"|cffFFFF00[ElvUI_mhTags Warning]|r This addon is designed for ElvUI %.1f or higher. "
-					.. "Current version: %.1f. Some features may not work correctly.",
-				minVersion,
-				currentVersion
+	-- ElvUI version check
+	if currentElvUIVersion > 0 then
+		if currentElvUIVersion < minElvUIVersion then
+			print(
+				format(
+					"|cffFF0000[ElvUI_mhTags Error]|r This addon requires ElvUI %.1f or higher. "
+						.. "Current version: %.1f. Please update ElvUI.",
+					minElvUIVersion,
+					currentElvUIVersion
+				)
 			)
-		)
+		elseif IS_WOW_12_0_OR_LATER and currentElvUIVersion < recommendedElvUIVersion then
+			print(
+				format(
+					"|cffFFFF00[ElvUI_mhTags Warning]|r WoW 12.0 (Midnight) detected. "
+						.. "ElvUI %.1f+ is recommended for best compatibility. "
+						.. "Current version: %.1f",
+					recommendedElvUIVersion,
+					currentElvUIVersion
+				)
+			)
+		end
 	end
+
+	-- WoW 12.0 API availability info (debug, only shown with /mhtags debug)
+	MHCT.debugInfo = {
+		wowVersion = WOW_INTERFACE_VERSION,
+		elvuiVersion = currentElvUIVersion,
+		isWoW12 = IS_WOW_12_0_OR_LATER,
+		hasHealthPercent = HAS_UNIT_HEALTH_PERCENT,
+		hasHealthMissing = HAS_UNIT_HEALTH_MISSING,
+		hasPowerPercent = HAS_UNIT_POWER_PERCENT,
+		hasPowerMissing = HAS_UNIT_POWER_MISSING,
+	}
 end
 
-checkElvUIVersion()
+checkCompatibility()
 
 -- Export ElvUI references for tag modules to avoid duplicate unpacking
 MHCT.E = E
@@ -542,7 +709,30 @@ end
 
 SLASH_MHTAGS1 = "/mhtags"
 SlashCmdList["MHTAGS"] = function(msg)
-	UpdateAddOnMemoryUsage()
-	local memoryUsage = GetAddOnMemoryUsage("ElvUI_mhTags")
-	print(format("|cff0388fcElvUI_mhTags:|r Memory usage: |cffffcc00%.2f KB|r", memoryUsage))
+	local cmd = msg and msg:lower():trim() or ""
+
+	if cmd == "debug" or cmd == "info" then
+		-- Show debug/compatibility info
+		local info = MHCT.debugInfo or {}
+		print("|cff0388fc[ElvUI_mhTags]|r Debug Information:")
+		print(format("  Addon Version: |cffffcc00%s|r", MHCT.ADDON_VERSION))
+		print(format("  WoW Interface: |cffffcc00%d|r", info.wowVersion or 0))
+		print(format("  ElvUI Version: |cffffcc00%.1f|r", info.elvuiVersion or 0))
+		print(format("  WoW 12.0+: |cffffcc00%s|r", info.isWoW12 and "Yes" or "No"))
+		print("|cff0388fc[12.0 API Availability]|r")
+		print(format("  UnitHealthPercent: |cff%s%s|r", info.hasHealthPercent and "00ff00" or "ff0000", info.hasHealthPercent and "Available" or "Unavailable"))
+		print(format("  UnitHealthMissing: |cff%s%s|r", info.hasHealthMissing and "00ff00" or "ff0000", info.hasHealthMissing and "Available" or "Unavailable"))
+		print(format("  UnitPowerPercent: |cff%s%s|r", info.hasPowerPercent and "00ff00" or "ff0000", info.hasPowerPercent and "Available" or "Unavailable"))
+		print(format("  UnitPowerMissing: |cff%s%s|r", info.hasPowerMissing and "00ff00" or "ff0000", info.hasPowerMissing and "Available" or "Unavailable"))
+	elseif cmd == "help" then
+		print("|cff0388fc[ElvUI_mhTags]|r Commands:")
+		print("  |cffffcc00/mhtags|r - Show memory usage")
+		print("  |cffffcc00/mhtags debug|r - Show version and API info")
+		print("  |cffffcc00/mhtags help|r - Show this help")
+	else
+		-- Default: show memory usage
+		UpdateAddOnMemoryUsage()
+		local memoryUsage = GetAddOnMemoryUsage("ElvUI_mhTags")
+		print(format("|cff0388fc[ElvUI_mhTags v%s]|r Memory: |cffffcc00%.2f KB|r", MHCT.ADDON_VERSION, memoryUsage))
+	end
 end

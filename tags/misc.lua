@@ -1,6 +1,11 @@
 -- ===================================================================================
 -- MISCELLANEOUS TAGS - Optimized for efficiency
 -- ===================================================================================
+--
+-- WoW 12.0+ Compatibility:
+-- This file uses standard WoW APIs that are compatible with 12.0's secret value system.
+-- Level and absorb APIs are not affected by the new restrictions.
+-- ===================================================================================
 local _, ns = ...
 local MHCT = ns.MHCT
 

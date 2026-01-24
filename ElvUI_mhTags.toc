@@ -1,14 +1,22 @@
-## Interface: 110207
+## Interface: 120000
 ## Title: |cff1784d1ElvUI|r |cffccff33MH Tags|r
-## Notes: Custom tags for use across ElvUI
+## Notes: Custom tags for use across ElvUI unit frames
 ## Author: mhDesigns
-## Version: 7.0.0
+## Version: 9.0
+## X-Category: Unit Frames
+## Category: Unit Frames
+## Group: ElvUI
 ## RequiredDeps: ElvUI
-## IconTexture: Interface\Addons\ElvUI_mhTags\icons\addon_icon.png
+## IconTexture: Interface\AddOns\ElvUI_mhTags\icons\addon_icon.png
+## X-Website: https://github.com/masomh-personal/ElvUI_mhTags
+## X-Curse-Project-ID: ElvUI_mhTags
+## X-Wago-ID: ElvUI_mhTags
+## X-License: MIT
+## X-Localizations: enUS
 
 core.lua
-tags/health.lua
-tags/power.lua
-tags/classification.lua
-tags/misc.lua
-tags/name.lua
+tags\health.lua
+tags\power.lua
+tags\classification.lua
+tags\misc.lua
+tags\name.lua

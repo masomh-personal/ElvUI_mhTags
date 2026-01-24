@@ -1,6 +1,11 @@
 -- ===================================================================================
 -- CLASSIFICATION TAGS - Optimized for efficiency
 -- ===================================================================================
+--
+-- WoW 12.0+ Compatibility:
+-- Classification APIs (UnitClassification, UnitEffectiveLevel) are not affected
+-- by 12.0's secret value restrictions as they don't expose combat-sensitive data.
+-- ===================================================================================
 local _, ns = ...
 local MHCT = ns.MHCT
 

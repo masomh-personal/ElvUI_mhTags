@@ -1,6 +1,11 @@
 -- ===================================================================================
 -- POWER RELATED TAGS - Optimized for efficiency
 -- ===================================================================================
+--
+-- WoW 12.0+ Optimization:
+-- Uses MHCT.GetUnitPowerPercent() which leverages native UnitPowerPercent()
+-- when available (12.0+), providing better performance and secret value handling
+-- ===================================================================================
 local _, ns = ...
 local MHCT = ns.MHCT
 
@@ -15,6 +20,9 @@ local tonumber = tonumber
 local UnitPowerType = UnitPowerType
 local UnitPower = UnitPower
 local UnitPowerMax = UnitPowerMax
+
+-- Localize MHCT API wrappers (use 12.0 APIs when available)
+local GetUnitPowerPercent = MHCT.GetUnitPowerPercent
 
 -- Local constants
 local POWER_SUBCATEGORY = "power"
@@ -32,25 +40,22 @@ local PERCENT_FORMATS = {
 -- ===================================================================================
 
 -- Optimized power percent formatter
+-- Uses MHCT.GetUnitPowerPercent() which leverages 12.0 APIs when available
 local function formatPowerPercent(unit, decimalPlaces)
-	if not unit then return "" end
-	local powerType = UnitPowerType(unit)
-	local maxPower = UnitPowerMax(unit, powerType)
-
-	-- Early return for invalid max power
-	if maxPower <= 0 then
+	if not unit then
 		return ""
 	end
 
-	local currentPower = UnitPower(unit, powerType)
+	-- Get the unit's power type for the API call
+	local powerType = UnitPowerType(unit)
+
+	-- Use optimized percentage calculation (uses 12.0 API when available)
+	local percent = GetUnitPowerPercent(unit, powerType)
 
 	-- Early return for zero power
-	if currentPower == 0 then
+	if percent == 0 then
 		return "0"
 	end
-
-	-- Calculate percentage
-	local percent = (currentPower / maxPower) * 100
 
 	-- Use pre-built format strings for common cases, build dynamically for others
 	local fmt = PERCENT_FORMATS[decimalPlaces]
@@ -72,7 +77,9 @@ MHCT.registerTag(
 	"Simple power percent, no percentage sign with dynamic number of decimals (dynamic number within {} of tag)",
 	"UNIT_DISPLAYPOWER UNIT_POWER_FREQUENT UNIT_MAXPOWER",
 	function(unit, _, args)
-		if not unit then return "" end
+		if not unit then
+			return ""
+		end
 		return formatPowerPercent(unit, MHCT.parseDecimalArg(args, DEFAULT_DECIMAL_PLACE))
 	end
 )

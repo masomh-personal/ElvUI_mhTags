@@ -1,6 +1,11 @@
 -- ===================================================================================
 -- NAME RELATED TAGS - Optimized for efficiency
 -- ===================================================================================
+--
+-- WoW 12.0+ Compatibility:
+-- UnitName() may return secret values in combat for non-player units in 12.0+.
+-- ElvUI's FontString handling accepts secret values, so tags continue to work.
+-- ===================================================================================
 local _, ns = ...
 local MHCT = ns.MHCT
 

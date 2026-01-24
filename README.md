@@ -1,13 +1,11 @@
 # ElvUI_mhTags
 
-[![Version](https://img.shields.io/badge/Version-6.1.0-brightgreen)](https://github.com/masomh-personal/ElvUI_mhTags)
+[![Version](https://img.shields.io/badge/Version-9.0-brightgreen)](https://github.com/masomh-personal/ElvUI_mhTags)
 [![ElvUI](https://img.shields.io/badge/Requires-ElvUI-blue)](https://www.tukui.org/download.php?ui=elvui)
-[![WoW](https://img.shields.io/badge/WoW-11.0.5+-orange)](https://worldofwarcraft.com)
+[![WoW](https://img.shields.io/badge/WoW-12.0.0+-orange)](https://worldofwarcraft.com)
 [![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
 
 **39 custom tags for ElvUI unit frames.** Lightweight, performant, and flexible.
-
-> ⚠️ **On Hold Until Midnight** — New features paused until the expansion's API changes are finalized. Bug fixes continue as needed.
 
 ## Installation
 
@@ -121,15 +119,31 @@
 - Pre-computed color gradients and format strings
 - O(1) raid roster lookups
 - Zero memory leaks
+- **WoW 12.0+**: Uses native `UnitHealthPercent()` and `UnitPowerPercent()` APIs for optimal performance
 
-**Utility command:** `/mhtags` — displays addon memory usage
+**Utility commands:**
+
+| Command          | Description                              |
+| ---------------- | ---------------------------------------- |
+| `/mhtags`        | Display addon memory usage               |
+| `/mhtags debug`  | Show version info and API availability   |
+| `/mhtags help`   | List available commands                  |
 
 ## Compatibility
 
-|           | Version                   |
-| --------- | ------------------------- |
-| **WoW**   | Retail 11.0.5+            |
-| **ElvUI** | 13.0+ (14.0+ recommended) |
+|           | Version                                     |
+| --------- | ------------------------------------------- |
+| **WoW**   | Retail 12.0.0+ (Midnight), also works on 11.x |
+| **ElvUI** | 13.0+ required, 14.0+ recommended for 12.0  |
+
+### WoW 12.0 (Midnight) Notes
+
+This addon is fully compatible with WoW 12.0's new addon security system:
+
+- **New APIs**: Automatically uses `UnitHealthPercent()`, `UnitHealthMissing()`, `UnitPowerPercent()`, and `UnitPowerMissing()` when available
+- **Fallback**: Gracefully falls back to manual calculation on pre-12.0 clients
+- **Secret Values**: Tags handle WoW 12.0's "secret value" system correctly through ElvUI's display layer
+- **Version Check**: Warns at startup if ElvUI version is incompatible with WoW 12.0
 
 ## v4.x Migration
 

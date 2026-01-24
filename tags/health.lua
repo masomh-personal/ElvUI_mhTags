@@ -4,6 +4,10 @@
 -- This file contains all health-related tags for ElvUI_mhTags
 -- Tags are organized by category and follow DRY principles
 -- All tags are performance-optimized with minimal memory allocation
+--
+-- WoW 12.0+ Optimization:
+-- Uses MHCT.GetUnitHealthPercent() which leverages native UnitHealthPercent()
+-- when available (12.0+), providing better performance and secret value handling
 -- ===================================================================================
 
 local _, ns = ...
@@ -21,6 +25,10 @@ local tonumber = tonumber
 local UnitHealthMax = UnitHealthMax
 local UnitHealth = UnitHealth
 local UnitGetTotalAbsorbs = UnitGetTotalAbsorbs
+
+-- Localize MHCT API wrappers (use 12.0 APIs when available)
+local GetUnitHealthPercent = MHCT.GetUnitHealthPercent
+local GetUnitHealthMissing = MHCT.GetUnitHealthMissing
 
 -- ===================================================================================
 -- CONSTANTS
@@ -71,6 +79,7 @@ local function formatPercent(value, decimals)
 end
 
 -- Get health values and calculate percentage
+-- Uses MHCT.GetUnitHealthPercent() which leverages 12.0 APIs when available
 local function getHealthData(unit)
 	local maxHp = UnitHealthMax(unit)
 	local currentHp = UnitHealth(unit)
@@ -80,7 +89,8 @@ local function getHealthData(unit)
 		return 0, 0, 0
 	end
 
-	local percent = (currentHp / maxHp) * 100
+	-- Use optimized percentage calculation (uses 12.0 API when available)
+	local percent = GetUnitHealthPercent(unit)
 	return currentHp, maxHp, percent
 end
 
@@ -364,6 +374,7 @@ MHCT.registerTag(
 -- SECTION 4: HEALTH DEFICIT
 -- ===================================================================================
 -- Tags that show missing health in various formats
+-- WoW 12.0+: Uses MHCT.GetUnitHealthMissing() which leverages UnitHealthMissing()
 
 -- Numeric deficit with status
 MHCT.registerTag(
@@ -381,12 +392,13 @@ MHCT.registerTag(
 			return statusFormatted
 		end
 
-		local currentHp, maxHp = getHealthData(unit)
-		if currentHp == maxHp then
+		-- Use optimized missing health calculation (uses 12.0 API when available)
+		local missing = GetUnitHealthMissing(unit)
+		if missing == 0 then
 			return ""
 		end
 
-		return format(DEFICIT_FORMAT, E:ShortValue(maxHp - currentHp))
+		return format(DEFICIT_FORMAT, E:ShortValue(missing))
 	end
 )
 
@@ -400,12 +412,14 @@ MHCT.registerTag(
 		if not unit then
 			return ""
 		end
-		local currentHp, maxHp = getHealthData(unit)
-		if currentHp == maxHp then
+
+		-- Use optimized missing health calculation (uses 12.0 API when available)
+		local missing = GetUnitHealthMissing(unit)
+		if missing == 0 then
 			return ""
 		end
 
-		return format(DEFICIT_FORMAT, E:ShortValue(maxHp - currentHp))
+		return format(DEFICIT_FORMAT, E:ShortValue(missing))
 	end
 )
 
@@ -425,8 +439,9 @@ MHCT.registerTag(
 			return statusFormatted
 		end
 
-		local currentHp, maxHp, percent = getHealthData(unit)
-		if currentHp == maxHp then
+		-- Use optimized percentage calculation (uses 12.0 API when available)
+		local percent = GetUnitHealthPercent(unit)
+		if percent >= 100 then
 			return ""
 		end
 
