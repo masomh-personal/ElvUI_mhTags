@@ -30,66 +30,66 @@
 | `[mh-classification:icon]`      | 🛡️             | Elite/Rare/Boss icon          |
 | `[mh-status]`                   | `AFK` + icon   | Status indicator              |
 
-## All Tags
+## Complete Tag Reference (32 Tags)
 
-### Health (12 tags)
+### Health Tags (12)
 
-| Tag                                    | Output              | Notes                  |
-| -------------------------------------- | ------------------- | ---------------------- |
-| `[mh-health-current]`                  | `100k`              | Current HP             |
-| `[mh-health-current-absorb]`           | `(25k) 100k`        | With absorb shield     |
-| `[mh-health-percent{N}]`               | `85.2%`             | `{N}` = decimal places |
-| `[mh-health-percent-nosign{N}]`        | `85.2`              | No % sign              |
-| `[mh-health-current-percent]`          | `100k \| 85%`       | Combined display       |
-| `[mh-health-percent-current]`          | `85% \| 100k`       | Reversed order         |
-| `[mh-health-current-percent-hidefull]` | `100k \| 85%`       | Hides % at full        |
-| `[mh-health-percent-current-hidefull]` | `85% \| 100k`       | Hides % at full        |
-| `[mh-health-current-percent-absorb]`   | `(25k) 100k \| 85%` | All metrics            |
-| `[mh-health-deficit]`                  | `-15k` / `DEAD`     | Missing health         |
-| `[mh-health-deficit-nostatus]`         | `-15k`              | No status text         |
-| `[mh-health-deficit-percent{N}]`       | `-15%`              | As percentage          |
+| Tag | Example Output | Description |
+|-----|----------------|-------------|
+| `[mh-health-current]` | `100k` | Current health with ElvUI formatting |
+| `[mh-health-current-absorb]` | `(25k) 100k` | Absorb shield + current health |
+| `[mh-health-percent{N}]` | `85.2%` | Health percent, `{N}` = decimals (default 1) |
+| `[mh-health-percent-nosign{N}]` | `85.2` | Health percent without % sign |
+| `[mh-health-current-percent]` | `100k \| 85%` | Current health and percent combined |
+| `[mh-health-percent-current]` | `85% \| 100k` | Percent and current (reversed order) |
+| `[mh-health-current-percent-hidefull]` | `100k \| 85%` | Hides percent when at full health |
+| `[mh-health-percent-current-hidefull]` | `85% \| 100k` | Hides percent when at full (reversed) |
+| `[mh-health-current-percent-absorb]` | `(25k) 100k \| 85%` | Absorb + current + percent |
+| `[mh-health-deficit]` | `-15k` or `DEAD` | Missing health with status check |
+| `[mh-health-deficit-nostatus]` | `-15k` | Missing health only (no status) |
+| `[mh-health-deficit-percent{N}]` | `-15%` | Missing health as percent |
 
-> **⚠️ Note**: All colored/gradient health tags were **removed** in v9.0 due to WoW 12.0 secret value restrictions. See [WoW 12.0 Limitations](#wow-120-midnight-limitations) for technical details.
+> **⚠️ Removed in v9.0**: All colored/gradient health tags were removed due to WoW 12.0 secret value restrictions. See [WoW 12.0 Limitations](#wow-120-midnight-limitations).
 
-### Name (7 tags)
+### Name Tags (7)
 
-| Tag                                          | Output              | Notes                     |
-| -------------------------------------------- | ------------------- | ------------------------- |
-| `[mh-dynamic:name:caps{N}]`                  | `PLAYERNAME`        | `{N}` = max chars         |
-| `[mh-dynamic:name:caps-statusicon{N}]`       | `PLAYERNAME` + icon | With status icon          |
-| `[mh-player:frame:name:caps-groupnumber{N}]` | `PLAYERNAME (5)`    | With raid group #         |
-| `[mh-name:caps:abbrev]`                      | `C.T. Dummy`        | Abbreviated               |
-| `[mh-name:caps:abbrev-reverse]`              | `Cleave T.D.`       | Abbreviated reverse       |
-| `[mh-name-caps-abbrev-V2{N}]`                | `C.T. Dummy`        | Smart abbrev if > N chars |
-| `[mh-name-caps-abbrev-reverse-V2{N}]`        | `Cleave T.D.`       | Smart abbrev reverse      |
+| Tag | Example Output | Description |
+|-----|----------------|-------------|
+| `[mh-dynamic:name:caps{N}]` | `PLAYERNAME` | Uppercase name, `{N}` = max chars (default 28) |
+| `[mh-dynamic:name:caps-statusicon{N}]` | `PLAYERNAME` + 💀 | Uppercase name with status icon |
+| `[mh-player:frame:name:caps-groupnumber{N}]` | `PLAYERNAME (5)` | Name with raid group number |
+| `[mh-name:caps:abbrev]` | `C.T. Dummy` | Abbreviated name (first letters + last word) |
+| `[mh-name:caps:abbrev-reverse]` | `Cleave T.D.` | Abbreviated (first word + last letters) |
+| `[mh-name-caps-abbrev-V2{N}]` | `C.T. Dummy` | Abbreviate only if name > N chars |
+| `[mh-name-caps-abbrev-reverse-V2{N}]` | `Cleave T.D.` | Abbreviate reverse if > N chars |
 
-### Classification (5 tags)
+### Classification Tags (5)
 
-| Tag                                | Output    | Notes                 |
-| ---------------------------------- | --------- | --------------------- |
-| `[mh-classification:icon]`         | Icon      | Elite/Rare/Boss       |
-| `[mh-classification:icon-V2]`      | Icon      | Fixed-size variant    |
-| `[mh-classification:text]`         | `[Elite]` | Colored with brackets |
-| `[mh-classification:text-compact]` | `E`       | Single letter         |
-| `[mh-classification:text-full]`    | `Elite`   | Full text             |
+| Tag | Example Output | Description |
+|-----|----------------|-------------|
+| `[mh-classification:icon]` | ⭐ | Custom icon for Elite/Rare/Boss (dynamic size) |
+| `[mh-classification:icon-V2]` | ⭐ | Same as above but fixed 14px size |
+| `[mh-classification:text]` | `[Elite]` | Colored text with brackets |
+| `[mh-classification:text-compact]` | `E` | Single letter (B/E/R/R+/E+) |
+| `[mh-classification:text-full]` | `Elite` | Full text without brackets |
 
-### Power (1 tag)
+### Power Tags (1)
 
-| Tag                     | Output | Notes                |
-| ----------------------- | ------ | -------------------- |
-| `[mh-power-percent{N}]` | `85.3` | Mana/energy/rage/etc |
+| Tag | Example Output | Description |
+|-----|----------------|-------------|
+| `[mh-power-percent{N}]` | `85` | Power percent (mana/energy/rage), `{N}` = decimals |
 
-### Misc (7 tags)
+### Misc Tags (7)
 
-| Tag                               | Output        | Notes               |
-| --------------------------------- | ------------- | ------------------- |
-| `[mh-smartlevel]`                 | `80`          | Hides at max level  |
-| `[mh-absorb]`                     | `(25k)`       | Absorb shield value |
-| `[mh-difficultycolor:level]`      | `85`          | Difficulty colored  |
-| `[mh-difficultycolor:level-hide]` | `85`          | Hides when both max |
-| `[mh-status]`                     | `AFK` + icon  | Status with icon    |
-| `[mh-status-noicon]`              | `AFK`         | Text only           |
-| `[mh-healer-drinking]`            | `DRINKING...` | Healers only        |
+| Tag | Example Output | Description |
+|-----|----------------|-------------|
+| `[mh-smartlevel]` | `80` or `` | Shows level; hides if both player and unit are max |
+| `[mh-absorb]` | `(25k)` | Absorb shield amount in yellow |
+| `[mh-difficultycolor:level]` | `85` | Level with difficulty color (always shows) |
+| `[mh-difficultycolor:level-hide]` | `85` or `` | Level with color; hides at max level |
+| `[mh-status]` | `AFK` + 🔴 | Status text with icon (AFK/DND/Dead/Ghost/Offline) |
+| `[mh-status-noicon]` | `AFK` | Status text only, no icon |
+| `[mh-healer-drinking]` | `DRINKING...` | Shows only for healers when drinking/eating |
 
 ## Syntax Guide
 
