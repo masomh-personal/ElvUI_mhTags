@@ -66,7 +66,7 @@ MHCT.IS_WOW_12_0_OR_LATER = IS_WOW_12_0_OR_LATER
 -------------------------------------
 -- WOW 12.0 API DETECTION AND WRAPPERS
 -- New APIs in 12.0: UnitHealthPercent, UnitHealthMissing, UnitPowerPercent, UnitPowerMissing
--- These APIs handle secret values internally and are more performant
+-- Also: issecretvalue() to check if a value is secret
 -------------------------------------
 
 -- Check for new 12.0 APIs availability (they may not exist in all 12.0 builds)
@@ -75,11 +75,16 @@ local HAS_UNIT_HEALTH_MISSING = type(UnitHealthMissing) == "function"
 local HAS_UNIT_POWER_PERCENT = type(UnitPowerPercent) == "function"
 local HAS_UNIT_POWER_MISSING = type(UnitPowerMissing) == "function"
 
+-- Check for issecretvalue() function (12.0+)
+local HAS_ISSECRETVALUE = type(issecretvalue) == "function"
+local _issecretvalue = HAS_ISSECRETVALUE and issecretvalue or function() return false end
+
 -- Export API availability for tag files
 MHCT.HAS_UNIT_HEALTH_PERCENT = HAS_UNIT_HEALTH_PERCENT
 MHCT.HAS_UNIT_HEALTH_MISSING = HAS_UNIT_HEALTH_MISSING
 MHCT.HAS_UNIT_POWER_PERCENT = HAS_UNIT_POWER_PERCENT
 MHCT.HAS_UNIT_POWER_MISSING = HAS_UNIT_POWER_MISSING
+MHCT.HAS_ISSECRETVALUE = HAS_ISSECRETVALUE
 
 -- Localize new APIs if available
 local _UnitHealthPercent = HAS_UNIT_HEALTH_PERCENT and UnitHealthPercent or nil
@@ -89,12 +94,16 @@ local _UnitPowerMissing = HAS_UNIT_POWER_MISSING and UnitPowerMissing or nil
 
 -------------------------------------
 -- API WRAPPER FUNCTIONS
--- Use new 12.0 APIs when available, fallback to legacy calculation
--- These wrappers provide a consistent interface across WoW versions
+-- WoW 12.0 Secret Value Handling:
+-- Even the new 12.0 APIs can return "secret values" in combat contexts.
+-- Secret values CANNOT be compared or used in arithmetic by tainted addon code.
+-- We use issecretvalue() to detect secrets and return a safe default (0) for comparisons.
+-- The actual display will use the raw values passed to ElvUI which handles them correctly.
 -------------------------------------
 
--- Get health percentage (0-100)
--- Uses UnitHealthPercent in 12.0+, falls back to manual calculation
+-- Get health percentage (0-100) - SAFE FOR COMPARISONS
+-- Returns 0 if the value is secret (caller should not use for comparisons in that case)
+-- For display purposes, use UnitHealthPercent directly and pass to UI functions
 MHCT.GetUnitHealthPercent = function(unit)
 	if not unit then
 		return 0
@@ -102,10 +111,15 @@ MHCT.GetUnitHealthPercent = function(unit)
 
 	if HAS_UNIT_HEALTH_PERCENT then
 		local percent = _UnitHealthPercent(unit)
+		-- If it's a secret value, we can't compare it - return 0 as a safe default
+		-- The display layer will still work with the raw value
+		if percent and _issecretvalue(percent) then
+			return 0 -- Secret value - can't be compared
+		end
 		return percent or 0
 	end
 
-	-- Fallback for pre-12.0
+	-- Fallback for pre-12.0 (no secret values in older WoW)
 	local maxHp = UnitHealthMax(unit)
 	if not maxHp or maxHp == 0 then
 		return 0
@@ -115,7 +129,6 @@ MHCT.GetUnitHealthPercent = function(unit)
 end
 
 -- Get health deficit (positive number representing missing health)
--- Uses UnitHealthMissing in 12.0+, falls back to manual calculation
 MHCT.GetUnitHealthMissing = function(unit)
 	if not unit then
 		return 0
@@ -123,6 +136,9 @@ MHCT.GetUnitHealthMissing = function(unit)
 
 	if HAS_UNIT_HEALTH_MISSING then
 		local missing = _UnitHealthMissing(unit)
+		if missing and _issecretvalue(missing) then
+			return 0 -- Secret value - can't be compared
+		end
 		return missing or 0
 	end
 
@@ -136,7 +152,6 @@ MHCT.GetUnitHealthMissing = function(unit)
 end
 
 -- Get power percentage (0-100)
--- Uses UnitPowerPercent in 12.0+, falls back to manual calculation
 MHCT.GetUnitPowerPercent = function(unit, powerType)
 	if not unit then
 		return 0
@@ -144,6 +159,9 @@ MHCT.GetUnitPowerPercent = function(unit, powerType)
 
 	if HAS_UNIT_POWER_PERCENT then
 		local percent = _UnitPowerPercent(unit, powerType)
+		if percent and _issecretvalue(percent) then
+			return 0 -- Secret value - can't be compared
+		end
 		return percent or 0
 	end
 
@@ -159,7 +177,6 @@ MHCT.GetUnitPowerPercent = function(unit, powerType)
 end
 
 -- Get power deficit (positive number representing missing power)
--- Uses UnitPowerMissing in 12.0+, falls back to manual calculation
 MHCT.GetUnitPowerMissing = function(unit, powerType)
 	if not unit then
 		return 0
@@ -167,6 +184,9 @@ MHCT.GetUnitPowerMissing = function(unit, powerType)
 
 	if HAS_UNIT_POWER_MISSING then
 		local missing = _UnitPowerMissing(unit, powerType)
+		if missing and _issecretvalue(missing) then
+			return 0 -- Secret value - can't be compared
+		end
 		return missing or 0
 	end
 

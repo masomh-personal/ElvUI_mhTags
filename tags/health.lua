@@ -80,19 +80,27 @@ end
 
 -- Get health values and calculate percentage
 -- Uses MHCT.GetUnitHealthPercent() which leverages 12.0 APIs when available
--- WoW 12.0+: Avoids comparisons on potentially secret values
+-- WoW 12.0+: Returns -1 for percent when values are secret (indicates "unknown/secret")
+-- This allows callers to differentiate between dead (0) and secret (-1)
 local function getHealthData(unit)
-	-- Use our wrapper which handles secret values internally
-	-- Returns 0 if unit is invalid or has no health
-	local percent = GetUnitHealthPercent(unit)
-
-	-- If percent is 0, could be dead or invalid - get raw values for display only
-	-- Note: In 12.0+, these may be secret values but can still be passed to display functions
+	-- Get raw values for display (may be secret values in 12.0+, but display layer handles them)
 	local currentHp = UnitHealth(unit)
 	local maxHp = UnitHealthMax(unit)
 
-	-- Return values - percent is safe to compare (our wrapper returns a number)
-	-- currentHp/maxHp are for display purposes only (passed to E:GetFormattedText)
+	-- Use our wrapper which handles secret values internally
+	-- Returns 0 if unit is invalid/dead, but also returns 0 if value is secret
+	local percent = GetUnitHealthPercent(unit)
+
+	-- If percent is 0 but unit exists and is alive, it's likely a secret value situation
+	-- We use -1 to signal "secret/unknown" to callers so they can handle it appropriately
+	-- (e.g., by showing current values without conditional hide logic)
+	if percent == 0 and unit and UnitExists(unit) and not UnitIsDeadOrGhost(unit) then
+		percent = -1 -- Signal: value is secret, don't make decisions based on it
+	end
+
+	-- Return values:
+	-- percent: 0-100 (normal), 0 (dead/invalid), -1 (secret value - don't compare)
+	-- currentHp/maxHp: for display only (may be secret values)
 	return currentHp, maxHp, percent
 end
 
@@ -123,15 +131,41 @@ end
 
 -- Get gradient color based on health percentage
 -- Optimized with fast paths for common cases
+-- Note: percent can be -1 (secret value) - treat as unknown, use neutral color
 local function getGradientColor(percent)
 	-- Fast path: dead or zero health
-	if percent <= 0 then
+	if percent == 0 then
 		return HEALTH_GRADIENT_RGB_TABLE[0] or DEAD_OR_DC_COLOR
+	end
+
+	-- Secret value (-1): use white/neutral since we don't know the real value
+	if percent < 0 then
+		return WHITE_COLOR
 	end
 
 	-- Standard lookup for everything else
 	local index = floor(percent)
 	return HEALTH_GRADIENT_RGB_TABLE[index] or WHITE_COLOR
+end
+
+-- WoW 12.0 Secret Value Helpers
+-- These help determine display behavior when health values might be secret
+
+-- Check if unit data is invalid (dead or doesn't exist)
+-- Returns true if we should show nothing/empty
+local function isUnitInvalid(percent)
+	return percent == 0 -- Only 0 means dead/invalid; -1 means secret (show something)
+end
+
+-- Check if unit is at full health (for "hide at full" logic)
+-- When secret (-1), we DON'T know if full, so return false (show the value)
+local function isAtFullHealth(percent)
+	return percent >= 100 -- -1 will not match, so we'll show the value when secret
+end
+
+-- Check if we have a secret value (can't make comparisons)
+local function isSecretValue(percent)
+	return percent < 0
 end
 
 -- ===================================================================================
@@ -150,8 +184,8 @@ MHCT.registerTag(
 			return ""
 		end
 		local currentHp, maxHp, percent = getHealthData(unit)
-		-- Use percent for validity check (safe to compare, not a secret value)
-		if percent == 0 then
+		-- Only hide for dead/invalid units; show for secret values (they have health)
+		if isUnitInvalid(percent) then
 			return ""
 		end
 		return E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
@@ -197,8 +231,8 @@ MHCT.registerTag(
 
 		local currentHp, maxHp, percent = getHealthData(unit)
 
-		-- Show max health value at full (use percent >= 100, safe to compare)
-		if percent >= 100 then
+		-- Show max health value at full, or if secret value (can't show %)
+		if isAtFullHealth(percent) or isSecretValue(percent) then
 			return E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
 		end
 
@@ -225,8 +259,8 @@ MHCT.registerTag(
 
 		local currentHp, maxHp, percent = getHealthData(unit)
 
-		-- Show max health value at full (use percent >= 100, safe to compare)
-		if percent >= 100 then
+		-- Show max health value at full, or if secret value (can't show %)
+		if isAtFullHealth(percent) or isSecretValue(percent) then
 			return E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
 		end
 
@@ -307,8 +341,8 @@ MHCT.registerTag(
 		local currentHp, maxHp, percent = getHealthData(unit)
 		local currentText = E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
 
-		-- Use percent >= 100 instead of currentHp == maxHp (safe to compare)
-		if percent >= 100 then
+		-- Hide percent at full health, or if secret value (can't calculate %)
+		if isAtFullHealth(percent) or isSecretValue(percent) then
 			return currentText
 		end
 
@@ -336,8 +370,8 @@ MHCT.registerTag(
 		local currentHp, maxHp, percent = getHealthData(unit)
 		local currentText = E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
 
-		-- Use percent >= 100 instead of currentHp == maxHp (safe to compare)
-		if percent >= 100 then
+		-- Hide percent at full health, or if secret value (can't calculate %)
+		if isAtFullHealth(percent) or isSecretValue(percent) then
 			return currentText
 		end
 
@@ -366,8 +400,8 @@ MHCT.registerTag(
 		local currentText = E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
 		local absorbText = getAbsorbText(unit)
 
-		-- Use percent >= 100 instead of currentHp == maxHp (safe to compare)
-		if percent >= 100 then
+		-- Hide percent at full health, or if secret value (can't calculate %)
+		if isAtFullHealth(percent) or isSecretValue(percent) then
 			return absorbText .. currentText
 		end
 
@@ -447,7 +481,8 @@ MHCT.registerTag(
 
 		-- Use optimized percentage calculation (uses 12.0 API when available)
 		local percent = GetUnitHealthPercent(unit)
-		if percent >= 100 then
+		-- At full health or secret value: no deficit to show
+		if percent >= 100 or percent < 0 then
 			return ""
 		end
 
@@ -474,17 +509,18 @@ MHCT.registerTag(
 		end
 		local currentHp, maxHp, percent = getHealthData(unit)
 
-		-- Early exit for invalid health data (use percent, safe to compare)
-		if percent == 0 then
+		-- Early exit for invalid health data (dead unit)
+		if isUnitInvalid(percent) then
 			return ""
 		end
 
 		local currentText = E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
 		local absorbText = getAbsorbText(unit)
 
-		-- Use gradient color (green) at full health for consistency
-		if percent >= 100 then
-			return absorbText .. getGradientColor(100) .. currentText .. COLOR_END
+		-- At full health or secret: show just current with appropriate color
+		if isAtFullHealth(percent) or isSecretValue(percent) then
+			local color = isSecretValue(percent) and WHITE_COLOR or getGradientColor(100)
+			return absorbText .. color .. currentText .. COLOR_END
 		end
 
 		local percentText = format(PERCENT_FORMAT, percent)
@@ -507,17 +543,18 @@ MHCT.registerTag(
 		end
 		local currentHp, maxHp, percent = getHealthData(unit)
 
-		-- Early exit for invalid health data (use percent, safe to compare)
-		if percent == 0 then
+		-- Early exit for invalid health data (dead unit)
+		if isUnitInvalid(percent) then
 			return ""
 		end
 
 		local currentText = E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
 		local absorbText = getAbsorbText(unit)
 
-		-- Use gradient color (green) at full health for consistency
-		if percent >= 100 then
-			return absorbText .. getGradientColor(100) .. currentText .. COLOR_END
+		-- At full health or secret: show just current with appropriate color
+		if isAtFullHealth(percent) or isSecretValue(percent) then
+			local color = isSecretValue(percent) and WHITE_COLOR or getGradientColor(100)
+			return absorbText .. color .. currentText .. COLOR_END
 		end
 
 		local percentText = format(PERCENT_FORMAT, percent)
@@ -548,17 +585,18 @@ MHCT.registerTag(
 		-- Get health data
 		local currentHp, maxHp, percent = getHealthData(unit)
 
-		-- Early exit for invalid health data (use percent, safe to compare)
-		if percent == 0 then
+		-- Early exit for invalid health data (dead unit)
+		if isUnitInvalid(percent) then
 			return ""
 		end
 
 		local currentText = E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
 		local absorbText = getAbsorbText(unit)
 
-		-- Use gradient color (green) at full health for consistency
-		if percent >= 100 then
-			return absorbText .. getGradientColor(100) .. currentText .. COLOR_END
+		-- At full health or secret: show just current with appropriate color
+		if isAtFullHealth(percent) or isSecretValue(percent) then
+			local color = isSecretValue(percent) and WHITE_COLOR or getGradientColor(100)
+			return absorbText .. color .. currentText .. COLOR_END
 		end
 
 		local percentText = format(PERCENT_FORMAT, percent)
@@ -589,17 +627,18 @@ MHCT.registerTag(
 		-- Get health data
 		local currentHp, maxHp, percent = getHealthData(unit)
 
-		-- Early exit for invalid health data (use percent, safe to compare)
-		if percent == 0 then
+		-- Early exit for invalid health data (dead unit)
+		if isUnitInvalid(percent) then
 			return ""
 		end
 
 		local currentText = E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
 		local absorbText = getAbsorbText(unit)
 
-		-- Use gradient color (green) at full health for consistency
-		if percent >= 100 then
-			return absorbText .. getGradientColor(100) .. currentText .. COLOR_END
+		-- At full health or secret: show just current with appropriate color
+		if isAtFullHealth(percent) or isSecretValue(percent) then
+			local color = isSecretValue(percent) and WHITE_COLOR or getGradientColor(100)
+			return absorbText .. color .. currentText .. COLOR_END
 		end
 
 		local percentText = format(PERCENT_FORMAT, percent)
@@ -622,20 +661,24 @@ MHCT.registerTag(
 		end
 		local currentHp, maxHp, percent = getHealthData(unit)
 
-		-- Early exit for invalid health data (use percent, safe to compare)
-		if percent == 0 then
+		-- Early exit for invalid health data (dead unit)
+		if isUnitInvalid(percent) then
 			return ""
 		end
 
 		local currentText = E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
 		local absorbText = getAbsorbText(unit)
 
-		-- Use gradient color (green) at full health for consistency
-		if percent >= 100 then
-			return absorbText .. getGradientColor(100) .. currentText .. COLOR_END
+		-- Get appropriate color (white for secret, green for full, gradient otherwise)
+		local colorCode
+		if isSecretValue(percent) then
+			colorCode = WHITE_COLOR
+		elseif isAtFullHealth(percent) then
+			colorCode = getGradientColor(100)
+		else
+			colorCode = getGradientColor(percent)
 		end
 
-		local colorCode = getGradientColor(percent)
 		return absorbText .. colorCode .. currentText .. COLOR_END
 	end
 )
@@ -650,11 +693,17 @@ MHCT.registerTag(
 		if not unit then
 			return ""
 		end
-		local _, _, percent = getHealthData(unit)
+		local currentHp, maxHp, percent = getHealthData(unit)
 
-		-- Use gradient color (green) at full health for consistency
-		if percent >= 100 then
+		-- At full health: show 100% in green
+		if isAtFullHealth(percent) then
 			return getGradientColor(100) .. "100%" .. COLOR_END
+		end
+
+		-- Secret value: show current health in white (can't calculate %)
+		if isSecretValue(percent) then
+			local currentText = E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
+			return WHITE_COLOR .. currentText .. COLOR_END
 		end
 
 		local percentText = format(PERCENT_FORMAT, percent)
@@ -681,12 +730,18 @@ MHCT.registerTag(
 			return statusFormatted
 		end
 
-		-- Get health data (percent is safe to compare)
-		local _, _, percent = getHealthData(unit)
+		-- Get health data
+		local currentHp, maxHp, percent = getHealthData(unit)
 
-		-- Handle edge case: dead/offline units (use percent, safe to compare)
-		if percent == 0 then
+		-- Handle edge case: dead/offline units
+		if isUnitInvalid(percent) then
 			return ""
+		end
+
+		-- Secret value: show current health in white (can't calculate %)
+		if isSecretValue(percent) then
+			local currentText = E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
+			return WHITE_COLOR .. currentText .. COLOR_END
 		end
 
 		-- Parse decimals argument (default 0, clamp to 0-3)
@@ -725,12 +780,18 @@ MHCT.registerTag(
 			return statusFormatted
 		end
 
-		-- Get health data (percent is safe to compare)
-		local _, _, percent = getHealthData(unit)
+		-- Get health data
+		local currentHp, maxHp, percent = getHealthData(unit)
 
-		-- Handle edge case: dead/offline units (use percent, safe to compare)
-		if percent == 0 then
+		-- Handle edge case: dead/offline units
+		if isUnitInvalid(percent) then
 			return ""
+		end
+
+		-- Secret value: show current health in white (can't calculate %)
+		if isSecretValue(percent) then
+			local currentText = E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
+			return WHITE_COLOR .. currentText .. COLOR_END
 		end
 
 		-- Parse decimals argument (default 0, clamp to 0-3)
@@ -765,13 +826,15 @@ MHCT.registerTag(
 		if not unit then
 			return ""
 		end
-		-- Only need percent for color lookup (safe to compare)
+		-- Only need percent for color lookup
 		local _, _, percent = getHealthData(unit)
 
-		if percent == 0 then
+		-- Dead/invalid: return dead color
+		if isUnitInvalid(percent) then
 			return DEAD_OR_DC_COLOR
 		end
 
+		-- getGradientColor handles secret values (-1) by returning white
 		return getGradientColor(percent)
 	end
 )

@@ -41,6 +41,7 @@ local PERCENT_FORMATS = {
 
 -- Optimized power percent formatter
 -- Uses MHCT.GetUnitPowerPercent() which leverages 12.0 APIs when available
+-- WoW 12.0: If value is secret (returns -1), we return empty string
 local function formatPowerPercent(unit, decimalPlaces)
 	if not unit then
 		return ""
@@ -55,6 +56,12 @@ local function formatPowerPercent(unit, decimalPlaces)
 	-- Early return for zero power
 	if percent == 0 then
 		return "0"
+	end
+
+	-- Secret value (-1): can't calculate percentage, return empty
+	-- (In 12.0, power values can be secret in combat contexts)
+	if percent < 0 then
+		return ""
 	end
 
 	-- Use pre-built format strings for common cases, build dynamically for others
