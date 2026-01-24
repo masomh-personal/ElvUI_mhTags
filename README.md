@@ -216,15 +216,6 @@ If you need health-based coloring, consider:
 
 **Configurable fallback:** `MHCT.SECRET_VALUE_FALLBACK_TEXT` (default: `"---"`)
 
-## v4.x Migration
-
-Old tags work via aliases (zero overhead):
-
-| v4.x                                | v5.0+                         |
-| ----------------------------------- | ----------------------------- |
-| `[mh-health:current:percent:right]` | `[mh-health-current-percent]` |
-| `[mh-health:current:percent:left]`  | `[mh-health-percent-current]` |
-
 ## Support
 
 - [GitHub Issues](https://github.com/masomh-personal/ElvUI_mhTags/issues)
