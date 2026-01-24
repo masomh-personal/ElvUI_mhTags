@@ -9,11 +9,7 @@
 local _, ns = ...
 local MHCT = ns.MHCT
 
--- Get ElvUI references from core (shared to avoid duplicate unpacking)
-local E = MHCT.E
-
 -- Localize Lua functions
-local tonumber = tonumber
 local format = string.format
 
 -- Local constants
@@ -24,7 +20,31 @@ local DEFAULT_ICON_SIZE = MHCT.DEFAULT_ICON_SIZE
 local BOSS_COLOR = "fc495e" -- light red
 local ELITE_COLOR = "ffcc00" -- gold
 local RARE_COLOR = "fc49f3" -- light magenta
-local NORMAL_COLOR = "ffffff" -- white
+
+-- Pre-built classification text tables (avoid creating tables per call)
+local CLASSIFICATION_TEXT = {
+	boss = format("|cff%s[Boss]|r", BOSS_COLOR),
+	elite = format("|cff%s[Elite]|r", ELITE_COLOR),
+	rare = format("|cff%s[Rare]|r", RARE_COLOR),
+	rareelite = format("|cff%s[Rare Elite]|r", RARE_COLOR),
+	eliteplus = format("|cff%s[Elite+]|r", ELITE_COLOR),
+}
+
+local CLASSIFICATION_COMPACT = {
+	boss = format("|cff%sB|r", BOSS_COLOR),
+	elite = format("|cff%sE|r", ELITE_COLOR),
+	rare = format("|cff%sR|r", RARE_COLOR),
+	rareelite = format("|cff%sR+|r", RARE_COLOR),
+	eliteplus = format("|cff%sE+|r", ELITE_COLOR),
+}
+
+local CLASSIFICATION_FULL = {
+	boss = "Boss",
+	elite = "Elite",
+	rare = "Rare",
+	rareelite = "Rare Elite",
+	eliteplus = "Elite+",
+}
 
 -- ===================================================================================
 -- UNIT CLASSIFICATION (ICONS)
@@ -71,7 +91,7 @@ MHCT.registerTag(
 -- UNIT CLASSIFICATION (TEXT)
 -- ===================================================================================
 
--- Text-based classification with color coding
+-- Text-based classification with color coding (uses pre-built table)
 MHCT.registerTag(
 	"mh-classification:text",
 	CLASSIFICATION_SUBCATEGORY,
@@ -80,25 +100,11 @@ MHCT.registerTag(
 	function(unit)
 		if not unit then return "" end
 		local unitType = MHCT.classificationType(unit)
-
-		if not unitType then
-			return ""
-		end
-
-		-- Map classification types to colored descriptive text
-		local classificationText = {
-			boss = format("|cff%s[Boss]|r", BOSS_COLOR),
-			elite = format("|cff%s[Elite]|r", ELITE_COLOR),
-			rare = format("|cff%s[Rare]|r", RARE_COLOR),
-			rareelite = format("|cff%s[Rare Elite]|r", RARE_COLOR),
-			eliteplus = format("|cff%s[Elite+]|r", ELITE_COLOR),
-		}
-
-		return classificationText[unitType] or ""
+		return unitType and CLASSIFICATION_TEXT[unitType] or ""
 	end
 )
 
--- Text-based classification with symbols (compact version)
+-- Text-based classification with symbols (compact version, uses pre-built table)
 MHCT.registerTag(
 	"mh-classification:text-compact",
 	CLASSIFICATION_SUBCATEGORY,
@@ -107,25 +113,11 @@ MHCT.registerTag(
 	function(unit)
 		if not unit then return "" end
 		local unitType = MHCT.classificationType(unit)
-
-		if not unitType then
-			return ""
-		end
-
-		-- Map classification types to compact colored text with symbols
-		local compactText = {
-			boss = format("|cff%sB|r", BOSS_COLOR),
-			elite = format("|cff%sE|r", ELITE_COLOR),
-			rare = format("|cff%sR|r", RARE_COLOR),
-			rareelite = format("|cff%sR+|r", RARE_COLOR),
-			eliteplus = format("|cff%sE+|r", ELITE_COLOR),
-		}
-
-		return compactText[unitType] or ""
+		return unitType and CLASSIFICATION_COMPACT[unitType] or ""
 	end
 )
 
--- Full descriptive classification without brackets
+-- Full descriptive classification without brackets (uses pre-built table)
 MHCT.registerTag(
 	"mh-classification:text-full",
 	CLASSIFICATION_SUBCATEGORY,
@@ -134,20 +126,6 @@ MHCT.registerTag(
 	function(unit)
 		if not unit then return "" end
 		local unitType = MHCT.classificationType(unit)
-
-		if not unitType then
-			return ""
-		end
-
-		-- Map classification types to descriptive text
-		local fullText = {
-			boss = "Boss",
-			elite = "Elite",
-			rare = "Rare",
-			rareelite = "Rare Elite",
-			eliteplus = "Elite+",
-		}
-
-		return fullText[unitType] or ""
+		return unitType and CLASSIFICATION_FULL[unitType] or ""
 	end
 )

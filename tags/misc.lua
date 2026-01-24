@@ -58,6 +58,9 @@ MHCT.registerTag(
 
 -- Removed - direct formatting is simpler
 
+-- Localize secret value check
+local issecretvalue = issecretvalue
+
 MHCT.registerTag(
 	"mh-absorb",
 	MISC_SUBCATEGORY,
@@ -70,16 +73,24 @@ MHCT.registerTag(
 
 		local absorbAmount = UnitGetTotalAbsorbs(unit)
 
-		-- Guard: Must be a valid positive number
-		if not absorbAmount or type(absorbAmount) ~= "number" or absorbAmount <= 0 then
+		-- Guard: Check for nil first
+		if not absorbAmount then
 			return ""
 		end
 
-		-- Use ElvUI's ShortValue (wrap in pcall for safety)
-		local success, result = pcall(function()
-			return E:ShortValue(absorbAmount)
-		end)
-		if success and result then
+		-- Secret value check - can't compare or use in math
+		if issecretvalue(absorbAmount) then
+			return ""
+		end
+
+		-- Now safe to compare - must be positive
+		if absorbAmount <= 0 then
+			return ""
+		end
+
+		-- Use MHCT.FormatLargeNumber (secret-safe)
+		local result = MHCT.FormatLargeNumber(absorbAmount)
+		if result then
 			return format("|cff%s(%s)|r", ABSORB_TEXT_COLOR, result)
 		end
 

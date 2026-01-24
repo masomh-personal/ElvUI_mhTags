@@ -9,59 +9,139 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [9.0] - January 23, 2026
 
+### Breaking Changes
+
+- **WoW 12.0+ Only** - This addon now exclusively supports WoW 12.0 (Midnight) and later
+  - Pre-12.0 clients are no longer supported
+  - Removed all backwards compatibility fallback code
+  - ElvUI 14.0+ is now required
+
+- **Removed All Colored Health Tags** - Health-based gradient coloring is NOT possible in WoW 12.0
+  - Blizzard's "secret value" system blocks ALL operations needed for gradient color lookup
+  - Cannot use secret values as table keys
+  - Cannot use `tonumber()` on secret-derived strings
+  - Cannot use `string.byte()`, `string.len()`, or pattern matching on secret strings
+  - The only operation that works is `string.format()` for display purposes
+  - **Removed tags**: `mh-health-current-percent-colored`, `mh-health-percent-current-colored`, `mh-health-current-percent-colored-status`, `mh-health-percent-current-colored-status`, `mh-health-current-colored`, `mh-health-percent-colored`, `mh-health-percent-colored-status`, `mh-health-percent-nosign-colored-status`, `mh-healthcolor`
+  - **Alternative**: Use non-colored tags, or consider reaction-based coloring (UnitReaction)
+
 ### Added
 
-- **WoW 12.0 API Wrappers** - New optimized API wrapper functions in core.lua:
-  - `MHCT.GetUnitHealthPercent(unit)` - Uses native `UnitHealthPercent()` in 12.0+
-  - `MHCT.GetUnitHealthMissing(unit)` - Uses native `UnitHealthMissing()` in 12.0+
-  - `MHCT.GetUnitPowerPercent(unit, powerType)` - Uses native `UnitPowerPercent()` in 12.0+
-  - `MHCT.GetUnitPowerMissing(unit, powerType)` - Uses native `UnitPowerMissing()` in 12.0+
-  - All wrappers automatically fall back to manual calculation on pre-12.0 clients
+- **Secret-Safe Utility Functions in core.lua**:
+  - `MHCT.GetHealthPercent(unit)` - Returns 0-100 percent, handles secret values via `CurveConstants.ScaleTo100`
+  - `MHCT.GetPowerPercent(unit, powerType)` - Returns 0-100 percent, handles secret values via `CurveConstants.ScaleTo100`
+  - `MHCT.FormatLargeNumber(value)` - Formats with K/M/B suffix using `AbbreviateNumbers()`, secret-safe
+  - `MHCT.FormatPercent(value, decimals, includeSign)` - Formats percent string, secret-safe
+  - `MHCT.SafeCall(func, default, ...)` - Wraps function calls in pcall with default fallback
 
-- **Version Compatibility Checks** - Enhanced startup validation:
-  - Detects WoW 12.0+ and warns if ElvUI version is below 14.0
-  - Shows error if ElvUI version is below minimum required (13.0)
-  - Stores debug info accessible via `/mhtags debug`
+- **Configurable Secret Value Fallback** - `MHCT.SECRET_VALUE_FALLBACK_TEXT` constant for customizing display when values are secret
 
 - **Enhanced Slash Commands**:
   - `/mhtags` - Shows memory usage (default)
-  - `/mhtags debug` - Shows version info, WoW interface version, and 12.0 API availability
+  - `/mhtags debug` - Shows version info and WoW 12.0 limitation notes
   - `/mhtags help` - Shows available commands
 
 ### Changed
 
 - **Updated for WoW 12.0 (Midnight)** - Interface version bumped to 120000
+
+- **Major Code Refactoring** - Simplified architecture for WoW 12.0+ only:
+  - Uses WoW 12.0 APIs directly: `UnitHealthPercent()`, `UnitHealthMissing()`, `UnitPowerPercent()`, `UnitPowerMissing()`
+  - Uses `issecretvalue()` directly in tag functions for secret value detection
+  - Uses `CurveConstants.ScaleTo100` to get 0-100 range percentages directly from APIs
+  - Uses `AbbreviateNumbers()` / `AbbreviateLargeNumbers()` for formatting (accepts secret values)
+  - Removed backwards compatibility code (version detection, API wrappers, fallbacks)
+
 - **Modernized TOC metadata**:
   - Added `## Category: Unit Frames` for addon list categorization (WoW 11.1.0+)
   - Added `## Group: ElvUI` for addon grouping in list
-  - Added `## X-Category` for backwards compatibility
   - Added `## X-License: MIT`
   - Added `## X-Localizations: enUS`
-  - Fixed `IconTexture` path capitalization
 
-- **Health Tags Optimized** - All health percentage and deficit calculations now use 12.0 native APIs when available:
-  - `[mh-health-percent]` and variants
-  - `[mh-health-deficit]` and variants
-  - `[mh-health-deficit-percent]`
-  - Provides better performance and proper handling of WoW 12.0's "secret values"
+- **Health Tags Updated for Secret Values** - Non-colored tags properly handle secrets:
+  - `[mh-health-current]` - Shows formatted HP or fallback text
+  - `[mh-health-current-absorb]` - Shows absorb + formatted HP
+  - `[mh-health-percent]` - Shows percent or fallback for secrets
+  - `[mh-health-current-percent]` - Shows current | percent
+  - `[mh-health-percent-current]` - Shows percent | current
+  - `[mh-health-current-percent-hidefull]` - Hides percent at full health
+  - `[mh-health-percent-current-hidefull]` - Hides percent at full health
+  - `[mh-health-current-percent-absorb]` - Includes absorb with secret handling
+  - `[mh-health-deficit]` - Shows missing HP or empty for secrets
 
-- **Power Tags Optimized** - Power percentage calculations now use `UnitPowerPercent()` in 12.0+:
-  - `[mh-power-percent]` now uses native API when available
+- **Power Tags Optimized** - Power percentage calculations use `MHCT.GetPowerPercent()`:
+  - `[mh-power-percent]` now uses secret-safe utility with `CurveConstants.ScaleTo100`
 
-- **Code Documentation** - Added WoW 12.0 compatibility notes to all tag files
+- **Absorb Tags Updated**:
+  - `[mh-absorb]` in misc.lua now uses `issecretvalue()` check and `MHCT.FormatLargeNumber()`
+
+### Removed
+
+- **Gradient Color Table** - Removed `MHCT.createGradientTable()` and related code since it cannot function with secret values
+- **Colored Health Tags** - See Breaking Changes above
+- **Debug Tags** - Removed `mh-debug-secret` temporary testing tag
 
 ### Technical Details
 
-- **WoW 12.0 Secret Values**: The new API wrappers handle WoW 12.0's "secret value" system internally. Secret values are returned by combat APIs to prevent addon automation, but can still be displayed via ElvUI's FontString system.
+#### Secret Values in WoW 12.0 (Midnight)
 
-- **API Detection**: At load time, the addon checks for availability of new 12.0 APIs (`UnitHealthPercent`, etc.) and stores this in `MHCT.debugInfo` for troubleshooting.
+Blizzard introduced a "secret value" system to protect combat-sensitive data. This affects health/power values on:
+- Enemy nameplates
+- Rated PvP (arena, RBGs)
+- Competitive content
 
-- **Backwards Compatibility**: All changes are backwards compatible. The addon will work on both pre-12.0 and 12.0+ clients seamlessly.
+**How Secret Values Work:**
+
+Secret values are tainted at the C/engine level before reaching Lua. The taint propagates to ALL derived values - even strings created via `string.format()` remain tainted.
+
+**Blocked Operations (Lua errors or nil returns):**
+
+| Operation | What Happens |
+|-----------|--------------|
+| `percent >= 50` | Lua error: "attempt to compare a secret value" |
+| `percent * 100` | Lua error: "attempt to perform arithmetic on a secret value" |
+| `colors[percent]` | Lua error: "table index is secret" |
+| `colors[format('%d', percent)]` | Lua error: "table index is secret" (string is tainted!) |
+| `tonumber(format('%d', percent))` | Returns `nil` (blocked, not error) |
+| `string.byte(taintedStr, 1)` | Lua error: "attempt to index a secret value" |
+| `#taintedStr` | Lua error: "attempt to get length of a secret value" |
+| `taintedStr:gsub(...)` | Lua error: "attempt to call method on a secret value" |
+
+**Allowed Operations:**
+
+| Operation | Result |
+|-----------|--------|
+| `string.format('%d', secret)` | Returns displayable (but tainted) string |
+| `issecretvalue(value)` | Returns `true` or `false` |
+| `AbbreviateNumbers(secret)` | Returns formatted string like "2.5M" |
+| `string.concat(a, b, c)` | WoW 12.0 secret-safe concatenation |
+
+**Why Gradient Colors Cannot Work:**
+
+Health-based gradient coloring requires:
+1. Getting health percent (works with `CurveConstants.ScaleTo100`)
+2. Looking up color in table: `colors[floor(percent)]` (BLOCKED - table index is secret)
+
+We tested multiple workarounds:
+- Format to string then `tonumber()` back → Blocked (string remains tainted)
+- Extract characters with `string.byte()` → Blocked
+- Pattern match with `:match()` → Blocked
+- Build new string character by character → Derived strings still tainted
+
+**Conclusion:** There is no Lua-level workaround. The taint is applied at the C level.
+
+#### Performance Optimizations in v9.0
+
+- Pre-cached icon strings avoid `format()` in hot path
+- Pre-built classification text tables (created once at load)
+- Removed unused API localizations
+- Icon cache fast-path for default size (O(1) lookup)
+- Shared format patterns across all tag files
 
 ### Compatibility
 
-- **WoW**: Retail 12.0.0+ (Midnight) - Also compatible with 11.x clients
-- **ElvUI**: 13.0+ required, 14.0+ recommended for WoW 12.0
+- **WoW**: Retail 12.0.0+ (Midnight) only - uses `UnitHealthPercent()`, `UnitPowerPercent()`, `issecretvalue()`
+- **ElvUI**: 14.0+ required - uses modern tag registration API
 
 ---
 

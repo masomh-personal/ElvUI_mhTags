@@ -1,11 +1,13 @@
 # ElvUI_mhTags
 
 [![Version](https://img.shields.io/badge/Version-9.0-brightgreen)](https://github.com/masomh-personal/ElvUI_mhTags)
-[![ElvUI](https://img.shields.io/badge/Requires-ElvUI-blue)](https://www.tukui.org/download.php?ui=elvui)
-[![WoW](https://img.shields.io/badge/WoW-12.0.0+-orange)](https://worldofwarcraft.com)
+[![ElvUI](https://img.shields.io/badge/Requires-ElvUI%2014.0+-blue)](https://www.tukui.org/download.php?ui=elvui)
+[![WoW](https://img.shields.io/badge/WoW-12.0.0%20Midnight+-orange)](https://worldofwarcraft.com)
 [![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
 
-**39 custom tags for ElvUI unit frames.** Lightweight, performant, and flexible.
+**32 custom tags for ElvUI unit frames.** Lightweight, performant, and WoW 12.0 (Midnight) optimized.
+
+> **⚠️ Important**: This addon requires **WoW 12.0+ (Midnight)** and **ElvUI 14.0+**. Health gradient coloring has been removed due to Blizzard's secret value restrictions - see [WoW 12.0 Limitations](#wow-120-midnight-limitations) for details.
 
 ## Installation
 
@@ -19,42 +21,35 @@
 
 ### Popular Tags
 
-| Tag                                     | Example        | Use For                       |
-| --------------------------------------- | -------------- | ----------------------------- |
-| `[mh-health-current-percent]`           | `100k \| 85%`  | Standard health display       |
-| `[mh-health-percent-colored-status{0}]` | `85%` / `DEAD` | Color-coded with status       |
-| `[mh-health-deficit]`                   | `-15k`         | Missing health (healer focus) |
-| `[mh-dynamic:name:caps{20}]`            | `PLAYERNAME`   | Uppercase name, max 20 chars  |
-| `[mh-classification:icon]`              | 🛡️             | Elite/Rare/Boss icon          |
-| `[mh-status]`                           | `AFK` + icon   | Status indicator              |
+| Tag                             | Example        | Use For                       |
+| ------------------------------- | -------------- | ----------------------------- |
+| `[mh-health-current-percent]`   | `100k \| 85%`  | Standard health display       |
+| `[mh-health-percent{0}]`        | `85%`          | Percent with status check     |
+| `[mh-health-deficit]`           | `-15k`         | Missing health (healer focus) |
+| `[mh-dynamic:name:caps{20}]`    | `PLAYERNAME`   | Uppercase name, max 20 chars  |
+| `[mh-classification:icon]`      | 🛡️             | Elite/Rare/Boss icon          |
+| `[mh-status]`                   | `AFK` + icon   | Status indicator              |
 
 ## All Tags
 
-### Health (21 tags)
+### Health (12 tags)
 
-| Tag                                            | Output                 | Notes                  |
-| ---------------------------------------------- | ---------------------- | ---------------------- |
-| `[mh-health-current]`                          | `100k`                 | Current HP             |
-| `[mh-health-current-absorb]`                   | `(25k) 100k`           | With absorb shield     |
-| `[mh-health-percent{N}]`                       | `85.2%`                | `{N}` = decimal places |
-| `[mh-health-percent-nosign{N}]`                | `85.2`                 | No % sign              |
-| `[mh-health-percent-nosign-colored-status{N}]` | `85.2`                 | Gradient + status      |
-| `[mh-health-current-percent]`                  | `100k \| 85%`          | Combined display       |
-| `[mh-health-percent-current]`                  | `85% \| 100k`          | Reversed order         |
-| `[mh-health-current-percent-hidefull]`         | `100k \| 85%`          | Hides % at full        |
-| `[mh-health-percent-current-hidefull]`         | `85% \| 100k`          | Hides % at full        |
-| `[mh-health-current-percent-absorb]`           | `(25k) 100k \| 85%`    | All metrics            |
-| `[mh-health-deficit]`                          | `-15k` / `DEAD`        | Missing health         |
-| `[mh-health-deficit-nostatus]`                 | `-15k`                 | No status text         |
-| `[mh-health-deficit-percent{N}]`               | `-15%`                 | As percentage          |
-| `[mh-health-current-percent-colored]`          | `100k \| 85%`          | Gradient colored       |
-| `[mh-health-percent-current-colored]`          | `85% \| 100k`          | Gradient colored       |
-| `[mh-health-current-percent-colored-status]`   | `100k \| 85%` / `AFK`  | Colored + status       |
-| `[mh-health-percent-current-colored-status]`   | `85% \| 100k` / `DEAD` | Colored + status       |
-| `[mh-health-current-colored]`                  | `100k`                 | Current only, colored  |
-| `[mh-health-percent-colored]`                  | `85%`                  | Percent only, colored  |
-| `[mh-health-percent-colored-status{N}]`        | `85%` / `GHOST`        | Colored + status       |
-| `[mh-healthcolor]`                             | `\|cffRRGGBB`          | Color code only        |
+| Tag                                    | Output              | Notes                  |
+| -------------------------------------- | ------------------- | ---------------------- |
+| `[mh-health-current]`                  | `100k`              | Current HP             |
+| `[mh-health-current-absorb]`           | `(25k) 100k`        | With absorb shield     |
+| `[mh-health-percent{N}]`               | `85.2%`             | `{N}` = decimal places |
+| `[mh-health-percent-nosign{N}]`        | `85.2`              | No % sign              |
+| `[mh-health-current-percent]`          | `100k \| 85%`       | Combined display       |
+| `[mh-health-percent-current]`          | `85% \| 100k`       | Reversed order         |
+| `[mh-health-current-percent-hidefull]` | `100k \| 85%`       | Hides % at full        |
+| `[mh-health-percent-current-hidefull]` | `85% \| 100k`       | Hides % at full        |
+| `[mh-health-current-percent-absorb]`   | `(25k) 100k \| 85%` | All metrics            |
+| `[mh-health-deficit]`                  | `-15k` / `DEAD`     | Missing health         |
+| `[mh-health-deficit-nostatus]`         | `-15k`              | No status text         |
+| `[mh-health-deficit-percent{N}]`       | `-15%`              | As percentage          |
+
+> **⚠️ Note**: All colored/gradient health tags were **removed** in v9.0 due to WoW 12.0 secret value restrictions. See [WoW 12.0 Limitations](#wow-120-midnight-limitations) for technical details.
 
 ### Name (7 tags)
 
@@ -116,34 +111,110 @@
 ## Performance
 
 - **300-500 KB** memory in 40-person raids
-- Pre-computed color gradients and format strings
+- Pre-cached icon strings and format patterns
 - O(1) raid roster lookups
 - Zero memory leaks
-- **WoW 12.0+**: Uses native `UnitHealthPercent()` and `UnitPowerPercent()` APIs for optimal performance
+- **WoW 12.0+**: Uses native `UnitHealthPercent()` and `UnitPowerPercent()` APIs directly
+- Pre-built classification text tables (created once at load)
+- Icon cache fast-path for default sizes
 
 **Utility commands:**
 
 | Command          | Description                              |
 | ---------------- | ---------------------------------------- |
 | `/mhtags`        | Display addon memory usage               |
-| `/mhtags debug`  | Show version info and API availability   |
+| `/mhtags debug`  | Show version info and WoW 12.0 notes |
 | `/mhtags help`   | List available commands                  |
 
 ## Compatibility
 
-|           | Version                                     |
-| --------- | ------------------------------------------- |
-| **WoW**   | Retail 12.0.0+ (Midnight), also works on 11.x |
-| **ElvUI** | 13.0+ required, 14.0+ recommended for 12.0  |
+|           | Version                              |
+| --------- | ------------------------------------ |
+| **WoW**   | Retail 12.0.0+ (Midnight) **only**   |
+| **ElvUI** | 14.0+ required                       |
 
-### WoW 12.0 (Midnight) Notes
+### WoW 12.0 (Midnight) Limitations
 
-This addon is fully compatible with WoW 12.0's new addon security system:
+This addon is optimized exclusively for WoW 12.0 (Midnight) and later.
 
-- **New APIs**: Automatically uses `UnitHealthPercent()`, `UnitHealthMissing()`, `UnitPowerPercent()`, and `UnitPowerMissing()` when available
-- **Fallback**: Gracefully falls back to manual calculation on pre-12.0 clients
-- **Secret Values**: Tags handle WoW 12.0's "secret value" system correctly through ElvUI's display layer
-- **Version Check**: Warns at startup if ElvUI version is incompatible with WoW 12.0
+#### What Changed in WoW 12.0
+
+Blizzard introduced a **"secret value" system** to protect combat-sensitive data in competitive content. This affects:
+- **Nameplates** (enemy units)
+- **Rated PvP** (arena, RBGs)
+- **Competitive content** (Mythic+ leaderboards, etc.)
+
+#### What Are Secret Values?
+
+When health/power values are "secret," they carry a C-level taint that **cannot be removed by any Lua operation**. The taint propagates to all derived values.
+
+**Blocked Operations on Secret Values:**
+
+| Operation | Example | Result |
+|-----------|---------|--------|
+| Comparison | `percent >= 50` | ❌ Lua error |
+| Arithmetic | `percent * 100` | ❌ Lua error |
+| Table key | `colors[percent]` | ❌ Lua error |
+| `tonumber()` | `tonumber(format('%d', secret))` | ❌ Returns `nil` |
+| `string.byte()` | `string.byte(secretStr, 1)` | ❌ Lua error |
+| `string.len()` | `#secretStr` | ❌ Lua error |
+| `string.gsub()` | `secretStr:gsub(...)` | ❌ Lua error |
+
+**Allowed Operations:**
+
+| Operation | Example | Result |
+|-----------|---------|--------|
+| `string.format()` | `format('%d', secret)` | ✅ Returns tainted string (display only) |
+| `issecretvalue()` | `issecretvalue(percent)` | ✅ Returns `true`/`false` |
+| `AbbreviateNumbers()` | `AbbreviateNumbers(health)` | ✅ Returns formatted string |
+| `string.concat()` | `string.concat(a, b, c)` | ✅ WoW 12.0 secret-safe concatenation |
+
+#### Impact on This Addon
+
+**Removed Features (v9.0):**
+- **All colored health tags** - Gradient coloring requires table lookups (`colors[floor(percent)]`) which are blocked
+- **Health color tag** (`mh-healthcolor`) - Cannot return dynamic color codes for secret values
+
+**Removed Tags:**
+- `mh-health-current-percent-colored`
+- `mh-health-percent-current-colored`
+- `mh-health-current-percent-colored-status`
+- `mh-health-percent-current-colored-status`
+- `mh-health-current-colored`
+- `mh-health-percent-colored`
+- `mh-health-percent-colored-status`
+- `mh-health-percent-nosign-colored-status`
+- `mh-healthcolor`
+
+**What Still Works:**
+- All non-colored health tags display values correctly
+- Formatting with `string.format()` shows percentages/numbers
+- `AbbreviateNumbers()` formats large values (e.g., `2.5M`)
+- Status checks (AFK, Dead, Offline) work normally
+- Absorb shields display correctly (when not secret)
+
+**Fallback Behavior:**
+When health/power values are secret, tags display `---` (configurable via `MHCT.SECRET_VALUE_FALLBACK_TEXT`).
+
+#### Why Can't We Work Around This?
+
+We extensively tested multiple approaches:
+
+1. **String laundering** - Format to string, then `tonumber()` back → `tonumber()` blocked on tainted strings
+2. **Character extraction** - `string.byte()` each character → `string.byte()` blocked
+3. **Pattern matching** - `string:match()` → Pattern functions blocked
+4. **String key lookup** - `colors["85"]` with secret-derived key → Table indexing blocked
+
+The taint is applied at the **C/engine level before Lua**, making it impossible to circumvent through any Lua manipulation.
+
+#### Alternatives for Colored Health
+
+If you need health-based coloring, consider:
+- **Reaction-based colors** - Use `UnitReaction()` (not affected by secrets) for hostile/friendly coloring
+- **Class-based colors** - Use `UnitClass()` for class colors
+- **ElvUI's built-in health bars** - The bar itself can still show colors based on health %
+
+**Configurable fallback:** `MHCT.SECRET_VALUE_FALLBACK_TEXT` (default: `"---"`)
 
 ## v4.x Migration
 

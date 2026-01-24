@@ -19,7 +19,6 @@ MHCT.ADDON_NAME = "ElvUI_mhTags"
 -- Localizing all functions improves performance by avoiding global lookups
 -------------------------------------
 -- Lua functions
-local floor = math.floor
 local format = string.format
 local ipairs = ipairs
 local tonumber = tonumber
@@ -29,177 +28,33 @@ local sub = string.sub
 local tinsert = table.insert
 local concat = table.concat
 local strupper = strupper
-local select = select
-local type = type
 
--- WoW API functions (standard)
+-- WoW API functions (only those used in core.lua)
 local UnitIsAFK = UnitIsAFK
 local UnitIsDND = UnitIsDND
 local UnitIsFeignDeath = UnitIsFeignDeath
 local UnitIsDead = UnitIsDead
 local UnitIsGhost = UnitIsGhost
 local UnitIsConnected = UnitIsConnected
-local UnitHealthMax = UnitHealthMax
-local UnitHealth = UnitHealth
 local UnitIsPlayer = UnitIsPlayer
 local UnitEffectiveLevel = UnitEffectiveLevel
 local UnitClassification = UnitClassification
 local GetCreatureDifficultyColor = GetCreatureDifficultyColor
 local GetMaxPlayerLevel = GetMaxPlayerLevel
-local GetNumGroupMembers = GetNumGroupMembers
-local GetRaidRosterInfo = GetRaidRosterInfo
-local IsInRaid = IsInRaid
-local wipe = wipe
-local GetBuildInfo = GetBuildInfo
 
 -------------------------------------
--- WOW VERSION DETECTION
--- Detect WoW 12.0+ for new API availability
+-- WOW 12.0+ API LOCALIZATION
+-- This addon requires WoW 12.0 (Midnight) or later
+-- These APIs are used directly without fallbacks
 -------------------------------------
-local WOW_INTERFACE_VERSION = select(4, GetBuildInfo())
-local IS_WOW_12_0_OR_LATER = WOW_INTERFACE_VERSION >= 120000
+local UnitHealthPercent = UnitHealthPercent
+local UnitHealthMissing = UnitHealthMissing
+local UnitPowerPercent = UnitPowerPercent
+local UnitPowerMissing = UnitPowerMissing
+local issecretvalue = issecretvalue
 
--- Export version info for debugging
-MHCT.WOW_INTERFACE_VERSION = WOW_INTERFACE_VERSION
-MHCT.IS_WOW_12_0_OR_LATER = IS_WOW_12_0_OR_LATER
-
--------------------------------------
--- WOW 12.0 API DETECTION AND WRAPPERS
--- New APIs in 12.0: UnitHealthPercent, UnitHealthMissing, UnitPowerPercent, UnitPowerMissing
--- Also: issecretvalue() to check if a value is secret
--------------------------------------
-
--- Check for new 12.0 APIs availability (they may not exist in all 12.0 builds)
-local HAS_UNIT_HEALTH_PERCENT = type(UnitHealthPercent) == "function"
-local HAS_UNIT_HEALTH_MISSING = type(UnitHealthMissing) == "function"
-local HAS_UNIT_POWER_PERCENT = type(UnitPowerPercent) == "function"
-local HAS_UNIT_POWER_MISSING = type(UnitPowerMissing) == "function"
-
--- Check for issecretvalue() function (12.0+)
-local HAS_ISSECRETVALUE = type(issecretvalue) == "function"
-local _issecretvalue = HAS_ISSECRETVALUE and issecretvalue or function() return false end
-
--- Export API availability for tag files
-MHCT.HAS_UNIT_HEALTH_PERCENT = HAS_UNIT_HEALTH_PERCENT
-MHCT.HAS_UNIT_HEALTH_MISSING = HAS_UNIT_HEALTH_MISSING
-MHCT.HAS_UNIT_POWER_PERCENT = HAS_UNIT_POWER_PERCENT
-MHCT.HAS_UNIT_POWER_MISSING = HAS_UNIT_POWER_MISSING
-MHCT.HAS_ISSECRETVALUE = HAS_ISSECRETVALUE
-
--- Localize new APIs if available
-local _UnitHealthPercent = HAS_UNIT_HEALTH_PERCENT and UnitHealthPercent or nil
-local _UnitHealthMissing = HAS_UNIT_HEALTH_MISSING and UnitHealthMissing or nil
-local _UnitPowerPercent = HAS_UNIT_POWER_PERCENT and UnitPowerPercent or nil
-local _UnitPowerMissing = HAS_UNIT_POWER_MISSING and UnitPowerMissing or nil
-
--------------------------------------
--- API WRAPPER FUNCTIONS
--- WoW 12.0 Secret Value Handling:
--- Even the new 12.0 APIs can return "secret values" in combat contexts.
--- Secret values CANNOT be compared or used in arithmetic by tainted addon code.
--- We use issecretvalue() to detect secrets and return a safe default (0) for comparisons.
--- The actual display will use the raw values passed to ElvUI which handles them correctly.
--------------------------------------
-
--- Get health percentage (0-100) - SAFE FOR COMPARISONS
--- Returns 0 if the value is secret (caller should not use for comparisons in that case)
--- For display purposes, use UnitHealthPercent directly and pass to UI functions
-MHCT.GetUnitHealthPercent = function(unit)
-	if not unit then
-		return 0
-	end
-
-	if HAS_UNIT_HEALTH_PERCENT then
-		local percent = _UnitHealthPercent(unit)
-		-- If it's a secret value, we can't compare it - return 0 as a safe default
-		-- The display layer will still work with the raw value
-		if percent and _issecretvalue(percent) then
-			return 0 -- Secret value - can't be compared
-		end
-		return percent or 0
-	end
-
-	-- Fallback for pre-12.0 (no secret values in older WoW)
-	local maxHp = UnitHealthMax(unit)
-	if not maxHp or maxHp == 0 then
-		return 0
-	end
-	local currentHp = UnitHealth(unit)
-	return (currentHp / maxHp) * 100
-end
-
--- Get health deficit (positive number representing missing health)
-MHCT.GetUnitHealthMissing = function(unit)
-	if not unit then
-		return 0
-	end
-
-	if HAS_UNIT_HEALTH_MISSING then
-		local missing = _UnitHealthMissing(unit)
-		if missing and _issecretvalue(missing) then
-			return 0 -- Secret value - can't be compared
-		end
-		return missing or 0
-	end
-
-	-- Fallback for pre-12.0
-	local maxHp = UnitHealthMax(unit)
-	local currentHp = UnitHealth(unit)
-	if not maxHp or not currentHp then
-		return 0
-	end
-	return maxHp - currentHp
-end
-
--- Get power percentage (0-100)
-MHCT.GetUnitPowerPercent = function(unit, powerType)
-	if not unit then
-		return 0
-	end
-
-	if HAS_UNIT_POWER_PERCENT then
-		local percent = _UnitPowerPercent(unit, powerType)
-		if percent and _issecretvalue(percent) then
-			return 0 -- Secret value - can't be compared
-		end
-		return percent or 0
-	end
-
-	-- Fallback for pre-12.0
-	local UnitPower = UnitPower
-	local UnitPowerMax = UnitPowerMax
-	local maxPower = UnitPowerMax(unit, powerType)
-	if not maxPower or maxPower == 0 then
-		return 0
-	end
-	local currentPower = UnitPower(unit, powerType)
-	return (currentPower / maxPower) * 100
-end
-
--- Get power deficit (positive number representing missing power)
-MHCT.GetUnitPowerMissing = function(unit, powerType)
-	if not unit then
-		return 0
-	end
-
-	if HAS_UNIT_POWER_MISSING then
-		local missing = _UnitPowerMissing(unit, powerType)
-		if missing and _issecretvalue(missing) then
-			return 0 -- Secret value - can't be compared
-		end
-		return missing or 0
-	end
-
-	-- Fallback for pre-12.0
-	local UnitPower = UnitPower
-	local UnitPowerMax = UnitPowerMax
-	local maxPower = UnitPowerMax(unit, powerType)
-	local currentPower = UnitPower(unit, powerType)
-	if not maxPower or not currentPower then
-		return 0
-	end
-	return maxPower - currentPower
-end
+-- Export for tag files
+MHCT.issecretvalue = issecretvalue
 
 -- Cache max player level at load time (doesn't change during session)
 local MAX_PLAYER_LEVEL_VALUE = GetMaxPlayerLevel()
@@ -244,46 +99,27 @@ validateElvUIAPI()
 
 -------------------------------------
 -- VERSION COMPATIBILITY CHECKS
--- Validates ElvUI version and provides WoW 12.0 guidance
+-- Validates ElvUI version for WoW 12.0+
 -------------------------------------
 local function checkCompatibility()
-	local minElvUIVersion = 13.0
-	local recommendedElvUIVersion = 14.0
+	local minElvUIVersion = 14.0
 	local currentElvUIVersion = tonumber(E.version) or 0
 
 	-- ElvUI version check
-	if currentElvUIVersion > 0 then
-		if currentElvUIVersion < minElvUIVersion then
-			print(
-				format(
-					"|cffFF0000[ElvUI_mhTags Error]|r This addon requires ElvUI %.1f or higher. "
-						.. "Current version: %.1f. Please update ElvUI.",
-					minElvUIVersion,
-					currentElvUIVersion
-				)
+	if currentElvUIVersion > 0 and currentElvUIVersion < minElvUIVersion then
+		print(
+			format(
+				"|cffFF0000[ElvUI_mhTags Error]|r This addon requires ElvUI %.1f or higher for WoW 12.0 (Midnight). "
+					.. "Current version: %.1f. Please update ElvUI.",
+				minElvUIVersion,
+				currentElvUIVersion
 			)
-		elseif IS_WOW_12_0_OR_LATER and currentElvUIVersion < recommendedElvUIVersion then
-			print(
-				format(
-					"|cffFFFF00[ElvUI_mhTags Warning]|r WoW 12.0 (Midnight) detected. "
-						.. "ElvUI %.1f+ is recommended for best compatibility. "
-						.. "Current version: %.1f",
-					recommendedElvUIVersion,
-					currentElvUIVersion
-				)
-			)
-		end
+		)
 	end
 
-	-- WoW 12.0 API availability info (debug, only shown with /mhtags debug)
+	-- Debug info (shown with /mhtags debug)
 	MHCT.debugInfo = {
-		wowVersion = WOW_INTERFACE_VERSION,
 		elvuiVersion = currentElvUIVersion,
-		isWoW12 = IS_WOW_12_0_OR_LATER,
-		hasHealthPercent = HAS_UNIT_HEALTH_PERCENT,
-		hasHealthMissing = HAS_UNIT_HEALTH_MISSING,
-		hasPowerPercent = HAS_UNIT_POWER_PERCENT,
-		hasPowerMissing = HAS_UNIT_POWER_MISSING,
 	}
 end
 
@@ -303,6 +139,10 @@ MHCT.ABSORB_TEXT_COLOR = "ccff33"
 MHCT.DEFAULT_TEXT_LENGTH = 28
 MHCT.DEFAULT_DECIMAL_PLACE = 0
 
+-- Fallback display for secret values (rated arena, RBGs, competitive content)
+-- Displayed when health/power values are restricted by Blizzard's secret value system
+MHCT.SECRET_VALUE_FALLBACK_TEXT = "---"
+
 -- Status color constants
 local STATUS_COLOR = "D6BFA6"
 local BOSS_COLOR = "fc495e" -- light red
@@ -313,17 +153,14 @@ local ELITE_SYMBOL = "+"
 local ELITE_PLUS_SYMBOL = "◆"
 local BOSS_SYMBOL = "??"
 
--- Format pattern caching
-local FORMAT_PATTERNS = {
-	DECIMAL_WITH_PERCENT = {}, -- Stores patterns like "%.0f%%", "%.1f%%", etc.
-	DECIMAL_WITHOUT_PERCENT = {}, -- Stores patterns like "%.0f", "%.1f", etc.
+-- Pre-cached format patterns for percent formatting (0-3 decimals covers all use cases)
+-- Exported for use by tag files to avoid duplication
+MHCT.PERCENT_FORMATS = {
+	[0] = "%.0f",
+	[1] = "%.1f",
+	[2] = "%.2f",
+	[3] = "%.3f",
 }
-
--- Cache all reasonable decimal patterns (0-5 decimals)
-for i = 0, 5 do
-	FORMAT_PATTERNS.DECIMAL_WITH_PERCENT[i] = format("%%.%df%%%%", i)
-	FORMAT_PATTERNS.DECIMAL_WITHOUT_PERCENT[i] = format("%%.%df", i)
-end
 
 -- Icon table with texture paths
 MHCT.iconTable = {
@@ -364,18 +201,143 @@ for status, _ in pairs(STATUS_ICON_MAP) do
 	FORMATTED_STATUS_CACHE[status] = format("|cff%s%s|r", STATUS_COLOR, strupper(status))
 end
 
--- Static color sequence for gradient
-local GRADIENT_COLORS = {
-	0.996,
-	0.32,
-	0.32, -- Start color (red) at 0% health
-	0.98,
-	0.84,
-	0.58, -- Mid color (yellow) at 50% health
-	0.44,
-	0.92,
-	0.44, -- End color (green) at 100% health
-}
+-- Pre-cached icon strings at default size (most common use case)
+-- Avoids format() call in hot path for common icons
+local CACHED_ICONS = {}
+for iconName, iconFormat in pairs(MHCT.iconTable) do
+	CACHED_ICONS[iconName] = format(iconFormat, MHCT.DEFAULT_ICON_SIZE, MHCT.DEFAULT_ICON_SIZE, 0, 0)
+end
+MHCT.CACHED_ICONS = CACHED_ICONS
+
+-------------------------------------
+-- SECRET VALUE UTILITIES (WoW 12.0+ Midnight)
+-- These functions handle "secret values" that cannot be compared or used
+-- in arithmetic operations. Common on nameplates and in competitive PvP.
+-------------------------------------
+
+-- Localize pcall for performance
+local pcall = pcall
+
+-- Check if CurveConstants.ScaleTo100 is available (converts 0-1 to 0-100 range)
+local CURVE_SCALE_TO_100 = CurveConstants and CurveConstants.ScaleTo100 or nil
+MHCT.CURVE_SCALE_TO_100 = CURVE_SCALE_TO_100
+
+-- Get health percent in 0-100 range, secret-safe
+-- Returns: percent (0-100), isSecret (boolean)
+-- Uses CurveConstants.ScaleTo100 when available for direct 0-100 output
+MHCT.GetHealthPercent = function(unit)
+	if not unit then
+		return nil, false
+	end
+	
+	local percent = nil
+	local isSecret = false
+	
+	-- Try CurveConstants.ScaleTo100 first (returns 0-100 directly)
+	if CURVE_SCALE_TO_100 then
+		local ok, pct = pcall(UnitHealthPercent, unit, false, CURVE_SCALE_TO_100)
+		if ok and pct then
+			percent = pct
+			isSecret = issecretvalue(pct)
+		end
+	end
+	
+	-- Fallback: standard UnitHealthPercent (0-1 range), convert to 0-100
+	if not percent then
+		local ok, pct = pcall(UnitHealthPercent, unit)
+		if ok and pct then
+			isSecret = issecretvalue(pct)
+			if not isSecret then
+				-- Can do arithmetic on non-secret values
+				percent = pct * 100
+			else
+				-- Secret value: try format trick (CurveConstants should have worked though)
+				percent = pct -- Will be 0-1, tag must handle this
+			end
+		end
+	end
+	
+	return percent, isSecret
+end
+
+-- Get power percent in 0-100 range, secret-safe
+-- Returns: percent (0-100), isSecret (boolean)
+-- powerType: optional, defaults to unit's primary power type
+MHCT.GetPowerPercent = function(unit, powerType)
+	if not unit then
+		return nil, false
+	end
+	
+	-- Get power type if not specified
+	if not powerType then
+		powerType = UnitPowerType(unit)
+	end
+	
+	local percent = nil
+	local isSecret = false
+	
+	-- Try CurveConstants.ScaleTo100 first (returns 0-100 directly)
+	if CURVE_SCALE_TO_100 then
+		local ok, pct = pcall(UnitPowerPercent, unit, powerType, false, CURVE_SCALE_TO_100)
+		if ok and pct then
+			percent = pct
+			isSecret = issecretvalue(pct)
+		end
+	end
+	
+	-- Fallback: standard UnitPowerPercent (0-1 range), convert to 0-100
+	if not percent then
+		local ok, pct = pcall(UnitPowerPercent, unit, powerType)
+		if ok and pct then
+			isSecret = issecretvalue(pct)
+			if not isSecret then
+				percent = pct * 100
+			else
+				percent = pct -- Will be 0-1, tag must handle this
+			end
+		end
+	end
+	
+	return percent, isSecret
+end
+
+-- Format a number with K/M/B suffix, secret-safe
+-- Uses AbbreviateNumbers (Midnight) or AbbreviateLargeNumbers (legacy)
+MHCT.FormatLargeNumber = function(value)
+	if not value then
+		return MHCT.SECRET_VALUE_FALLBACK_TEXT
+	end
+	-- Prefer AbbreviateNumbers (Midnight API) over AbbreviateLargeNumbers (legacy)
+	local abbr = AbbreviateNumbers or AbbreviateLargeNumbers
+	if abbr then
+		local ok, result = pcall(abbr, value)
+		if ok and result then
+			return result
+		end
+	end
+	-- Final fallback: string.format (works with secrets)
+	return format("%d", value)
+end
+
+-- Format percent value using cached patterns
+-- percentValue: 0-100 range, decimals: 0-3, includeSign: append %
+MHCT.FormatPercent = function(percentValue, decimals, includeSign)
+	if not percentValue then
+		return MHCT.SECRET_VALUE_FALLBACK_TEXT
+	end
+	decimals = decimals or 0
+	-- Clamp to cached range
+	if decimals < 0 then decimals = 0 end
+	if decimals > 3 then decimals = 3 end
+	
+	local pattern = MHCT.PERCENT_FORMATS[decimals]
+	local result = format(pattern, percentValue)
+	
+	if includeSign == nil or includeSign then
+		return result .. "%"
+	end
+	return result
+end
 
 -------------------------------------
 -- HELPER FUNCTIONS
@@ -431,16 +393,19 @@ MHCT.statusCheck = function(unit)
 end
 
 -- Get formatted icon with size and offset
+-- Uses pre-cached strings when using default size and no offset (common case)
 MHCT.getFormattedIcon = function(name, size, x, y)
 	local iconName = name or "default"
-	local iconSize = size or MHCT.DEFAULT_ICON_SIZE
-	local xOffset = x or 0
-	local yOffset = y or 0
-
-	-- Validate icon exists
+	local defaultSize = MHCT.DEFAULT_ICON_SIZE
+	
+	-- Fast path: use cached icon for default size with no offset
+	if (not size or size == defaultSize) and (not x or x == 0) and (not y or y == 0) then
+		return CACHED_ICONS[iconName] or CACHED_ICONS["default"]
+	end
+	
+	-- Slow path: custom size or offset requires format()
 	local iconFormat = MHCT.iconTable[iconName] or MHCT.iconTable["default"]
-
-	return format(iconFormat, iconSize, iconSize, xOffset, yOffset)
+	return format(iconFormat, size or defaultSize, size or defaultSize, x or 0, y or 0)
 end
 
 -- Optimized unit classification for ElvUI V14.0
@@ -576,43 +541,17 @@ MHCT.abbreviate = function(str, reverse, unit)
 	return concat(result)
 end
 
--- Removed - not used directly, replaced with pre-computed gradient table
-
--- Simplified gradient table - only create key health percentages
-MHCT.createGradientTable = function()
-	local gradientTable = {}
-
-	-- Use simpler interpolation for key percentages only
-	-- Red (0-30%), Yellow (30-70%), Green (70-100%)
-	for i = 0, 100 do
-		local r, g, b
-		if i <= 30 then
-			-- Red to yellow gradient (0-30%)
-			local factor = i / 30
-			r = 0.996
-			g = 0.32 + (0.84 - 0.32) * factor
-			b = 0.32 + (0.58 - 0.32) * factor
-		elseif i <= 70 then
-			-- Yellow to green gradient (30-70%)
-			local factor = (i - 30) / 40
-			r = 0.98 - (0.98 - 0.44) * factor
-			g = 0.84 + (0.92 - 0.84) * factor
-			b = 0.58 - (0.58 - 0.44) * factor
-		else
-			-- Green (70-100%)
-			r = 0.44
-			g = 0.92
-			b = 0.44
-		end
-
-		gradientTable[i] = format("|cff%02X%02X%02X", r * 255, g * 255, b * 255)
-	end
-
-	return gradientTable
-end
-
--- Create the gradient table once at load time
-MHCT.HEALTH_GRADIENT_RGB = MHCT.createGradientTable()
+-- ===================================================================================
+-- REMOVED: Health Gradient Color Tables
+-- ===================================================================================
+-- Health-based gradient coloring is NOT POSSIBLE in WoW 12.0+ for secret values.
+-- Blizzard's secret value system blocks ALL operations needed for gradient lookup:
+-- - Cannot use secret values as table keys
+-- - Cannot do tonumber() on secret-derived strings
+-- - Cannot do string.byte(), string.len(), or pattern matching on secret strings
+--
+-- The gradient table code was removed in v9.0 as it cannot function correctly.
+-- ===================================================================================
 
 -- Format unit status check
 MHCT.formatWithStatusCheck = function(unit)
@@ -626,51 +565,6 @@ MHCT.formatWithStatusCheck = function(unit)
 	end
 
 	return nil
-end
-
--- Optimized health percent formatter for ElvUI V14.0
-MHCT.formatHealthPercent = function(unit, decimalPlaces, showSign)
-	if not unit then
-		return ""
-	end
-
-	local maxHp = UnitHealthMax(unit)
-	if maxHp == 0 then
-		return ""
-	end
-
-	local currentHp = UnitHealth(unit)
-	if currentHp == maxHp then
-		return E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
-	end
-
-	local decimals = tonumber(decimalPlaces) or MHCT.DEFAULT_DECIMAL_PLACE
-	local percent = (currentHp / maxHp) * 100
-
-	-- Use cached format patterns for better performance
-	local fmt = FORMAT_PATTERNS.DECIMAL_WITHOUT_PERCENT[decimals] or format("%%.%df", decimals)
-
-	if showSign then
-		return format(fmt .. "%%", percent)
-	else
-		return format(fmt, percent)
-	end
-end
-
--- Optimized health deficit formatter for ElvUI V14.0
-MHCT.formatHealthDeficit = function(unit)
-	if not unit then
-		return ""
-	end
-
-	local currentHp = UnitHealth(unit)
-	local maxHp = UnitHealthMax(unit)
-
-	if currentHp == maxHp or maxHp == 0 then
-		return ""
-	end
-
-	return format("-%s", E:ShortValue(maxHp - currentHp))
 end
 
 -------------------------------------
@@ -736,18 +630,13 @@ SlashCmdList["MHTAGS"] = function(msg)
 		local info = MHCT.debugInfo or {}
 		print("|cff0388fc[ElvUI_mhTags]|r Debug Information:")
 		print(format("  Addon Version: |cffffcc00%s|r", MHCT.ADDON_VERSION))
-		print(format("  WoW Interface: |cffffcc00%d|r", info.wowVersion or 0))
 		print(format("  ElvUI Version: |cffffcc00%.1f|r", info.elvuiVersion or 0))
-		print(format("  WoW 12.0+: |cffffcc00%s|r", info.isWoW12 and "Yes" or "No"))
-		print("|cff0388fc[12.0 API Availability]|r")
-		print(format("  UnitHealthPercent: |cff%s%s|r", info.hasHealthPercent and "00ff00" or "ff0000", info.hasHealthPercent and "Available" or "Unavailable"))
-		print(format("  UnitHealthMissing: |cff%s%s|r", info.hasHealthMissing and "00ff00" or "ff0000", info.hasHealthMissing and "Available" or "Unavailable"))
-		print(format("  UnitPowerPercent: |cff%s%s|r", info.hasPowerPercent and "00ff00" or "ff0000", info.hasPowerPercent and "Available" or "Unavailable"))
-		print(format("  UnitPowerMissing: |cff%s%s|r", info.hasPowerMissing and "00ff00" or "ff0000", info.hasPowerMissing and "Available" or "Unavailable"))
+		print("  Target WoW Version: |cffffcc0012.0+ (Midnight)|r")
+		print("  Note: Health gradient colors removed (WoW 12.0 secret value limitation)")
 	elseif cmd == "help" then
 		print("|cff0388fc[ElvUI_mhTags]|r Commands:")
 		print("  |cffffcc00/mhtags|r - Show memory usage")
-		print("  |cffffcc00/mhtags debug|r - Show version and API info")
+		print("  |cffffcc00/mhtags debug|r - Show version info")
 		print("  |cffffcc00/mhtags help|r - Show this help")
 	else
 		-- Default: show memory usage

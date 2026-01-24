@@ -1,6 +1,6 @@
 ## Interface: 120000
 ## Title: |cff1784d1ElvUI|r |cffccff33MH Tags|r
-## Notes: Custom tags for use across ElvUI unit frames
+## Notes: Custom tags for ElvUI unit frames. WoW 12.0+ (Midnight) only. Health gradient colors removed due to Blizzard secret value restrictions.
 ## Author: mhDesigns
 ## Version: 9.0
 ## X-Category: Unit Frames
@@ -13,6 +13,8 @@
 ## X-Wago-ID: ElvUI_mhTags
 ## X-License: MIT
 ## X-Localizations: enUS
+## X-Min-ElvUI: 14.0
+## X-WoW-Version: 12.0.0
 
 core.lua
 tags\health.lua

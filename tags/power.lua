@@ -1,70 +1,53 @@
 -- ===================================================================================
--- POWER RELATED TAGS - Optimized for efficiency
+-- POWER RELATED TAGS - WoW 12.0+ (Midnight)
 -- ===================================================================================
+-- Requires WoW 12.0+ - uses native UnitPowerPercent API with CurveConstants.ScaleTo100
 --
--- WoW 12.0+ Optimization:
--- Uses MHCT.GetUnitPowerPercent() which leverages native UnitPowerPercent()
--- when available (12.0+), providing better performance and secret value handling
+-- Secret Value Handling:
+-- Power values may be "secret" on nameplates and in competitive content.
+-- We use MHCT.GetPowerPercent() which handles secrets via CurveConstants.ScaleTo100.
+-- For secret values, we format with string.format() which accepts secrets.
 -- ===================================================================================
 local _, ns = ...
 local MHCT = ns.MHCT
 
--- Get ElvUI references from core (shared to avoid duplicate unpacking)
-local E = MHCT.E
-
 -- Localize Lua functions
 local format = string.format
-local tonumber = tonumber
 
--- Localize WoW API functions
-local UnitPowerType = UnitPowerType
-local UnitPower = UnitPower
-local UnitPowerMax = UnitPowerMax
-
--- Localize MHCT API wrappers (use 12.0 APIs when available)
-local GetUnitPowerPercent = MHCT.GetUnitPowerPercent
+-- Localize core utility functions
+local GetPowerPercent = MHCT.GetPowerPercent
+local PERCENT_FORMATS = MHCT.PERCENT_FORMATS
 
 -- Local constants
 local POWER_SUBCATEGORY = "power"
 local DEFAULT_DECIMAL_PLACE = MHCT.DEFAULT_DECIMAL_PLACE
 
--- Pre-built format strings for common decimal cases (performance optimization)
-local PERCENT_FORMATS = {
-	[0] = "%.0f",
-	[1] = "%.1f",
-	[2] = "%.2f",
-}
-
 -- ===================================================================================
 -- HELPER FUNCTIONS
 -- ===================================================================================
 
--- Optimized power percent formatter
--- Uses MHCT.GetUnitPowerPercent() which leverages 12.0 APIs when available
--- WoW 12.0: If value is secret (returns -1), we return empty string
-local function formatPowerPercent(unit, decimalPlaces)
+-- Format power percent using secret-safe utility from core.lua
+-- Returns formatted percent string or empty string for zero/unavailable
+local function formatPowerPercent(unit, decimalPlaces, powerType)
 	if not unit then
 		return ""
 	end
 
-	-- Get the unit's power type for the API call
-	local powerType = UnitPowerType(unit)
-
-	-- Use optimized percentage calculation (uses 12.0 API when available)
-	local percent = GetUnitPowerPercent(unit, powerType)
-
-	-- Early return for zero power
-	if percent == 0 then
-		return "0"
-	end
-
-	-- Secret value (-1): can't calculate percentage, return empty
-	-- (In 12.0, power values can be secret in combat contexts)
-	if percent < 0 then
+	-- Get percent (0-100 range) using secret-safe utility
+	local percent, isSecret = GetPowerPercent(unit, powerType)
+	
+	if not percent then
 		return ""
 	end
 
-	-- Use pre-built format strings for common cases, build dynamically for others
+	-- For secret values, we can still format using string.format
+	-- (CurveConstants.ScaleTo100 gives us 0-100 even for secrets)
+	if isSecret then
+		-- Basic format for secret values
+		return format("%.0f", percent)
+	end
+
+	-- Non-secret: use requested decimal places
 	local fmt = PERCENT_FORMATS[decimalPlaces]
 	if fmt then
 		return format(fmt, percent)
@@ -78,6 +61,7 @@ end
 -- ===================================================================================
 
 -- Main power percent tag with simpler name
+-- Uses MHCT.GetPowerPercent() for secret-safe 0-100 percent
 MHCT.registerTag(
 	"mh-power-percent",
 	POWER_SUBCATEGORY,
