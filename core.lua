@@ -136,6 +136,7 @@ MHCT.TAG_CATEGORY_NAME = "|cff0388fcmh|r|cffccff33Tags|r"
 MHCT.MAX_PLAYER_LEVEL = MAX_PLAYER_LEVEL_VALUE
 MHCT.DEFAULT_ICON_SIZE = 14
 MHCT.ABSORB_TEXT_COLOR = "ccff33"
+MHCT.HEALTH_TEXT_COLOR = "ffffff"
 MHCT.DEFAULT_TEXT_LENGTH = 28
 MHCT.DEFAULT_DECIMAL_PLACE = 0
 
@@ -559,50 +560,14 @@ end
 -- TAG REGISTRATION
 -------------------------------------
 
--- Internal registry to track tag functions and events (needed for aliases in ElvUI 14.0+)
-local tagRegistry = {}
-
--- Simple tag registration for ElvUI V14.0+
+-- Simple tag registration for ElvUI 14.0+
 MHCT.registerTag = function(name, subCategory, description, events, func)
 	local fullCategory = MHCT.TAG_CATEGORY_NAME .. " [" .. subCategory .. "]"
 
 	E:AddTagInfo(name, fullCategory, description)
 	E:AddTag(name, events, func)
 
-	-- Store for alias creation (ElvUI 14.0+ doesn't expose tag methods)
-	tagRegistry[name] = {
-		func = func,
-		events = events,
-		category = fullCategory,
-		description = description,
-	}
-
 	return name
-end
-
--- Create tag alias for backwards compatibility (shares function reference, no duplication)
-MHCT.registerTagAlias = function(oldName, newName)
-	-- Get the existing tag from our internal registry
-	local tagData = tagRegistry[newName]
-	local tagInfo = E.TagInfo[newName]
-
-	if tagData and tagInfo then
-		-- Register alias with deprecation notice, using the same wrapped function
-		E:AddTagInfo(
-			oldName,
-			tagInfo.category,
-			tagInfo.description .. " (DEPRECATED - Use [" .. newName .. "] instead)"
-		)
-		-- Use the same wrapped function reference (no duplication)
-		E:AddTag(oldName, tagData.events, tagData.func)
-
-		-- Store alias in registry too (in case someone aliases an alias)
-		tagRegistry[oldName] = tagData
-		return oldName
-	end
-
-	-- If new tag doesn't exist, silently fail (developer error, should be caught during development)
-	return nil
 end
 
 -------------------------------------

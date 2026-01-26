@@ -21,7 +21,6 @@ local format = string.format
 local pcall = pcall
 
 -- Localize WoW 12.0+ API functions (required - no fallbacks)
-local UnitHealthMax = UnitHealthMax
 local UnitHealth = UnitHealth
 local UnitHealthPercent = UnitHealthPercent
 local UnitHealthMissing = UnitHealthMissing
@@ -37,6 +36,7 @@ local SCALE_TO_100 = CurveConstants.ScaleTo100
 
 local HEALTH_SUBCATEGORY = "health"
 local ABSORB_TEXT_COLOR = MHCT.ABSORB_TEXT_COLOR
+local HEALTH_TEXT_COLOR = MHCT.HEALTH_TEXT_COLOR
 
 -- Common display constants
 local VERTICAL_SEPARATOR = " | "
@@ -67,10 +67,9 @@ local PERCENT_FORMATS = MHCT.PERCENT_FORMATS
 -- Fallback text for secret values
 local SECRET_FALLBACK_TEXT = MHCT.SECRET_VALUE_FALLBACK_TEXT
 
--- Format absorb shield if present, secret-safe
---- Format absorb shield if present, secret-safe
---- NOTE: Due to secret values, (0) may display when absorb is 0 and secret.
---- All comparison/detection methods are blocked: numeric comparison, string comparison, string length.
+-- Format absorb shield if present, secret-safe.
+-- NOTE: Due to secret values, (0) may display when absorb is 0 and secret.
+-- All comparison/detection methods are blocked: numeric comparison, string comparison, string length.
 local function getAbsorbText(unit)
 	if not unit then
 		return ""
@@ -136,7 +135,7 @@ MHCT.registerTag(
 			return SECRET_FALLBACK_TEXT
 		end
 
-		return currentText
+		return format("|cff%s%s|r", HEALTH_TEXT_COLOR, currentText)
 	end
 )
 
@@ -160,7 +159,7 @@ MHCT.registerTag(
 			return absorbText .. SECRET_FALLBACK_TEXT
 		end
 
-		return absorbText .. currentText
+		return absorbText .. format("|cff%s%s|r", HEALTH_TEXT_COLOR, currentText)
 	end
 )
 
@@ -193,7 +192,8 @@ MHCT.registerTag(
 
 		-- Format with requested decimals - string.format works on secret values
 		local decimals = MHCT.parseDecimalArg(args, 1)
-		return formatPercentValue(percent, decimals) .. "%"
+		local percentText = formatPercentValue(percent, decimals) .. "%"
+		return format("|cff%s%s|r", HEALTH_TEXT_COLOR, percentText)
 	end
 )
 
@@ -221,7 +221,8 @@ MHCT.registerTag(
 
 		-- Format with requested decimals - string.format works on secret values
 		local decimals = MHCT.parseDecimalArg(args, 1)
-		return formatPercentValue(percent, decimals)
+		local percentText = formatPercentValue(percent, decimals)
+		return format("|cff%s%s|r", HEALTH_TEXT_COLOR, percentText)
 	end
 )
 
@@ -256,7 +257,7 @@ MHCT.registerTag(
 		-- Use secret-safe formatting for both values
 		local currentText = FormatLargeNumber(currentHp)
 		local percentText = format(PERCENT_FORMAT, percent)
-		return currentText .. VERTICAL_SEPARATOR .. percentText
+		return format("|cff%s%s|r", HEALTH_TEXT_COLOR, currentText) .. VERTICAL_SEPARATOR .. format("|cff%s%s|r", HEALTH_TEXT_COLOR, percentText)
 	end
 )
 
@@ -286,7 +287,7 @@ MHCT.registerTag(
 		-- Use secret-safe formatting for both values
 		local currentText = FormatLargeNumber(currentHp)
 		local percentText = format(PERCENT_FORMAT, percent)
-		return percentText .. VERTICAL_SEPARATOR .. currentText
+		return format("|cff%s%s|r", HEALTH_TEXT_COLOR, percentText) .. VERTICAL_SEPARATOR .. format("|cff%s%s|r", HEALTH_TEXT_COLOR, currentText)
 	end
 )
 
@@ -317,7 +318,7 @@ MHCT.registerTag(
 		-- Use secret-safe formatting for both values
 		local currentText = FormatLargeNumber(currentHp)
 		local percentText = format(PERCENT_FORMAT, percent)
-		return absorbText .. currentText .. VERTICAL_SEPARATOR .. percentText
+		return absorbText .. format("|cff%s%s|r", HEALTH_TEXT_COLOR, currentText) .. VERTICAL_SEPARATOR .. format("|cff%s%s|r", HEALTH_TEXT_COLOR, percentText)
 	end
 )
 
@@ -350,7 +351,8 @@ MHCT.registerTag(
 			return ""
 		end
 
-		return format(DEFICIT_FORMAT, E:ShortValue(missing))
+		local deficitText = format(DEFICIT_FORMAT, E:ShortValue(missing))
+		return format("|cff%s%s|r", HEALTH_TEXT_COLOR, deficitText)
 	end
 )
 
@@ -372,7 +374,8 @@ MHCT.registerTag(
 			return ""
 		end
 
-		return format(DEFICIT_FORMAT, E:ShortValue(missing))
+		local deficitText = format(DEFICIT_FORMAT, E:ShortValue(missing))
+		return format("|cff%s%s|r", HEALTH_TEXT_COLOR, deficitText)
 	end
 )
 
@@ -406,20 +409,11 @@ MHCT.registerTag(
 		-- Use pcall to safely attempt arithmetic (will fail for secrets)
 		local ok, deficit = pcall(function() return 100 - percent end)
 		if ok and deficit > 0 then
-			return "-" .. formatPercentValue(deficit, decimals) .. "%"
+			local deficitText = "-" .. formatPercentValue(deficit, decimals) .. "%"
+			return format("|cff%s%s|r", HEALTH_TEXT_COLOR, deficitText)
 		end
 		
 		-- At full health or secret: no deficit to show
 		return ""
 	end
 )
-
--- ===================================================================================
--- SECTION 5: LEGACY/COMPATIBILITY TAGS
--- ===================================================================================
--- These maintain backwards compatibility with old tag names using aliases
--- Aliases share the same function reference (zero performance overhead, no duplication)
-
-MHCT.registerTagAlias("mh-health:current:percent:right", "mh-health-current-percent")
-MHCT.registerTagAlias("mh-health:current:percent:left", "mh-health-percent-current")
-
