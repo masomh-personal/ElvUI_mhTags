@@ -20,5 +20,6 @@ core.lua
 tags\health.lua
 tags\power.lua
 tags\classification.lua
+tags\color.lua
 tags\misc.lua
 tags\name.lua
