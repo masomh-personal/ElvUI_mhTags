@@ -1,11 +1,11 @@
 # ElvUI_mhTags
 
-[![Version](https://img.shields.io/badge/Version-9.0-brightgreen)](https://github.com/masomh-personal/ElvUI_mhTags)
+[![Version](https://img.shields.io/badge/Version-10-brightgreen)](https://github.com/masomh-personal/ElvUI_mhTags)
 [![ElvUI](https://img.shields.io/badge/Requires-ElvUI%2014.0+-blue)](https://www.tukui.org/download.php?ui=elvui)
 [![WoW](https://img.shields.io/badge/WoW-12.0.0%20Midnight+-orange)](https://worldofwarcraft.com)
 [![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
 
-**30 custom tags for ElvUI unit frames.** Lightweight, performant, and WoW 12.0 (Midnight) optimized.
+**29 custom tags for ElvUI unit frames.** Lightweight, performant, and WoW 12.0 (Midnight) optimized.
 
 > **⚠️ Important**: This addon requires **WoW 12.0+ (Midnight)** and **ElvUI 14.0+**. Health gradient coloring has been removed due to Blizzard's secret value restrictions - see [WoW 12.0 Limitations](#wow-120-midnight-limitations) for details.
 
@@ -30,24 +30,24 @@
 | `[mh-classification:icon]`      | 🛡️             | Elite/Rare/Boss icon          |
 | `[mh-status]`                   | `AFK` + icon   | Status indicator              |
 
-## Complete Tag Reference (30 Tags)
+## Complete Tag Reference (29 Tags)
 
 ### Health Tags (10)
 
 | Tag | Example Output | Description |
 |-----|----------------|-------------|
 | `[mh-health-current]` | `100k` | Current health formatted |
-| `[mh-health-current-absorb]` | `(25k) 100k` | Absorb shield + current health |
+| `[mh-health-current-absorb]` | `(25k) 100k` | Absorb shield + current health (may show `(0)` for secret zero absorbs) |
 | `[mh-health-percent{N}]` | `85.2%` | Health percent, `{N}` = decimals (default 1) |
 | `[mh-health-percent-nosign{N}]` | `85.2` | Health percent without % sign |
-| `[mh-health-current-percent]` | `100k \| 85%` | Current + percent; hides % at full |
-| `[mh-health-percent-current]` | `85% \| 100k` | Percent + current; hides % at full |
-| `[mh-health-current-percent-absorb]` | `(25k) 100k \| 85%` | Absorb + current + percent; hides % at full |
+| `[mh-health-current-percent]` | `100k \| 85%` | Current health and percent combined |
+| `[mh-health-percent-current]` | `85% \| 100k` | Percent and current (reversed order) |
+| `[mh-health-current-percent-absorb]` | `(25k) 100k \| 85%` | Absorb + current + percent (may show `(0)` for secret zero absorbs) |
 | `[mh-health-deficit]` | `-15k` or `DEAD` | Missing health with status check |
 | `[mh-health-deficit-nostatus]` | `-15k` | Missing health only (no status) |
 | `[mh-health-deficit-percent{N}]` | `-15%` | Missing health as percent |
 
-> **⚠️ Removed in v9.0**: Colored/gradient health tags and "hidefull" variants were removed due to WoW 12.0 secret value restrictions. See [WoW 12.0 Limitations](#wow-120-midnight-limitations).
+> **⚠️ Removed in v10**: Colored/gradient health tags were removed due to WoW 12.0 secret value restrictions. See [WoW 12.0 Limitations](#wow-120-midnight-limitations).
 
 ### Name Tags (7)
 
@@ -77,7 +77,7 @@
 |-----|----------------|-------------|
 | `[mh-power-percent{N}]` | `85` | Power percent (mana/energy/rage), `{N}` = decimals |
 
-### Misc Tags (7)
+### Misc Tags (6)
 
 | Tag | Example Output | Description |
 |-----|----------------|-------------|
@@ -87,7 +87,6 @@
 | `[mh-difficultycolor:level-hide]` | `85` or `` | Level with color; hides at max level |
 | `[mh-status]` | `AFK` + 🔴 | Status text with icon (AFK/DND/Dead/Ghost/Offline) |
 | `[mh-status-noicon]` | `AFK` | Status text only, no icon |
-| `[mh-healer-drinking]` | `DRINKING...` | Shows only for healers when drinking/eating |
 
 ## Syntax Guide
 
@@ -169,11 +168,11 @@ When health/power values are "secret," they carry a C-level taint that **cannot 
 
 #### Impact on This Addon
 
-**Removed Features (v9.0):**
+**Removed Features (v10):**
 - **All colored health tags** - Gradient coloring requires table lookups (`colors[floor(percent)]`) which are blocked
 - **Health color tag** (`mh-healthcolor`) - Cannot return dynamic color codes for secret values
 
-**Removed Tags (v9.0):**
+**Removed Tags (v10):**
 
 *Colored/Gradient Tags (9):*
 - `mh-health-current-percent-colored`
@@ -198,7 +197,10 @@ When health/power values are "secret," they carry a C-level taint that **cannot 
 - `string.format()` displays percentages/numbers even for secret values
 - `AbbreviateNumbers()` formats large values (e.g., `2.5M`)
 - Status checks (AFK, Dead, Offline) work normally
-- Absorb shields display correctly (when not secret)
+- Absorb shields display correctly (when present)
+
+**Known Limitations:**
+- **Absorb zero detection**: Tags with absorbs (e.g., `[mh-health-current-percent-absorb]`) may show `(0)` when absorb is zero and secret. All comparison methods are blocked: numeric comparison (`absorbAmount <= 0`), string comparison (`result == "0"`), and string length (`#result == 1`). **Workaround**: Use `[mh-absorb]` as a separate text element, or use non-absorb tags like `[mh-health-current-percent]` on frames where this occurs.
 
 **Fallback Behavior:**
 When health/power values are secret, tags display `---` (configurable via `MHCT.SECRET_VALUE_FALLBACK_TEXT`).

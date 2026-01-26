@@ -14,15 +14,11 @@ local E = MHCT.E
 
 -- Localize Lua functions
 local format = string.format
-local lower = string.lower
 
 -- Localize WoW API functions
 local UnitEffectiveLevel = UnitEffectiveLevel
 local UnitGetTotalAbsorbs = UnitGetTotalAbsorbs
 local strupper = strupper
-local C_UnitAuras = C_UnitAuras
-local UnitGroupRolesAssigned = UnitGroupRolesAssigned
-local UnitAffectingCombat = UnitAffectingCombat
 
 -- Local constants
 local MISC_SUBCATEGORY = "misc"
@@ -78,17 +74,16 @@ MHCT.registerTag(
 			return ""
 		end
 
-		-- Secret value check - can't compare or use in math
-		if issecretvalue(absorbAmount) then
+		-- Try to check if absorb is zero/negative (works for non-secret values only)
+		local ok, isZeroOrNegative = pcall(function() return absorbAmount <= 0 end)
+		
+		-- If comparison succeeded and absorb is zero/negative, hide it
+		if ok and isZeroOrNegative then
 			return ""
 		end
-
-		-- Now safe to compare - must be positive
-		if absorbAmount <= 0 then
-			return ""
-		end
-
-		-- Use MHCT.FormatLargeNumber (secret-safe)
+		
+		-- If comparison failed (secret value), we cannot detect zero
+		-- Display the formatted value - may show (0) for secret zero values
 		local result = MHCT.FormatLargeNumber(absorbAmount)
 		if result then
 			return format("|cff%s(%s)|r", ABSORB_TEXT_COLOR, result)
@@ -184,76 +179,3 @@ MHCT.registerTag(
 	end
 )
 
--- ===================================================================================
--- HEALER DRINKING TAG
--- ===================================================================================
-
--- Exact match buffs that indicate drinking/eating (case-insensitive)
--- These are the actual active drinking states, not persistent stat buffs
-local DRINKING_BUFFS = {
-	["drink"] = true,
-	["food"] = true,
-	["food & drink"] = true,
-	["refreshment"] = true,
-}
-
--- Pre-built drinking text constant (avoid allocating on every call)
-local DRINKING_TEXT = "|cff1f6bffDRINKING...|r"
-
--- Check if unit has a drinking/eating buff
-local function isDrinking(unit)
-	if not unit then
-		return false
-	end
-
-	-- Scan all buffs using modern C_UnitAuras API (WoW 10.0+)
-	for i = 1, 40 do
-		local auraData = C_UnitAuras.GetBuffDataByIndex(unit, i)
-		if not auraData then
-			break -- No more buffs
-		end
-
-		local name = auraData.name
-		if name then
-			local nameLower = lower(name)
-			if DRINKING_BUFFS[nameLower] then
-				return true
-			end
-		end
-	end
-
-	return false
-end
-
--- Healer drinking tag - shows for healers in any scenario (solo, party, raid)
-MHCT.registerTag(
-	"mh-healer-drinking",
-	MISC_SUBCATEGORY,
-	"Shows 'DRINKING...' only for healers drinking/eating (works in any scenario: solo, party, or raid). Example: DRINKING...",
-	"UNIT_AURA UNIT_POWER_UPDATE",
-	function(unit)
-		-- Guard: Unit must exist
-		if not unit then
-			return ""
-		end
-
-		-- Guard: Cannot drink in combat (check FIRST before other checks)
-		if UnitAffectingCombat(unit) then
-			return ""
-		end
-
-		-- Guard: Only show for healers (most units won't be healers)
-		local role = UnitGroupRolesAssigned(unit)
-		if role ~= "HEALER" then
-			return ""
-		end
-
-		-- Check if drinking/eating (all guards passed)
-		if isDrinking(unit) then
-			return DRINKING_TEXT
-		end
-
-		-- Default: return empty (not drinking or guards failed)
-		return ""
-	end
-)

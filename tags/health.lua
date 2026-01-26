@@ -68,6 +68,9 @@ local PERCENT_FORMATS = MHCT.PERCENT_FORMATS
 local SECRET_FALLBACK_TEXT = MHCT.SECRET_VALUE_FALLBACK_TEXT
 
 -- Format absorb shield if present, secret-safe
+--- Format absorb shield if present, secret-safe
+--- NOTE: Due to secret values, (0) may display when absorb is 0 and secret.
+--- All comparison/detection methods are blocked: numeric comparison, string comparison, string length.
 local function getAbsorbText(unit)
 	if not unit then
 		return ""
@@ -80,23 +83,23 @@ local function getAbsorbText(unit)
 		return ""
 	end
 
-	-- Secret value check - can't compare or use in math
-	if issecretvalue(absorbAmount) then
+	-- Try to check if absorb is zero/negative (works for non-secret values only)
+	local ok, isZeroOrNegative = pcall(function() return absorbAmount <= 0 end)
+	
+	-- If comparison succeeded and absorb is zero/negative, hide it
+	if ok and isZeroOrNegative then
 		return ""
 	end
-
-	-- Now safe to compare - must be positive
-	if absorbAmount <= 0 then
-		return ""
-	end
-
-	-- Use MHCT.FormatLargeNumber (secret-safe)
+	
+	-- If comparison failed (secret value), we cannot detect zero
+	-- Display the formatted value - may show (0) for secret zero values
 	local result = FormatLargeNumber(absorbAmount)
-	if result then
-		return ABSORB_FORMAT_START .. result .. ABSORB_FORMAT_END
+	
+	if not result then
+		return ""
 	end
-
-	return ""
+	
+	return ABSORB_FORMAT_START .. result .. ABSORB_FORMAT_END
 end
 
 -- Local format helper using shared PERCENT_FORMATS from core.lua
@@ -227,11 +230,11 @@ MHCT.registerTag(
 -- ===================================================================================
 -- Tags that show both current health and percentage in various formats
 
--- Current | Percent (hides percent at full health when possible)
+-- Current | Percent (always shows both)
 MHCT.registerTag(
 	"mh-health-current-percent",
 	HEALTH_SUBCATEGORY,
-	"Current and percent. Hides percent at full health. Example: 100k | 85%",
+	"Current and percent. Example: 100k | 85%",
 	EVENTS.HEALTH_STATUS,
 	function(unit)
 		if not unit then
@@ -250,25 +253,18 @@ MHCT.registerTag(
 			return SECRET_FALLBACK_TEXT
 		end
 
-		-- Use secret-safe formatting
+		-- Use secret-safe formatting for both values
 		local currentText = FormatLargeNumber(currentHp)
-		
-		-- Try to hide percent at full health (pcall handles secret values gracefully)
-		local ok, isFull = pcall(function() return percent >= 100 end)
-		if ok and isFull then
-			return currentText
-		end
-
 		local percentText = format(PERCENT_FORMAT, percent)
 		return currentText .. VERTICAL_SEPARATOR .. percentText
 	end
 )
 
--- Percent | Current (hides percent at full health when possible)
+-- Percent | Current (always shows both)
 MHCT.registerTag(
 	"mh-health-percent-current",
 	HEALTH_SUBCATEGORY,
-	"Percent and current. Hides percent at full health. Example: 85% | 100k",
+	"Percent and current. Example: 85% | 100k",
 	EVENTS.HEALTH_STATUS,
 	function(unit)
 		if not unit then
@@ -287,25 +283,18 @@ MHCT.registerTag(
 			return SECRET_FALLBACK_TEXT
 		end
 
-		-- Use secret-safe formatting
+		-- Use secret-safe formatting for both values
 		local currentText = FormatLargeNumber(currentHp)
-		
-		-- Try to hide percent at full health (pcall handles secret values gracefully)
-		local ok, isFull = pcall(function() return percent >= 100 end)
-		if ok and isFull then
-			return currentText
-		end
-
 		local percentText = format(PERCENT_FORMAT, percent)
 		return percentText .. VERTICAL_SEPARATOR .. currentText
 	end
 )
 
--- Current | Percent with absorb shield (hides percent at full health when possible)
+-- Current | Percent with absorb shield (always shows both)
 MHCT.registerTag(
 	"mh-health-current-percent-absorb",
 	HEALTH_SUBCATEGORY,
-	"Absorb + current | percent. Hides percent at full health. Example: (25k) 100k | 85%",
+	"Absorb + current | percent. Example: (25k) 100k | 85%",
 	EVENTS.HEALTH_ABSORB_STATUS,
 	function(unit)
 		if not unit then
@@ -325,15 +314,8 @@ MHCT.registerTag(
 			return absorbText .. SECRET_FALLBACK_TEXT
 		end
 
-		-- Use secret-safe formatting
+		-- Use secret-safe formatting for both values
 		local currentText = FormatLargeNumber(currentHp)
-		
-		-- Try to hide percent at full health (pcall handles secret values gracefully)
-		local ok, isFull = pcall(function() return percent >= 100 end)
-		if ok and isFull then
-			return absorbText .. currentText
-		end
-
 		local percentText = format(PERCENT_FORMAT, percent)
 		return absorbText .. currentText .. VERTICAL_SEPARATOR .. percentText
 	end
@@ -433,21 +415,7 @@ MHCT.registerTag(
 )
 
 -- ===================================================================================
--- SECTION 5: DEPRECATED - COLORED HEALTH DISPLAYS
--- ===================================================================================
--- NOTE: Health-based gradient coloring is NOT POSSIBLE in WoW 12.0+ for secret values.
--- Blizzard's secret value system blocks ALL operations needed for gradient lookup:
--- - Cannot use secret values as table keys
--- - Cannot do tonumber() on secret-derived strings  
--- - Cannot do string.byte(), string.len(), or pattern matching on secret strings
--- - Only string.format() works for display purposes
---
--- All colored health tags have been REMOVED in v9.0.
--- Use non-colored tags or reaction-based coloring (UnitReaction) instead.
--- ===================================================================================
-
--- ===================================================================================
--- SECTION 6: LEGACY/COMPATIBILITY TAGS
+-- SECTION 5: LEGACY/COMPATIBILITY TAGS
 -- ===================================================================================
 -- These maintain backwards compatibility with old tag names using aliases
 -- Aliases share the same function reference (zero performance overhead, no duplication)

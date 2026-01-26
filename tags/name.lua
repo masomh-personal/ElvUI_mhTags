@@ -4,7 +4,7 @@
 --
 -- WoW 12.0+ Compatibility:
 -- UnitName() may return secret values in combat for non-player units in 12.0+.
--- ElvUI's FontString handling accepts secret values, so tags continue to work.
+-- We use issecretvalue() to detect this and handle gracefully.
 -- ===================================================================================
 local _, ns = ...
 local MHCT = ns.MHCT
@@ -22,10 +22,42 @@ local strupper = strupper
 local IsInRaid = IsInRaid
 local GetNumGroupMembers = GetNumGroupMembers
 local GetRaidRosterInfo = GetRaidRosterInfo
+local issecretvalue = issecretvalue
 
 -- Local constants
 local NAME_SUBCATEGORY = "name"
 local DEFAULT_TEXT_LENGTH = MHCT.DEFAULT_TEXT_LENGTH
+
+-- Helper: Get name safely, handling secret values
+-- Returns: name, isSecret
+-- For secret values, we return them as-is (can't transform but can display)
+local function getValidName(unit)
+	if not unit then
+		return nil, false
+	end
+	local name = UnitName(unit)
+	if not name then
+		return nil, false
+	end
+	-- Secret values can still be displayed by FontString, but can't be transformed
+	if issecretvalue(name) then
+		return name, true
+	end
+	-- Non-secret: check if empty
+	if name == "" then
+		return nil, false
+	end
+	return name, false
+end
+
+-- Helper: Format name with uppercase and length limit (only works on non-secret)
+local function formatName(name, isSecret, length)
+	if isSecret then
+		-- Can't transform secret names, return as-is
+		return name
+	end
+	return E:ShortenString(strupper(name), length)
+end
 
 -- ===================================================================================
 -- NAME RELATED TAGS
@@ -39,17 +71,13 @@ MHCT.registerTag(
 	"Shows unit name in all CAPS with a dynamic # of characters (dynamic number within {} of tag",
 	"UNIT_NAME_UPDATE",
 	function(unit, _, args)
-		if not unit then
-			return ""
-		end
-		local name = UnitName(unit)
-		-- Early return for common case
-		if not name or name == "" then
+		local name, isSecret = getValidName(unit)
+		if not name then
 			return ""
 		end
 
 		local length = MHCT.parseDecimalArg(args, DEFAULT_TEXT_LENGTH)
-		return E:ShortenString(strupper(name), length)
+		return formatName(name, isSecret, length)
 	end
 )
 
@@ -68,36 +96,32 @@ MHCT.registerTag(
 			return statusFormatted
 		end
 
-		local name = UnitName(unit)
-		if not name or name == "" then
+		local name, isSecret = getValidName(unit)
+		if not name then
 			return ""
 		end
 
 		local length = MHCT.parseDecimalArg(args, DEFAULT_TEXT_LENGTH)
-		return E:ShortenString(strupper(name), length)
+		return formatName(name, isSecret, length)
 	end
 )
 
--- Removed - direct formatting is simpler
 MHCT.registerTag(
 	"mh-player:frame:name:caps-groupnumber",
 	NAME_SUBCATEGORY,
 	"Shows unit name in all CAPS with a dynamic # of characters + unit group number if in raid (dynamic number within {} of tag)",
 	"UNIT_NAME_UPDATE GROUP_ROSTER_UPDATE",
 	function(unit, _, args)
-		if not unit then
-			return ""
-		end
-		local name = UnitName(unit)
-		if not name or name == "" then
+		local name, isSecret = getValidName(unit)
+		if not name then
 			return ""
 		end
 
 		local length = MHCT.parseDecimalArg(args, DEFAULT_TEXT_LENGTH)
-		local formatted = E:ShortenString(strupper(name), length)
+		local formatted = formatName(name, isSecret, length)
 
-		-- Only do raid group lookup if actually in a raid
-		if not IsInRaid() then
+		-- Only do raid group lookup if actually in a raid (and name is not secret)
+		if not IsInRaid() or isSecret then
 			return formatted
 		end
 
@@ -117,12 +141,14 @@ MHCT.registerTag(
 -- ===================================================================================
 -- Helper function for name abbreviation with configurable parameters
 local function formatAbbreviatedName(unit, reverse, lengthThreshold)
-	if not unit then
-		return ""
-	end
-	local name = UnitName(unit)
+	local name, isSecret = getValidName(unit)
 	if not name then
 		return ""
+	end
+
+	-- Secret names can't be transformed, return as-is
+	if isSecret then
+		return name
 	end
 
 	-- Convert to uppercase once
@@ -137,16 +163,13 @@ local function formatAbbreviatedName(unit, reverse, lengthThreshold)
 	return MHCT.abbreviate(uppercaseName, reverse, unit)
 end
 
--- Then use this helper in all abbreviation tags
+-- Abbreviation tags using the helper
 MHCT.registerTag(
 	"mh-name:caps:abbrev",
 	NAME_SUBCATEGORY,
 	"Name abbreviation/shortener - Example: 'Cleave Training Dummy' => 'C.T. Dummy'",
 	"UNIT_NAME_UPDATE",
 	function(unit)
-		if not unit then
-			return ""
-		end
 		return formatAbbreviatedName(unit, false)
 	end
 )
@@ -157,9 +180,6 @@ MHCT.registerTag(
 	"Name abbreviation/shortener - Example: 'Cleave Training Dummy' => 'Cleave T.D.'",
 	"UNIT_NAME_UPDATE",
 	function(unit)
-		if not unit then
-			return ""
-		end
 		return formatAbbreviatedName(unit, true)
 	end
 )
@@ -170,9 +190,6 @@ MHCT.registerTag(
 	"Name abbreviation/shortener if greater than 25 characters - Example: 'Cleave Training Dummy' => 'C.T. Dummy'",
 	"UNIT_NAME_UPDATE",
 	function(unit, _, nameLen)
-		if not unit then
-			return ""
-		end
 		return formatAbbreviatedName(unit, false, tonumber(nameLen) or 25)
 	end
 )
@@ -183,9 +200,6 @@ MHCT.registerTag(
 	"Name abbreviation/shortener if greater than 25 characters - Example: 'Cleave Training Dummy' => 'Cleave T.D.'",
 	"UNIT_NAME_UPDATE",
 	function(unit, _, nameLen)
-		if not unit then
-			return ""
-		end
 		return formatAbbreviatedName(unit, true, tonumber(nameLen) or 25)
 	end
 )

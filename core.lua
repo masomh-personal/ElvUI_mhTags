@@ -11,7 +11,7 @@ local MHCT = ns.MHCT
 -------------------------------------
 -- ADDON VERSION INFO
 -------------------------------------
-MHCT.ADDON_VERSION = "9.0"
+MHCT.ADDON_VERSION = "10"
 MHCT.ADDON_NAME = "ElvUI_mhTags"
 
 -------------------------------------
@@ -541,18 +541,6 @@ MHCT.abbreviate = function(str, reverse, unit)
 	return concat(result)
 end
 
--- ===================================================================================
--- REMOVED: Health Gradient Color Tables
--- ===================================================================================
--- Health-based gradient coloring is NOT POSSIBLE in WoW 12.0+ for secret values.
--- Blizzard's secret value system blocks ALL operations needed for gradient lookup:
--- - Cannot use secret values as table keys
--- - Cannot do tonumber() on secret-derived strings
--- - Cannot do string.byte(), string.len(), or pattern matching on secret strings
---
--- The gradient table code was removed in v9.0 as it cannot function correctly.
--- ===================================================================================
-
 -- Format unit status check
 MHCT.formatWithStatusCheck = function(unit)
 	if not unit then
@@ -632,7 +620,6 @@ SlashCmdList["MHTAGS"] = function(msg)
 		print(format("  Addon Version: |cffffcc00%s|r", MHCT.ADDON_VERSION))
 		print(format("  ElvUI Version: |cffffcc00%.1f|r", info.elvuiVersion or 0))
 		print("  Target WoW Version: |cffffcc0012.0+ (Midnight)|r")
-		print("  Note: Health gradient colors removed (WoW 12.0 secret value limitation)")
 	elseif cmd == "help" then
 		print("|cff0388fc[ElvUI_mhTags]|r Commands:")
 		print("  |cffffcc00/mhtags|r - Show memory usage")
