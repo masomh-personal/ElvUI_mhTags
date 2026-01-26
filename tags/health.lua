@@ -36,7 +36,6 @@ local SCALE_TO_100 = CurveConstants.ScaleTo100
 
 local HEALTH_SUBCATEGORY = "health"
 local ABSORB_TEXT_COLOR = MHCT.ABSORB_TEXT_COLOR
-local HEALTH_TEXT_COLOR = MHCT.HEALTH_TEXT_COLOR
 
 -- Common display constants
 local VERTICAL_SEPARATOR = " | "
@@ -135,7 +134,7 @@ MHCT.registerTag(
 			return SECRET_FALLBACK_TEXT
 		end
 
-		return format("|cff%s%s|r", HEALTH_TEXT_COLOR, currentText)
+		return currentText
 	end
 )
 
@@ -159,7 +158,7 @@ MHCT.registerTag(
 			return absorbText .. SECRET_FALLBACK_TEXT
 		end
 
-		return absorbText .. format("|cff%s%s|r", HEALTH_TEXT_COLOR, currentText)
+		return absorbText .. currentText
 	end
 )
 
@@ -193,7 +192,7 @@ MHCT.registerTag(
 		-- Format with requested decimals - string.format works on secret values
 		local decimals = MHCT.parseDecimalArg(args, 1)
 		local percentText = formatPercentValue(percent, decimals) .. "%"
-		return format("|cff%s%s|r", HEALTH_TEXT_COLOR, percentText)
+		return percentText
 	end
 )
 
@@ -222,7 +221,7 @@ MHCT.registerTag(
 		-- Format with requested decimals - string.format works on secret values
 		local decimals = MHCT.parseDecimalArg(args, 1)
 		local percentText = formatPercentValue(percent, decimals)
-		return format("|cff%s%s|r", HEALTH_TEXT_COLOR, percentText)
+		return percentText
 	end
 )
 
@@ -257,7 +256,7 @@ MHCT.registerTag(
 		-- Use secret-safe formatting for both values
 		local currentText = FormatLargeNumber(currentHp)
 		local percentText = format(PERCENT_FORMAT, percent)
-		return format("|cff%s%s|r", HEALTH_TEXT_COLOR, currentText) .. VERTICAL_SEPARATOR .. format("|cff%s%s|r", HEALTH_TEXT_COLOR, percentText)
+		return currentText .. VERTICAL_SEPARATOR .. percentText
 	end
 )
 
@@ -287,7 +286,7 @@ MHCT.registerTag(
 		-- Use secret-safe formatting for both values
 		local currentText = FormatLargeNumber(currentHp)
 		local percentText = format(PERCENT_FORMAT, percent)
-		return format("|cff%s%s|r", HEALTH_TEXT_COLOR, percentText) .. VERTICAL_SEPARATOR .. format("|cff%s%s|r", HEALTH_TEXT_COLOR, currentText)
+		return percentText .. VERTICAL_SEPARATOR .. currentText
 	end
 )
 
@@ -318,7 +317,7 @@ MHCT.registerTag(
 		-- Use secret-safe formatting for both values
 		local currentText = FormatLargeNumber(currentHp)
 		local percentText = format(PERCENT_FORMAT, percent)
-		return absorbText .. format("|cff%s%s|r", HEALTH_TEXT_COLOR, currentText) .. VERTICAL_SEPARATOR .. format("|cff%s%s|r", HEALTH_TEXT_COLOR, percentText)
+		return absorbText .. currentText .. VERTICAL_SEPARATOR .. percentText
 	end
 )
 
@@ -352,7 +351,7 @@ MHCT.registerTag(
 		end
 
 		local deficitText = format(DEFICIT_FORMAT, E:ShortValue(missing))
-		return format("|cff%s%s|r", HEALTH_TEXT_COLOR, deficitText)
+		return deficitText
 	end
 )
 
@@ -375,7 +374,7 @@ MHCT.registerTag(
 		end
 
 		local deficitText = format(DEFICIT_FORMAT, E:ShortValue(missing))
-		return format("|cff%s%s|r", HEALTH_TEXT_COLOR, deficitText)
+		return deficitText
 	end
 )
 
@@ -410,7 +409,7 @@ MHCT.registerTag(
 		local ok, deficit = pcall(function() return 100 - percent end)
 		if ok and deficit > 0 then
 			local deficitText = "-" .. formatPercentValue(deficit, decimals) .. "%"
-			return format("|cff%s%s|r", HEALTH_TEXT_COLOR, deficitText)
+			return deficitText
 		end
 		
 		-- At full health or secret: no deficit to show

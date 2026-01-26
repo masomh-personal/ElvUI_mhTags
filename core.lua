@@ -136,7 +136,6 @@ MHCT.TAG_CATEGORY_NAME = "|cff0388fcmh|r|cffccff33Tags|r"
 MHCT.MAX_PLAYER_LEVEL = MAX_PLAYER_LEVEL_VALUE
 MHCT.DEFAULT_ICON_SIZE = 14
 MHCT.ABSORB_TEXT_COLOR = "ccff33"
-MHCT.HEALTH_TEXT_COLOR = "ffffff"
 MHCT.DEFAULT_TEXT_LENGTH = 28
 MHCT.DEFAULT_DECIMAL_PLACE = 0
 
@@ -230,10 +229,10 @@ MHCT.GetHealthPercent = function(unit)
 	if not unit then
 		return nil, false
 	end
-	
+
 	local percent = nil
 	local isSecret = false
-	
+
 	-- Try CurveConstants.ScaleTo100 first (returns 0-100 directly)
 	if CURVE_SCALE_TO_100 then
 		local ok, pct = pcall(UnitHealthPercent, unit, false, CURVE_SCALE_TO_100)
@@ -242,7 +241,7 @@ MHCT.GetHealthPercent = function(unit)
 			isSecret = issecretvalue(pct)
 		end
 	end
-	
+
 	-- Fallback: standard UnitHealthPercent (0-1 range), convert to 0-100
 	if not percent then
 		local ok, pct = pcall(UnitHealthPercent, unit)
@@ -257,7 +256,7 @@ MHCT.GetHealthPercent = function(unit)
 			end
 		end
 	end
-	
+
 	return percent, isSecret
 end
 
@@ -268,15 +267,15 @@ MHCT.GetPowerPercent = function(unit, powerType)
 	if not unit then
 		return nil, false
 	end
-	
+
 	-- Get power type if not specified
 	if not powerType then
 		powerType = UnitPowerType(unit)
 	end
-	
+
 	local percent = nil
 	local isSecret = false
-	
+
 	-- Try CurveConstants.ScaleTo100 first (returns 0-100 directly)
 	if CURVE_SCALE_TO_100 then
 		local ok, pct = pcall(UnitPowerPercent, unit, powerType, false, CURVE_SCALE_TO_100)
@@ -285,7 +284,7 @@ MHCT.GetPowerPercent = function(unit, powerType)
 			isSecret = issecretvalue(pct)
 		end
 	end
-	
+
 	-- Fallback: standard UnitPowerPercent (0-1 range), convert to 0-100
 	if not percent then
 		local ok, pct = pcall(UnitPowerPercent, unit, powerType)
@@ -298,7 +297,7 @@ MHCT.GetPowerPercent = function(unit, powerType)
 			end
 		end
 	end
-	
+
 	return percent, isSecret
 end
 
@@ -328,12 +327,16 @@ MHCT.FormatPercent = function(percentValue, decimals, includeSign)
 	end
 	decimals = decimals or 0
 	-- Clamp to cached range
-	if decimals < 0 then decimals = 0 end
-	if decimals > 3 then decimals = 3 end
-	
+	if decimals < 0 then
+		decimals = 0
+	end
+	if decimals > 3 then
+		decimals = 3
+	end
+
 	local pattern = MHCT.PERCENT_FORMATS[decimals]
 	local result = format(pattern, percentValue)
-	
+
 	if includeSign == nil or includeSign then
 		return result .. "%"
 	end
@@ -398,12 +401,12 @@ end
 MHCT.getFormattedIcon = function(name, size, x, y)
 	local iconName = name or "default"
 	local defaultSize = MHCT.DEFAULT_ICON_SIZE
-	
+
 	-- Fast path: use cached icon for default size with no offset
 	if (not size or size == defaultSize) and (not x or x == 0) and (not y or y == 0) then
 		return CACHED_ICONS[iconName] or CACHED_ICONS["default"]
 	end
-	
+
 	-- Slow path: custom size or offset requires format()
 	local iconFormat = MHCT.iconTable[iconName] or MHCT.iconTable["default"]
 	return format(iconFormat, size or defaultSize, size or defaultSize, x or 0, y or 0)
