@@ -14,9 +14,13 @@ local MHCT = ns.MHCT
 -- Localize Lua functions
 local format = string.format
 local ipairs = ipairs
+local upper = string.upper
+local match = string.match
 
 -- Local constants
-local COLOR_SUBCATEGORY = "color"
+local COLOR_SUBCATEGORY = "colors"
+-- Sample text shown in tag descriptions; Aa123 + black square (U+25A0) for solid fill
+local COLOR_SAMPLE_TEXT = "Aa123 ■"
 
 -- ===================================================================================
 -- COLOR TABLE
@@ -40,7 +44,7 @@ local COLOR_TABLE = {
 	{ "pink", "FF69B4", "Pink" },
 	{ "lime", "32CD32", "Lime" },
 	{ "brown", "8B4513", "Brown" },
-	
+
 	-- WoW Class Colors
 	{ "deathknight", "C41F3B", "Death Knight class color" },
 	{ "demonhunter", "A330C9", "Demon Hunter class color" },
@@ -55,17 +59,7 @@ local COLOR_TABLE = {
 	{ "shaman", "0070DE", "Shaman class color" },
 	{ "warlock", "9482C9", "Warlock class color" },
 	{ "warrior", "C79C6E", "Warrior class color" },
-	
-	-- Item Quality Colors
-	{ "poor", "9D9D9D", "Poor quality (gray)" },
-	{ "common", "FFFFFF", "Common quality (white)" },
-	{ "uncommon", "1EFF00", "Uncommon quality (green)" },
-	{ "rare", "0070DD", "Rare quality (blue)" },
-	{ "epic", "A335EE", "Epic quality (purple)" },
-	{ "legendary", "FF8000", "Legendary quality (orange)" },
-	{ "artifact", "E6CC80", "Artifact quality (gold)" },
-	{ "heirloom", "E6CC80", "Heirloom quality (gold)" },
-	
+
 	-- Emerald Colors
 	{ "emerald-green", "50C878", "Emerald green" },
 	{ "emerald-red", "C85050", "Emerald red" },
@@ -73,6 +67,14 @@ local COLOR_TABLE = {
 	{ "emerald-yellow", "C8C850", "Emerald yellow" },
 	{ "emerald-cyan", "50C8C8", "Emerald cyan" },
 	{ "emerald-orange", "C87850", "Emerald orange" },
+
+	-- Pastel Colors
+	{ "pastel-green", "B0E0B0", "Pastel green" },
+	{ "pastel-red", "FFA0A0", "Pastel red" },
+	{ "pastel-blue", "A0C0E0", "Pastel blue" },
+	{ "pastel-yellow", "FFF8DC", "Pastel yellow" },
+	{ "pastel-cyan", "B0E0E0", "Pastel cyan" },
+	{ "pastel-orange", "FFC080", "Pastel orange" },
 }
 
 -- ===================================================================================
@@ -83,16 +85,63 @@ for _, colorData in ipairs(COLOR_TABLE) do
 	local tagName = colorData[1]
 	local hexColor = colorData[2]
 	local description = colorData[3]
-	
+
+	-- Build enhanced description with color sample and hex code
+	-- Format: [colored sample text] Color prefix: [description] (HEX: #[hex])
+	-- Use colored "Aa" as sample; works with any font and clearly shows the color
+	local enhancedDescription =
+		format("|cff%s%s|r Color prefix: %s (HEX: #%s)", hexColor, COLOR_SAMPLE_TEXT, description, hexColor)
+
 	-- Register the color tag
 	MHCT.registerTag(
 		"mh-color-" .. tagName,
 		COLOR_SUBCATEGORY,
-		"Color prefix: " .. description,
+		enhancedDescription,
 		"", -- No events needed - static color codes
 		function()
-			-- Return full color format string: |cffRRGGBB|r
-			return format("|cff%s|r", hexColor)
+			-- Return opening color code only (no |r) so it applies to following tags
+			-- User must add |r at the end of their tag string to close the color
+			return format("|cff%s", hexColor)
 		end
 	)
 end
+
+-- ===================================================================================
+-- CUSTOM HEX COLOR TAG
+-- Allows users to specify any hex color via tag arguments
+-- Usage: [mh-color-custom{FF5733}][tag]|r
+-- ===================================================================================
+
+-- Helper function to validate and normalize hex color
+local function validateHexColor(hex)
+	if not hex or hex == "" then
+		return nil
+	end
+
+	-- Remove # if present and convert to uppercase
+	hex = upper(hex:gsub("#", ""))
+
+	-- Validate: must be exactly 6 hex characters (0-9, A-F)
+	if match(hex, "^[0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F]$") then
+		return hex
+	end
+
+	return nil
+end
+
+-- Register custom hex color tag
+MHCT.registerTag(
+	"mh-color-custom",
+	COLOR_SUBCATEGORY,
+	"Color prefix: Custom hex color. Use {RRGGBB} for hex code (no #). Example: [mh-color-custom{FF5733}][tag]|r",
+	"", -- No events needed - static color codes
+	function(unit, _, args)
+		local hexColor = validateHexColor(args)
+		if hexColor then
+			-- Return opening color code only (no |r) so it applies to following tags
+			return format("|cff%s", hexColor)
+		end
+		-- Invalid hex color - return empty string (tag won't apply any color)
+		return ""
+	end
+)
