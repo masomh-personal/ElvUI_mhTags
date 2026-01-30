@@ -19,9 +19,6 @@ local tonumber = tonumber
 -- Localize WoW API functions
 local UnitName = UnitName
 local strupper = strupper
-local IsInRaid = IsInRaid
-local GetNumGroupMembers = GetNumGroupMembers
-local GetRaidRosterInfo = GetRaidRosterInfo
 local issecretvalue = issecretvalue
 
 -- Local constants
@@ -119,22 +116,7 @@ MHCT.registerTag(
 
 		local length = MHCT.parseDecimalArg(args, DEFAULT_TEXT_LENGTH)
 		local formatted = formatName(name, isSecret, length)
-
-		-- Only do raid group lookup if actually in a raid (and name is not secret)
-		if not IsInRaid() or isSecret then
-			return formatted
-		end
-
-		-- Find raid group number (simple iteration, only fires on roster/name changes)
-		local numMembers = GetNumGroupMembers()
-		for i = 1, numMembers do
-			local raidName, _, group = GetRaidRosterInfo(i)
-			if raidName == name then
-				return format("%s |cff00FFFF(%s)|r", formatted, group)
-			end
-		end
-
-		return formatted
+		return MHCT.appendRaidGroupToName(unit, formatted)
 	end
 )
 

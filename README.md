@@ -109,7 +109,7 @@
 
 - **300-500 KB** memory in 40-person raids
 - Pre-cached icon strings and format patterns
-- O(1) raid roster lookups
+- Raid group: O(raid size) scan, only on roster/name events (no per-frame cost)
 - Zero memory leaks
 - **WoW 12.0+**: Uses native `UnitHealthPercent()` and `UnitPowerPercent()` APIs directly
 - Pre-built classification text tables (created once at load)

@@ -41,6 +41,10 @@ local UnitEffectiveLevel = UnitEffectiveLevel
 local UnitClassification = UnitClassification
 local GetCreatureDifficultyColor = GetCreatureDifficultyColor
 local GetMaxPlayerLevel = GetMaxPlayerLevel
+local UnitName = UnitName
+local IsInRaid = IsInRaid
+local GetNumGroupMembers = GetNumGroupMembers
+local GetRaidRosterInfo = GetRaidRosterInfo
 
 -------------------------------------
 -- WOW 12.0+ API LOCALIZATION
@@ -557,6 +561,28 @@ MHCT.formatWithStatusCheck = function(unit)
 	end
 
 	return nil
+end
+
+-- Append raid group number to formatted name when in raid (e.g. "NAME" -> "NAME |cff00FFFF(3)|r")
+-- Shared by mh-name-caps-with-raid-group and mh-classification-name-level-raid-group
+MHCT.appendRaidGroupToName = function(unit, formattedName)
+	if not unit or not formattedName or formattedName == "" then
+		return formattedName or ""
+	end
+	local name = UnitName(unit)
+	if not name or issecretvalue(name) then
+		return formattedName
+	end
+	if not IsInRaid() then
+		return formattedName
+	end
+	for i = 1, GetNumGroupMembers() do
+		local raidName, _, group = GetRaidRosterInfo(i)
+		if raidName == name then
+			return format("%s |cff00FFFF(%s)|r", formattedName, group)
+		end
+	end
+	return formattedName
 end
 
 -------------------------------------
