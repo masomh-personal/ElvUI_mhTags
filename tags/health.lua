@@ -171,7 +171,7 @@ MHCT.registerTag(
 MHCT.registerTag(
 	"mh-health-percent",
 	HEALTH_SUBCATEGORY,
-	"Health percent with status check. Use {N} for decimals. Example: 85.2%",
+	"Health percent, status-aware. Use {N} for decimals (default 1). Example: [mh-health-percent{1}]",
 	EVENTS.HEALTH_STATUS,
 	function(unit, _, args)
 		if not unit then
@@ -200,7 +200,7 @@ MHCT.registerTag(
 MHCT.registerTag(
 	"mh-health-percent-nosign",
 	HEALTH_SUBCATEGORY,
-	"Health percent without % sign; status-aware. Use {N} for decimals. Example: 85.2",
+	"Health percent without % sign, status-aware. Use {N} for decimals (default 1). Example: [mh-health-percent-nosign{1}]",
 	EVENTS.HEALTH_STATUS,
 	function(unit, _, args)
 		if not unit then
@@ -234,7 +234,7 @@ MHCT.registerTag(
 MHCT.registerTag(
 	"mh-health-current-percent",
 	HEALTH_SUBCATEGORY,
-	"Current and percent. Example: 100k | 85%",
+	"Current health and percent. Example: 100k | 85%",
 	EVENTS.HEALTH_STATUS,
 	function(unit)
 		if not unit then
@@ -264,7 +264,7 @@ MHCT.registerTag(
 MHCT.registerTag(
 	"mh-health-percent-current",
 	HEALTH_SUBCATEGORY,
-	"Percent and current. Example: 85% | 100k",
+	"Percent and current health. Example: 85% | 100k",
 	EVENTS.HEALTH_STATUS,
 	function(unit)
 		if not unit then
@@ -383,7 +383,7 @@ MHCT.registerTag(
 MHCT.registerTag(
 	"mh-health-deficit-percent",
 	HEALTH_SUBCATEGORY,
-	"Missing health as percent with status. Use {N} for decimals. Example: -15%",
+	"Missing health as percent, status-aware. Use {N} for decimals (default 1). Example: [mh-health-deficit-percent{1}]",
 	EVENTS.HEALTH_STATUS,
 	function(unit, _, args)
 		if not unit then

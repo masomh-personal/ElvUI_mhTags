@@ -58,20 +58,20 @@ local COLOR_TABLE = {
 	{ "warrior", "C79C6E", "Warrior class color" },
 
 	-- Emerald Colors
-	{ "emerald-green", "50C878", "Emerald green" },
-	{ "emerald-red", "C85050", "Emerald red" },
-	{ "emerald-blue", "50A0C8", "Emerald blue" },
-	{ "emerald-yellow", "C8C850", "Emerald yellow" },
-	{ "emerald-cyan", "50C8C8", "Emerald cyan" },
-	{ "emerald-orange", "C87850", "Emerald orange" },
+	{ "emerald-green", "50C878", "Emerald: Green" },
+	{ "emerald-red", "C85050", "Emerald: Red" },
+	{ "emerald-blue", "50A0C8", "Emerald: Blue" },
+	{ "emerald-yellow", "C8C850", "Emerald: Yellow" },
+	{ "emerald-cyan", "50C8C8", "Emerald: Cyan" },
+	{ "emerald-orange", "C87850", "Emerald: Orange" },
 
 	-- Pastel Colors
-	{ "pastel-green", "B0E0B0", "Pastel green" },
-	{ "pastel-red", "FFA0A0", "Pastel red" },
-	{ "pastel-blue", "A0C0E0", "Pastel blue" },
-	{ "pastel-yellow", "FFF8DC", "Pastel yellow" },
-	{ "pastel-cyan", "B0E0E0", "Pastel cyan" },
-	{ "pastel-orange", "FFC080", "Pastel orange" },
+	{ "pastel-green", "B0E0B0", "Pastel: Green" },
+	{ "pastel-red", "FFA0A0", "Pastel: Red" },
+	{ "pastel-blue", "A0C0E0", "Pastel: Blue" },
+	{ "pastel-yellow", "FFF8DC", "Pastel: Yellow" },
+	{ "pastel-cyan", "B0E0E0", "Pastel: Cyan" },
+	{ "pastel-orange", "FFC080", "Pastel: Orange" },
 }
 
 -- ===================================================================================
@@ -128,7 +128,7 @@ end
 MHCT.registerTag(
 	"mh-color-custom",
 	COLOR_SUBCATEGORY,
-	"Color prefix: Custom hex color. Use {RRGGBB} for hex code (no #). Example: [mh-color-custom{FF5733}][tag]|r",
+	"Color prefix: Custom hex color. Use {RRGGBB} for hex code (no #). Example: [mh-color-custom{FF5733}][mh-health-current]|r Invalid or missing hex applies no color.",
 	"", -- No events needed - static color codes
 	function(unit, _, args)
 		local hexColor = validateHexColor(args)
