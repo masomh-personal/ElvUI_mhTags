@@ -52,9 +52,7 @@ local GetRaidRosterInfo = GetRaidRosterInfo
 -- These APIs are used directly without fallbacks
 -------------------------------------
 local UnitHealthPercent = UnitHealthPercent
-local UnitHealthMissing = UnitHealthMissing
 local UnitPowerPercent = UnitPowerPercent
-local UnitPowerMissing = UnitPowerMissing
 local issecretvalue = issecretvalue
 
 -- Export for tag files

@@ -13,7 +13,6 @@ local MHCT = ns.MHCT
 local E = MHCT.E
 
 -- Localize Lua functions
-local format = string.format
 local tonumber = tonumber
 
 -- Localize WoW API functions

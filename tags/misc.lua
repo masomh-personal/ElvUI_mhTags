@@ -9,9 +9,6 @@
 local _, ns = ...
 local MHCT = ns.MHCT
 
--- Get ElvUI references from core (shared to avoid duplicate unpacking)
-local E = MHCT.E
-
 -- Localize Lua functions
 local format = string.format
 
@@ -53,9 +50,6 @@ MHCT.registerTag(
 )
 
 -- Removed - direct formatting is simpler
-
--- Localize secret value check
-local issecretvalue = issecretvalue
 
 MHCT.registerTag(
 	"mh-absorb",
