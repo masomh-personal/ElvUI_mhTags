@@ -27,11 +27,16 @@ local function getFormattedName(unit, length)
 		return nil
 	end
 	local name = UnitName(unit)
-	if not name or name == "" then
+	if not name then
 		return nil
 	end
+	-- Check for secret value BEFORE doing any comparisons (WoW 12.0 group frames can return secrets)
 	if issecretvalue(name) then
 		return name
+	end
+	-- Safe to compare now (not a secret)
+	if name == "" then
+		return nil
 	end
 	return E:ShortenString(strupper(name), length or DEFAULT_TEXT_LENGTH)
 end
