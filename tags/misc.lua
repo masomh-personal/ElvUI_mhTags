@@ -115,9 +115,9 @@ end
 
 -- Then use this helper in both difficulty level tags
 MHCT.registerTag(
-	"mh-difficultycolor:level",
+	"mh-diff-level",
 	MISC_SUBCATEGORY,
-	"Traditional ElvUI difficulty color + level with more modern updates (will always show level)",
+	"Unit level colored by difficulty (gray/green/red). Always shows level.",
 	"UNIT_LEVEL PLAYER_LEVEL_UP",
 	function(unit)
 		if not unit then
@@ -128,9 +128,9 @@ MHCT.registerTag(
 )
 
 MHCT.registerTag(
-	"mh-difficultycolor:level-hide",
+	"mh-diff-level-hide",
 	MISC_SUBCATEGORY,
-	"Traditional ElvUI difficulty color + level with more modern updates (will always show level and only hide level when you reach max level and unit level is equal to player level)",
+	"Unit level colored by difficulty. Hides when you and the unit are both max level.",
 	"UNIT_LEVEL PLAYER_LEVEL_UP",
 	function(unit)
 		if not unit then

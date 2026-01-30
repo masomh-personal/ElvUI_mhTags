@@ -52,9 +52,9 @@ local CLASSIFICATION_FULL = {
 
 -- Dynamic size classification icon
 MHCT.registerTag(
-	"mh-classification:icon",
+	"mh-classification-icon",
 	CLASSIFICATION_SUBCATEGORY,
-	"Classification custom blp icons (elite, minibosses, bosses, rares, and rare elites)",
+	"Unit classification icon (Boss, Elite, Rare, etc.). Use {N} for icon size (default 14).",
 	"UNIT_CLASSIFICATION_CHANGED",
 	function(unit, _, args)
 		if not unit then return "" end
@@ -71,9 +71,9 @@ MHCT.registerTag(
 
 -- Fixed size classification icon
 MHCT.registerTag(
-	"mh-classification:icon-V2",
+	"mh-classification-icon-fixed",
 	CLASSIFICATION_SUBCATEGORY,
-	"Classification custom blp icons (elite, minibosses, bosses, rares, and rare elites) - NON Dynamic sizing",
+	"Unit classification icon at fixed size (no size argument).",
 	"UNIT_CLASSIFICATION_CHANGED",
 	function(unit)
 		if not unit then return "" end
@@ -93,9 +93,9 @@ MHCT.registerTag(
 
 -- Text-based classification with color coding (uses pre-built table)
 MHCT.registerTag(
-	"mh-classification:text",
+	"mh-classification-text",
 	CLASSIFICATION_SUBCATEGORY,
-	"Unit classification as color-coded text (Boss, Elite, Rare, etc.)",
+	"Unit classification as text in brackets (e.g. [Boss], [Elite], [Rare]).",
 	"UNIT_CLASSIFICATION_CHANGED",
 	function(unit)
 		if not unit then return "" end
@@ -106,9 +106,9 @@ MHCT.registerTag(
 
 -- Text-based classification with symbols (compact version, uses pre-built table)
 MHCT.registerTag(
-	"mh-classification:text-compact",
+	"mh-classification-symbols",
 	CLASSIFICATION_SUBCATEGORY,
-	"Unit classification as compact colored symbols (B, E, R, R+, E+)",
+	"Unit classification as single symbols (B, E, R, R+, E+).",
 	"UNIT_CLASSIFICATION_CHANGED",
 	function(unit)
 		if not unit then return "" end
@@ -119,9 +119,9 @@ MHCT.registerTag(
 
 -- Full descriptive classification without brackets (uses pre-built table)
 MHCT.registerTag(
-	"mh-classification:text-full",
+	"mh-classification-plain",
 	CLASSIFICATION_SUBCATEGORY,
-	"Full descriptive classification text without brackets",
+	"Unit classification as plain text without brackets (e.g. Boss, Elite, Rare).",
 	"UNIT_CLASSIFICATION_CHANGED",
 	function(unit)
 		if not unit then return "" end

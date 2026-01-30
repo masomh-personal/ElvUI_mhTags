@@ -26,8 +26,8 @@
 | `[mh-health-current-percent]`   | `100k \| 85%`  | Standard health display       |
 | `[mh-health-percent{0}]`        | `85%`          | Percent with status check     |
 | `[mh-health-deficit]`           | `-15k`         | Missing health (healer focus) |
-| `[mh-dynamic:name:caps{20}]`    | `PLAYERNAME`   | Uppercase name, max 20 chars  |
-| `[mh-classification:icon]`      | 🛡️             | Elite/Rare/Boss icon          |
+| `[mh-name-caps{20}]`            | `PLAYERNAME`   | Uppercase name, max 20 chars  |
+| `[mh-classification-icon]`     | 🛡️             | Elite/Rare/Boss icon          |
 | `[mh-status]`                   | `AFK` + icon   | Status indicator              |
 
 ## Complete Tag Reference (29 Tags)
@@ -53,29 +53,29 @@
 
 | Tag | Example Output | Description |
 |-----|----------------|-------------|
-| `[mh-dynamic:name:caps{N}]` | `PLAYERNAME` | Uppercase name, `{N}` = max chars (default 28) |
-| `[mh-dynamic:name:caps-statusicon{N}]` | `PLAYERNAME` + 💀 | Uppercase name with status icon |
-| `[mh-player:frame:name:caps-groupnumber{N}]` | `PLAYERNAME (5)` | Name with raid group number |
-| `[mh-name:caps:abbrev]` | `C.T. Dummy` | Abbreviated name (first letters + last word) |
-| `[mh-name:caps:abbrev-reverse]` | `Cleave T.D.` | Abbreviated (first word + last letters) |
-| `[mh-name-caps-abbrev-V2{N}]` | `C.T. Dummy` | Abbreviate only if name > N chars |
-| `[mh-name-caps-abbrev-reverse-V2{N}]` | `Cleave T.D.` | Abbreviate reverse if > N chars |
+| `[mh-name-caps{N}]` | `PLAYERNAME` | Uppercase name, `{N}` = max chars (default 28) |
+| `[mh-name-caps-or-status{N}]` | `PLAYERNAME` + 💀 | Status with icon when AFK/Dead/etc.; otherwise name in CAPS |
+| `[mh-name-caps-with-raid-group{N}]` | `PLAYERNAME (5)` | Name in CAPS; in raid, appends group number |
+| `[mh-name-abbrev]` | `C.T. Dummy` | Abbreviated name (first letters + last word) |
+| `[mh-name-abbrev-reverse]` | `Cleave T.D.` | Abbreviated (first word + last letters) |
+| `[mh-name-abbrev-if-long{N}]` | `C.T. Dummy` | Abbreviate only if name longer than N chars (default 25) |
+| `[mh-name-abbrev-if-long-reverse{N}]` | `Cleave T.D.` | Same as above, last word full |
 
 ### Classification Tags (5)
 
 | Tag | Example Output | Description |
 |-----|----------------|-------------|
-| `[mh-classification:icon]` | ⭐ | Custom icon for Elite/Rare/Boss (dynamic size) |
-| `[mh-classification:icon-V2]` | ⭐ | Same as above but fixed 14px size |
-| `[mh-classification:text]` | `[Elite]` | Colored text with brackets |
-| `[mh-classification:text-compact]` | `E` | Single letter (B/E/R/R+/E+) |
-| `[mh-classification:text-full]` | `Elite` | Full text without brackets |
+| `[mh-classification-icon{N}]` | ⭐ | Unit classification icon (Boss/Elite/Rare); `{N}` = icon size (default 14) |
+| `[mh-classification-icon-fixed]` | ⭐ | Same icon at fixed size (no size argument) |
+| `[mh-classification-text]` | `[Elite]` | Classification as text in brackets |
+| `[mh-classification-symbols]` | `E` | Single symbol (B/E/R/R+/E+) |
+| `[mh-classification-plain]` | `Elite` | Plain text without brackets |
 
 ### Power Tags (1)
 
 | Tag | Example Output | Description |
 |-----|----------------|-------------|
-| `[mh-power-percent{N}]` | `85` | Power percent (mana/energy/rage), `{N}` = decimals |
+| `[mh-power-percent{N}]` | `85` | Power percent (0–100); `{N}` = decimal places (default 0) |
 
 ### Misc Tags (6)
 
@@ -83,8 +83,8 @@
 |-----|----------------|-------------|
 | `[mh-smartlevel]` | `80` or `` | Shows level; hides if both player and unit are max |
 | `[mh-absorb]` | `(25k)` | Absorb shield amount in yellow |
-| `[mh-difficultycolor:level]` | `85` | Level with difficulty color (always shows) |
-| `[mh-difficultycolor:level-hide]` | `85` or `` | Level with color; hides at max level |
+| `[mh-diff-level]` | `85` | Level with difficulty color (always shows) |
+| `[mh-diff-level-hide]` | `85` or `` | Level with color; hides when you and unit both max |
 | `[mh-status]` | `AFK` + 🔴 | Status text with icon (AFK/DND/Dead/Ghost/Offline) |
 | `[mh-status-noicon]` | `AFK` | Status text only, no icon |
 
@@ -101,8 +101,8 @@
 ### Max Characters `{N}`
 
 ```
-[mh-dynamic:name:caps{15}]  → Max 15 characters
-[mh-dynamic:name:caps{25}]  → Max 25 characters
+[mh-name-caps{15}]  → Max 15 characters
+[mh-name-caps{25}]  → Max 25 characters
 ```
 
 ## Performance

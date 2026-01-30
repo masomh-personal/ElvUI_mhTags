@@ -66,9 +66,9 @@ end
 -- Removed - no need to cache empty string
 
 MHCT.registerTag(
-	"mh-dynamic:name:caps",
+	"mh-name-caps",
 	NAME_SUBCATEGORY,
-	"Shows unit name in all CAPS with a dynamic # of characters (dynamic number within {} of tag",
+	"Unit name in CAPS. Use {N} for max character length (default 28). Example: [mh-name-caps{20}]",
 	"UNIT_NAME_UPDATE",
 	function(unit, _, args)
 		local name, isSecret = getValidName(unit)
@@ -82,9 +82,9 @@ MHCT.registerTag(
 )
 
 MHCT.registerTag(
-	"mh-dynamic:name:caps-statusicon",
+	"mh-name-caps-or-status",
 	NAME_SUBCATEGORY,
-	"Shows unit name in all CAPS with a dynamic # of characters (dynamic number within {} of tag) - Example: [mh-dynamic:name:caps-statusicon{20}] will show name up to 20 characters",
+	"Shows status with icon when AFK, Dead, Offline, etc.; otherwise unit name in CAPS. Use {N} for max name length (default 28). Example: [mh-name-caps-or-status{20}]",
 	"UNIT_NAME_UPDATE UNIT_CONNECTION PLAYER_FLAGS_CHANGED UNIT_HEALTH INSTANCE_ENCOUNTER_ENGAGE_UNIT",
 	function(unit, _, args)
 		if not unit then
@@ -107,9 +107,9 @@ MHCT.registerTag(
 )
 
 MHCT.registerTag(
-	"mh-player:frame:name:caps-groupnumber",
+	"mh-name-caps-with-raid-group",
 	NAME_SUBCATEGORY,
-	"Shows unit name in all CAPS with a dynamic # of characters + unit group number if in raid (dynamic number within {} of tag)",
+	"Unit name in CAPS. In raid, appends raid group number (e.g. Name (3)). Use {N} for max name length (default 28). Example: [mh-name-caps-with-raid-group{20}]",
 	"UNIT_NAME_UPDATE GROUP_ROSTER_UPDATE",
 	function(unit, _, args)
 		local name, isSecret = getValidName(unit)
@@ -165,9 +165,9 @@ end
 
 -- Abbreviation tags using the helper
 MHCT.registerTag(
-	"mh-name:caps:abbrev",
+	"mh-name-abbrev",
 	NAME_SUBCATEGORY,
-	"Name abbreviation/shortener - Example: 'Cleave Training Dummy' => 'C.T. Dummy'",
+	"Abbreviated name in CAPS (e.g. Cleave Training Dummy → C.T. Dummy).",
 	"UNIT_NAME_UPDATE",
 	function(unit)
 		return formatAbbreviatedName(unit, false)
@@ -175,9 +175,9 @@ MHCT.registerTag(
 )
 
 MHCT.registerTag(
-	"mh-name:caps:abbrev-reverse",
+	"mh-name-abbrev-reverse",
 	NAME_SUBCATEGORY,
-	"Name abbreviation/shortener - Example: 'Cleave Training Dummy' => 'Cleave T.D.'",
+	"Abbreviated name with last word full (e.g. Cleave Training Dummy → Cleave T.D.).",
 	"UNIT_NAME_UPDATE",
 	function(unit)
 		return formatAbbreviatedName(unit, true)
@@ -185,9 +185,9 @@ MHCT.registerTag(
 )
 
 MHCT.registerTag(
-	"mh-name-caps-abbrev-V2",
+	"mh-name-abbrev-if-long",
 	NAME_SUBCATEGORY,
-	"Name abbreviation/shortener if greater than 25 characters - Example: 'Cleave Training Dummy' => 'C.T. Dummy'",
+	"Name in CAPS; abbreviates only if longer than {N} characters (default 25). Use {N} for length threshold. Example: [mh-name-abbrev-if-long{30}]",
 	"UNIT_NAME_UPDATE",
 	function(unit, _, nameLen)
 		return formatAbbreviatedName(unit, false, tonumber(nameLen) or 25)
@@ -195,9 +195,9 @@ MHCT.registerTag(
 )
 
 MHCT.registerTag(
-	"mh-name-caps-abbrev-reverse-V2",
+	"mh-name-abbrev-if-long-reverse",
 	NAME_SUBCATEGORY,
-	"Name abbreviation/shortener if greater than 25 characters - Example: 'Cleave Training Dummy' => 'Cleave T.D.'",
+	"Same as mh-name-abbrev-if-long but last word full. Use {N} for length threshold (default 25). Example: [mh-name-abbrev-if-long-reverse{30}]",
 	"UNIT_NAME_UPDATE",
 	function(unit, _, nameLen)
 		return formatAbbreviatedName(unit, true, tonumber(nameLen) or 25)

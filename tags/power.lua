@@ -65,7 +65,7 @@ end
 MHCT.registerTag(
 	"mh-power-percent",
 	POWER_SUBCATEGORY,
-	"Simple power percent, no percentage sign with dynamic number of decimals (dynamic number within {} of tag)",
+	"Power percent (0–100). Use {N} for decimal places (default 0). Example: [mh-power-percent{1}]",
 	"UNIT_DISPLAYPOWER UNIT_POWER_FREQUENT UNIT_MAXPOWER",
 	function(unit, _, args)
 		if not unit then
