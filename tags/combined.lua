@@ -14,6 +14,7 @@ local UnitName = UnitName
 local UnitEffectiveLevel = UnitEffectiveLevel
 local strupper = strupper
 local issecretvalue = issecretvalue
+local concat = table.concat
 
 local COMBINED_SUBCATEGORY = "combined"
 local DEFAULT_TEXT_LENGTH = MHCT.DEFAULT_TEXT_LENGTH
@@ -60,7 +61,15 @@ local function getClassificationNameLevel(unit, includeLevel, nameLength, includ
 		nameStr = MHCT.appendRaidGroupToName(unit, nameStr)
 	end
 
-	local result = iconStr .. nameStr
+	-- Build result using table (avoid repeated string concatenation)
+	local parts = {}
+	if iconStr ~= "" then
+		parts[#parts + 1] = iconStr
+	end
+	if nameStr ~= "" then
+		parts[#parts + 1] = nameStr
+	end
+
 	if includeLevel then
 		local unitLevel = UnitEffectiveLevel(unit)
 		-- Smart level: same logic as mh-smartlevel — hide when both player and unit are max level
@@ -74,11 +83,12 @@ local function getClassificationNameLevel(unit, includeLevel, nameLength, includ
 		if unitLevel then
 			local levelStr = MHCT.difficultyLevelFormatter(unit, unitLevel)
 			if levelStr and levelStr ~= "" then
-				result = result .. " " .. levelStr
+				parts[#parts + 1] = " "
+				parts[#parts + 1] = levelStr
 			end
 		end
 	end
-	return result
+	return concat(parts, "")
 end
 
 -- ===================================================================================

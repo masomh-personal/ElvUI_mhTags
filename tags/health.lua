@@ -97,6 +97,7 @@ local function getAbsorbText(unit)
 		return ""
 	end
 	
+	-- Use .. for concatenation (works with secret values, unlike table.concat)
 	return ABSORB_FORMAT_START .. result .. ABSORB_FORMAT_END
 end
 
