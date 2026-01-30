@@ -20,7 +20,6 @@ local strupper = strupper
 -- Local constants
 local MISC_SUBCATEGORY = "misc"
 local MAX_PLAYER_LEVEL = MHCT.MAX_PLAYER_LEVEL
-local ABSORB_TEXT_COLOR = MHCT.ABSORB_TEXT_COLOR
 
 -- ===================================================================================
 -- LEVEL TAGS
@@ -54,7 +53,7 @@ MHCT.registerTag(
 MHCT.registerTag(
 	"mh-absorb",
 	MISC_SUBCATEGORY,
-	"Simple absorb tag in parentheses (with yellow text color)",
+	"Absorb shield amount in parentheses. No color applied; use with color tags if desired. Example: [mh-color-yellow][mh-absorb]|r",
 	"UNIT_ABSORB_AMOUNT_CHANGED",
 	function(unit)
 		if not unit then
@@ -80,7 +79,7 @@ MHCT.registerTag(
 		-- Display the formatted value - may show (0) for secret zero values
 		local result = MHCT.FormatLargeNumber(absorbAmount)
 		if result then
-			return format("|cff%s(%s)|r", ABSORB_TEXT_COLOR, result)
+			return format("(%s)", result)
 		end
 
 		return ""

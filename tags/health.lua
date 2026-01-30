@@ -35,7 +35,6 @@ local SCALE_TO_100 = CurveConstants.ScaleTo100
 -- ===================================================================================
 
 local HEALTH_SUBCATEGORY = "health"
-local ABSORB_TEXT_COLOR = MHCT.ABSORB_TEXT_COLOR
 
 -- Common display constants
 local VERTICAL_SEPARATOR = " | "
@@ -43,8 +42,6 @@ local VERTICAL_SEPARATOR = " | "
 -- Pre-built common format strings to reduce concatenation
 local PERCENT_FORMAT = "%.1f%%"
 local DEFICIT_FORMAT = "-%s"
-local ABSORB_FORMAT_START = "|cff" .. ABSORB_TEXT_COLOR .. "("
-local ABSORB_FORMAT_END = ")|r "
 
 -- Event constant groups for clarity and maintainability
 local EVENTS = {
@@ -69,6 +66,7 @@ local SECRET_FALLBACK_TEXT = MHCT.SECRET_VALUE_FALLBACK_TEXT
 -- Format absorb shield if present, secret-safe.
 -- NOTE: Due to secret values, (0) may display when absorb is 0 and secret.
 -- All comparison/detection methods are blocked: numeric comparison, string comparison, string length.
+-- Returns plain text with parentheses; no color applied (user can use color tags if desired).
 local function getAbsorbText(unit)
 	if not unit then
 		return ""
@@ -97,8 +95,8 @@ local function getAbsorbText(unit)
 		return ""
 	end
 	
-	-- Use .. for concatenation (works with secret values, unlike table.concat)
-	return ABSORB_FORMAT_START .. result .. ABSORB_FORMAT_END
+	-- Return plain text with parentheses and trailing space (no color)
+	return "(" .. result .. ") "
 end
 
 -- Local format helper using shared PERCENT_FORMATS from core.lua
@@ -143,7 +141,7 @@ MHCT.registerTag(
 MHCT.registerTag(
 	"mh-health-current-absorb",
 	HEALTH_SUBCATEGORY,
-	"Current health with absorb shown first. Example: (25k) 100k",
+	"Current health with absorb shown first. No color applied to absorb; use color tags if desired. Example: (25k) 100k",
 	EVENTS.HEALTH_ABSORB,
 	function(unit)
 		if not unit then
@@ -295,7 +293,7 @@ MHCT.registerTag(
 MHCT.registerTag(
 	"mh-health-current-percent-absorb",
 	HEALTH_SUBCATEGORY,
-	"Absorb + current | percent. Example: (25k) 100k | 85%",
+	"Absorb + current | percent. No color applied to absorb; use color tags if desired. Example: (25k) 100k | 85%",
 	EVENTS.HEALTH_ABSORB_STATUS,
 	function(unit)
 		if not unit then

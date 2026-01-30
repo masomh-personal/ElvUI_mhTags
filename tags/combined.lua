@@ -57,7 +57,9 @@ local function getClassificationNameLevel(unit, includeLevel, nameLength, includ
 	local iconStr = (unitType and MHCT.ICON_MAP[unitType]) and MHCT.getFormattedIcon(MHCT.ICON_MAP[unitType], MHCT.DEFAULT_ICON_SIZE) or ""
 
 	local nameStr = getFormattedName(unit, nameLength or DEFAULT_TEXT_LENGTH) or ""
-	if includeRaidGroup and nameStr ~= "" then
+	-- Check for secret before comparing (PvP/targettarget can return secrets)
+	local nameIsSecret = issecretvalue(nameStr)
+	if includeRaidGroup and not nameIsSecret and nameStr ~= "" then
 		nameStr = MHCT.appendRaidGroupToName(unit, nameStr)
 	end
 
@@ -66,7 +68,8 @@ local function getClassificationNameLevel(unit, includeLevel, nameLength, includ
 	if iconStr ~= "" then
 		parts[#parts + 1] = iconStr
 	end
-	if nameStr ~= "" then
+	-- Add name if present (secrets can be added to table, just can't be compared)
+	if nameStr and (nameIsSecret or nameStr ~= "") then
 		parts[#parts + 1] = nameStr
 	end
 
