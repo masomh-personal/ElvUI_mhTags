@@ -14,13 +14,14 @@ local MHCT = ns.MHCT
 -- Localize Lua functions
 local format = string.format
 local ipairs = ipairs
+local unpack = unpack
 local upper = string.upper
 local match = string.match
 
 -- Local constants
 local COLOR_SUBCATEGORY = "colors"
 -- Sample text shown in tag descriptions; Aa123 + black square (U+25A0) for solid fill
-local COLOR_SAMPLE_TEXT = "Aa123 ■"
+local COLOR_SAMPLE_TEXT = "Aa123 ■■■"
 
 -- ===================================================================================
 -- COLOR TABLE
@@ -28,22 +29,18 @@ local COLOR_SAMPLE_TEXT = "Aa123 ■"
 -- ===================================================================================
 
 local COLOR_TABLE = {
-	-- Basic Colors
-	{ "red", "FF0000", "Red" },
-	{ "green", "00FF00", "Green" },
-	{ "blue", "0000FF", "Blue" },
-	{ "yellow", "FFFF00", "Yellow" },
-	{ "cyan", "00FFFF", "Cyan" },
-	{ "magenta", "FF00FF", "Magenta" },
-	{ "white", "FFFFFF", "White" },
-	{ "black", "000000", "Black" },
-	{ "gray", "808080", "Gray" },
-	{ "grey", "808080", "Grey (alias for gray)" },
-	{ "orange", "FF7F00", "Orange" },
-	{ "purple", "800080", "Purple" },
-	{ "pink", "FF69B4", "Pink" },
-	{ "lime", "32CD32", "Lime" },
-	{ "brown", "8B4513", "Brown" },
+	-- Basic Colors (duplicates of class colors removed: white=priest, yellow=rogue, orange=druid, pink=paladin)
+	{ "red", "FF0000", "Basic: Red" },
+	{ "green", "00FF00", "Basic: Green" },
+	{ "blue", "0000FF", "Basic: Blue" },
+	{ "cyan", "00FFFF", "Basic: Cyan" },
+	{ "magenta", "FF00FF", "Basic: Magenta" },
+	{ "black", "000000", "Basic: Black" },
+	{ "gray", "808080", "Basic: Gray" },
+	{ "grey", "808080", "Basic: Grey (alias for gray)" },
+	{ "purple", "800080", "Basic: Purple" },
+	{ "lime", "32CD32", "Basic: Lime" },
+	{ "brown", "8B4513", "Basic: Brown" },
 
 	-- WoW Class Colors
 	{ "deathknight", "C41F3B", "Death Knight class color" },
@@ -82,9 +79,7 @@ local COLOR_TABLE = {
 -- ===================================================================================
 
 for _, colorData in ipairs(COLOR_TABLE) do
-	local tagName = colorData[1]
-	local hexColor = colorData[2]
-	local description = colorData[3]
+	local tagName, hexColor, description = unpack(colorData)
 
 	-- Build enhanced description with color sample and hex code
 	-- Format: [colored sample text] Color prefix: [description] (HEX: #[hex])
