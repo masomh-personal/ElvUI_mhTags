@@ -14,7 +14,6 @@ local UnitName = UnitName
 local UnitEffectiveLevel = UnitEffectiveLevel
 local strupper = strupper
 local issecretvalue = issecretvalue
-local concat = table.concat
 
 local COMBINED_SUBCATEGORY = "combined"
 local DEFAULT_TEXT_LENGTH = MHCT.DEFAULT_TEXT_LENGTH
@@ -63,15 +62,8 @@ local function getClassificationNameLevel(unit, includeLevel, nameLength, includ
 		nameStr = MHCT.appendRaidGroupToName(unit, nameStr)
 	end
 
-	-- Build result using table (avoid repeated string concatenation)
-	local parts = {}
-	if iconStr ~= "" then
-		parts[#parts + 1] = iconStr
-	end
-	-- Add name if present (secrets can be added to table, just can't be compared)
-	if nameStr and (nameIsSecret or nameStr ~= "") then
-		parts[#parts + 1] = nameStr
-	end
+	-- Build result using .. (table.concat fails with secret values)
+	local result = iconStr .. nameStr
 
 	if includeLevel then
 		local unitLevel = UnitEffectiveLevel(unit)
@@ -86,12 +78,11 @@ local function getClassificationNameLevel(unit, includeLevel, nameLength, includ
 		if unitLevel then
 			local levelStr = MHCT.difficultyLevelFormatter(unit, unitLevel)
 			if levelStr and levelStr ~= "" then
-				parts[#parts + 1] = " "
-				parts[#parts + 1] = levelStr
+				result = result .. " " .. levelStr
 			end
 		end
 	end
-	return concat(parts, "")
+	return result
 end
 
 -- ===================================================================================
