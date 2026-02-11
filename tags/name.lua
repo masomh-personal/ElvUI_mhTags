@@ -32,12 +32,12 @@ local function getValidName(unit)
 		return nil, false
 	end
 	local name = UnitName(unit)
-	if not name then
-		return nil, false
-	end
 	-- Secret values can still be displayed by FontString, but can't be transformed
 	if issecretvalue(name) then
 		return name, true
+	end
+	if name == nil then
+		return nil, false
 	end
 	-- Non-secret: check if empty
 	if name == "" then
@@ -68,7 +68,7 @@ MHCT.registerTag(
 	"UNIT_NAME_UPDATE",
 	function(unit, _, args)
 		local name, isSecret = getValidName(unit)
-		if not name then
+		if name == nil then
 			return ""
 		end
 
@@ -93,7 +93,7 @@ MHCT.registerTag(
 		end
 
 		local name, isSecret = getValidName(unit)
-		if not name then
+		if name == nil then
 			return ""
 		end
 
@@ -109,7 +109,7 @@ MHCT.registerTag(
 	"UNIT_NAME_UPDATE GROUP_ROSTER_UPDATE",
 	function(unit, _, args)
 		local name, isSecret = getValidName(unit)
-		if not name then
+		if name == nil then
 			return ""
 		end
 
@@ -123,7 +123,7 @@ MHCT.registerTag(
 -- Helper function for name abbreviation with configurable parameters
 local function formatAbbreviatedName(unit, reverse, lengthThreshold)
 	local name, isSecret = getValidName(unit)
-	if not name then
+	if name == nil then
 		return ""
 	end
 

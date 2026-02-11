@@ -73,9 +73,8 @@ local function getAbsorbText(unit)
 	end
 
 	local absorbAmount = UnitGetTotalAbsorbs(unit)
-
-	-- Guard: Check for nil first
-	if not absorbAmount then
+	local absorbIsSecret = issecretvalue(absorbAmount)
+	if not absorbIsSecret and absorbAmount == nil then
 		return ""
 	end
 
@@ -90,8 +89,7 @@ local function getAbsorbText(unit)
 	-- If comparison failed (secret value), we cannot detect zero
 	-- Display the formatted value - may show (0) for secret zero values
 	local result = FormatLargeNumber(absorbAmount)
-	
-	if not result then
+	if result == nil then
 		return ""
 	end
 	
@@ -129,7 +127,7 @@ MHCT.registerTag(
 
 		-- Use secret-safe formatting
 		local currentText = FormatLargeNumber(currentHp)
-		if not currentText then
+		if currentText == nil then
 			return SECRET_FALLBACK_TEXT
 		end
 
@@ -153,7 +151,7 @@ MHCT.registerTag(
 
 		-- Use secret-safe formatting for current health
 		local currentText = FormatLargeNumber(currentHp)
-		if not currentText then
+		if currentText == nil then
 			return absorbText .. SECRET_FALLBACK_TEXT
 		end
 
@@ -184,7 +182,8 @@ MHCT.registerTag(
 
 		-- Get percent (0-100 range) - works even for secret values
 		local percent = UnitHealthPercent(unit, false, SCALE_TO_100)
-		if not percent then
+		local percentIsSecret = issecretvalue(percent)
+		if not percentIsSecret and percent == nil then
 			return SECRET_FALLBACK_TEXT
 		end
 
@@ -213,7 +212,8 @@ MHCT.registerTag(
 
 		-- Get percent (0-100 range) - works even for secret values
 		local percent = UnitHealthPercent(unit, false, SCALE_TO_100)
-		if not percent then
+		local percentIsSecret = issecretvalue(percent)
+		if not percentIsSecret and percent == nil then
 			return SECRET_FALLBACK_TEXT
 		end
 
@@ -247,8 +247,9 @@ MHCT.registerTag(
 
 		local currentHp = UnitHealth(unit)
 		local percent = UnitHealthPercent(unit, false, SCALE_TO_100)
+		local percentIsSecret = issecretvalue(percent)
 
-		if not percent then
+		if not percentIsSecret and percent == nil then
 			return SECRET_FALLBACK_TEXT
 		end
 
@@ -277,8 +278,9 @@ MHCT.registerTag(
 
 		local currentHp = UnitHealth(unit)
 		local percent = UnitHealthPercent(unit, false, SCALE_TO_100)
+		local percentIsSecret = issecretvalue(percent)
 
-		if not percent then
+		if not percentIsSecret and percent == nil then
 			return SECRET_FALLBACK_TEXT
 		end
 
@@ -308,8 +310,9 @@ MHCT.registerTag(
 		local currentHp = UnitHealth(unit)
 		local percent = UnitHealthPercent(unit, false, SCALE_TO_100)
 		local absorbText = getAbsorbText(unit)
+		local percentIsSecret = issecretvalue(percent)
 
-		if not percent then
+		if not percentIsSecret and percent == nil then
 			return absorbText .. SECRET_FALLBACK_TEXT
 		end
 
@@ -395,7 +398,8 @@ MHCT.registerTag(
 		end
 
 		local percent = UnitHealthPercent(unit, false, SCALE_TO_100)
-		if not percent then
+		local percentIsSecret = issecretvalue(percent)
+		if not percentIsSecret and percent == nil then
 			return ""
 		end
 

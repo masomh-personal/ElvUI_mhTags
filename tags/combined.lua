@@ -27,12 +27,12 @@ local function getFormattedName(unit, length)
 		return nil
 	end
 	local name = UnitName(unit)
-	if not name then
-		return nil
-	end
 	-- Check for secret value BEFORE doing any comparisons (WoW 12.0 group frames can return secrets)
 	if issecretvalue(name) then
 		return name
+	end
+	if name == nil then
+		return nil
 	end
 	-- Safe to compare now (not a secret)
 	if name == "" then
@@ -67,15 +67,20 @@ local function getClassificationNameLevel(unit, includeLevel, nameLength, includ
 
 	if includeLevel then
 		local unitLevel = UnitEffectiveLevel(unit)
+		local shouldShowLevel = unitLevel ~= nil
 		-- Smart level: same logic as mh-smartlevel — hide when both player and unit are max level
 		-- Guard: only compare when both levels are comparable (WoW 12.0 can return secret values)
-		if useSmartLevel and unitLevel and not issecretvalue(unitLevel) then
+		if useSmartLevel and unitLevel ~= nil and not issecretvalue(unitLevel) then
 			local playerLevel = UnitEffectiveLevel("player")
-			if playerLevel and not issecretvalue(playerLevel) and playerLevel == MAX_PLAYER_LEVEL and unitLevel == MAX_PLAYER_LEVEL then
-				unitLevel = nil
+			if playerLevel ~= nil
+				and not issecretvalue(playerLevel)
+				and playerLevel == MAX_PLAYER_LEVEL
+				and unitLevel == MAX_PLAYER_LEVEL
+			then
+				shouldShowLevel = false
 			end
 		end
-		if unitLevel then
+		if shouldShowLevel then
 			local levelStr = MHCT.difficultyLevelFormatter(unit, unitLevel)
 			if levelStr and levelStr ~= "" then
 				result = result .. " " .. levelStr

@@ -35,16 +35,19 @@ local function formatPowerPercent(unit, decimalPlaces, powerType)
 
 	-- Get percent (0-100 range) using secret-safe utility
 	local percent, isSecret = GetPowerPercent(unit, powerType)
-	
-	if not percent then
-		return ""
-	end
 
 	-- For secret values, we can still format using string.format
 	-- (CurveConstants.ScaleTo100 gives us 0-100 even for secrets)
 	if isSecret then
+		if percent == nil then
+			return ""
+		end
 		-- Basic format for secret values
 		return format("%.0f", percent)
+	end
+
+	if percent == nil then
+		return ""
 	end
 
 	-- Non-secret: use requested decimal places

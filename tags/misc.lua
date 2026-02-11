@@ -16,10 +16,20 @@ local format = string.format
 local UnitEffectiveLevel = UnitEffectiveLevel
 local UnitGetTotalAbsorbs = UnitGetTotalAbsorbs
 local strupper = strupper
+local issecretvalue = issecretvalue
 
 -- Local constants
 local MISC_SUBCATEGORY = "misc"
 local MAX_PLAYER_LEVEL = MHCT.MAX_PLAYER_LEVEL
+
+-- Check whether two level values can be safely compared.
+-- Secret values cannot be compared in WoW 12.x.
+local function canCompareLevels(levelA, levelB)
+	if issecretvalue(levelA) or issecretvalue(levelB) then
+		return false
+	end
+	return levelA ~= nil and levelB ~= nil
+end
 
 -- ===================================================================================
 -- LEVEL TAGS
@@ -39,7 +49,10 @@ MHCT.registerTag(
 		local playerLevel = UnitEffectiveLevel("player")
 
 		-- Optimize conditional logic - check if we need to show level at all
-		if playerLevel == MAX_PLAYER_LEVEL and unitLevel == MAX_PLAYER_LEVEL then
+		if canCompareLevels(playerLevel, unitLevel)
+			and playerLevel == MAX_PLAYER_LEVEL
+			and unitLevel == MAX_PLAYER_LEVEL
+		then
 			return ""
 		end
 
@@ -61,9 +74,10 @@ MHCT.registerTag(
 		end
 
 		local absorbAmount = UnitGetTotalAbsorbs(unit)
+		local absorbIsSecret = issecretvalue(absorbAmount)
 
-		-- Guard: Check for nil first
-		if not absorbAmount then
+		-- Guard: only nil means unavailable (secret values are still displayable)
+		if not absorbIsSecret and absorbAmount == nil then
 			return ""
 		end
 
@@ -78,7 +92,7 @@ MHCT.registerTag(
 		-- If comparison failed (secret value), we cannot detect zero
 		-- Display the formatted value - may show (0) for secret zero values
 		local result = MHCT.FormatLargeNumber(absorbAmount)
-		if result then
+		if result ~= nil then
 			return format("(%s)", result)
 		end
 
@@ -99,7 +113,11 @@ local function formatDifficultyLevel(unit, hideAtMax)
 	local playerLevel = UnitEffectiveLevel("player")
 
 	-- Check if we should hide the level
-	if hideAtMax and playerLevel == unitLevel and playerLevel == MAX_PLAYER_LEVEL then
+	if hideAtMax
+		and canCompareLevels(playerLevel, unitLevel)
+		and playerLevel == unitLevel
+		and playerLevel == MAX_PLAYER_LEVEL
+	then
 		return ""
 	end
 

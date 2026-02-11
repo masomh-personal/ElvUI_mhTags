@@ -219,6 +219,33 @@ MHCT.CACHED_ICONS = CACHED_ICONS
 -- Localize pcall for performance
 local pcall = pcall
 
+-- Safe boolean API call for WoW 12.x secret booleans.
+-- Returns: true, false, or "secret" (for secret/error/nil cases).
+local function getSafeBooleanState(apiFunc, unit)
+	if not apiFunc or not unit then
+		return "secret"
+	end
+
+	local ok, value = pcall(apiFunc, unit)
+	if not ok then
+		return "secret"
+	end
+
+	if issecretvalue(value) then
+		return "secret"
+	end
+
+	if value == nil then
+		return "secret"
+	end
+
+	if value == true then
+		return true
+	end
+
+	return false
+end
+
 -- Check if CurveConstants.ScaleTo100 is available (converts 0-1 to 0-100 range)
 local CURVE_SCALE_TO_100 = CurveConstants and CurveConstants.ScaleTo100 or nil
 MHCT.CURVE_SCALE_TO_100 = CURVE_SCALE_TO_100
@@ -233,27 +260,31 @@ MHCT.GetHealthPercent = function(unit)
 
 	local percent = nil
 	local isSecret = false
+	local hasPercent = false
 
 	-- Try CurveConstants.ScaleTo100 first (returns 0-100 directly)
 	if CURVE_SCALE_TO_100 then
 		local ok, pct = pcall(UnitHealthPercent, unit, false, CURVE_SCALE_TO_100)
-		if ok and pct then
+		if ok and issecretvalue(pct) then
 			percent = pct
-			isSecret = issecretvalue(pct)
+			isSecret = true
+			hasPercent = true
+		elseif ok and pct ~= nil then
+			percent = pct
+			hasPercent = true
 		end
 	end
 
 	-- Fallback: standard UnitHealthPercent (0-1 range), convert to 0-100
-	if not percent then
+	if not hasPercent then
 		local ok, pct = pcall(UnitHealthPercent, unit)
-		if ok and pct then
-			isSecret = issecretvalue(pct)
+		if ok and issecretvalue(pct) then
+			isSecret = true
+			percent = pct -- Will be 0-1, tag must handle this
+		elseif ok and pct ~= nil then
 			if not isSecret then
 				-- Can do arithmetic on non-secret values
 				percent = pct * 100
-			else
-				-- Secret value: try format trick (CurveConstants should have worked though)
-				percent = pct -- Will be 0-1, tag must handle this
 			end
 		end
 	end
@@ -276,25 +307,30 @@ MHCT.GetPowerPercent = function(unit, powerType)
 
 	local percent = nil
 	local isSecret = false
+	local hasPercent = false
 
 	-- Try CurveConstants.ScaleTo100 first (returns 0-100 directly)
 	if CURVE_SCALE_TO_100 then
 		local ok, pct = pcall(UnitPowerPercent, unit, powerType, false, CURVE_SCALE_TO_100)
-		if ok and pct then
+		if ok and issecretvalue(pct) then
 			percent = pct
-			isSecret = issecretvalue(pct)
+			isSecret = true
+			hasPercent = true
+		elseif ok and pct ~= nil then
+			percent = pct
+			hasPercent = true
 		end
 	end
 
 	-- Fallback: standard UnitPowerPercent (0-1 range), convert to 0-100
-	if not percent then
+	if not hasPercent then
 		local ok, pct = pcall(UnitPowerPercent, unit, powerType)
-		if ok and pct then
-			isSecret = issecretvalue(pct)
+		if ok and issecretvalue(pct) then
+			isSecret = true
+			percent = pct -- Will be 0-1, tag must handle this
+		elseif ok and pct ~= nil then
 			if not isSecret then
 				percent = pct * 100
-			else
-				percent = pct -- Will be 0-1, tag must handle this
 			end
 		end
 	end
@@ -305,7 +341,7 @@ end
 -- Format a number with K/M/B suffix, secret-safe
 -- Uses AbbreviateNumbers (Midnight) or AbbreviateLargeNumbers (legacy)
 MHCT.FormatLargeNumber = function(value)
-	if not value then
+	if value == nil then
 		return MHCT.SECRET_VALUE_FALLBACK_TEXT
 	end
 	-- Prefer AbbreviateNumbers (Midnight API) over AbbreviateLargeNumbers (legacy)
@@ -323,7 +359,7 @@ end
 -- Format percent value using cached patterns
 -- percentValue: 0-100 range, decimals: 0-3, includeSign: append %
 MHCT.FormatPercent = function(percentValue, decimals, includeSign)
-	if not percentValue then
+	if percentValue == nil then
 		return MHCT.SECRET_VALUE_FALLBACK_TEXT
 	end
 	decimals = decimals or 0
@@ -375,23 +411,12 @@ MHCT.statusCheck = function(unit)
 		return nil
 	end
 
-	-- Fast path: check connection first (most common case)
-	if not UnitIsConnected(unit) then
-		return L["Offline"]
-	end
-
-	-- Check death states (common in combat)
-	if UnitIsDead(unit) and not UnitIsFeignDeath(unit) then
+	-- Only override tags with status when unit is confirmed dead.
+	-- Any secret/unknown state should fall through so health still shows.
+	local deadState = getSafeBooleanState(UnitIsDead, unit)
+	local feignState = getSafeBooleanState(UnitIsFeignDeath, unit)
+	if deadState == true and feignState == false then
 		return L["Dead"]
-	elseif UnitIsGhost(unit) then
-		return L["Ghost"]
-	end
-
-	-- Check status flags (less common)
-	if UnitIsAFK(unit) then
-		return L["AFK"]
-	elseif UnitIsDND(unit) then
-		return L["DND"]
 	end
 
 	return nil
@@ -415,12 +440,19 @@ end
 
 -- Optimized unit classification for ElvUI V14.0
 MHCT.classificationType = function(unit)
-	if not unit or UnitIsPlayer(unit) then
+	if not unit then
+		return nil
+	end
+	local isPlayerState = getSafeBooleanState(UnitIsPlayer, unit)
+	if isPlayerState == true or isPlayerState == "secret" then
 		return nil
 	end
 
 	local unitLevel = UnitEffectiveLevel(unit)
 	local classification = UnitClassification(unit)
+	if issecretvalue(unitLevel) or issecretvalue(classification) or classification == nil then
+		return nil
+	end
 
 	-- Fast path for rare types
 	if classification == "rare" or classification == "rareelite" then
@@ -442,7 +474,10 @@ end
 
 -- Format difficulty level with colors and symbols - optimized
 MHCT.difficultyLevelFormatter = function(unit, unitLevel)
-	if not unit or not unitLevel then
+	if not unit then
+		return ""
+	end
+	if issecretvalue(unitLevel) or unitLevel == nil then
 		return ""
 	end
 
@@ -485,6 +520,14 @@ MHCT.statusFormatter = function(status, size, reverse)
 	local iconSize = size or MHCT.DEFAULT_ICON_SIZE
 	local iconName = STATUS_ICON_MAP[status]
 	local formattedStatus = FORMATTED_STATUS_CACHE[status] -- O(1) lookup, no strupper() or format()
+	if not formattedStatus then
+		formattedStatus = format("|cff%s%s|r", STATUS_COLOR, strupper(tostring(status)))
+	end
+
+	if not iconName then
+		return formattedStatus
+	end
+
 	local icon = MHCT.getFormattedIcon(iconName, iconSize)
 
 	if reverse then
@@ -563,11 +606,20 @@ end
 -- Append raid group number to formatted name when in raid (e.g. "NAME" -> "NAME |cff00FFFF(3)|r")
 -- Shared by mh-name-caps-with-raid-group and mh-classification-name-level-raid-group
 MHCT.appendRaidGroupToName = function(unit, formattedName)
-	if not unit or not formattedName or formattedName == "" then
+	if not unit then
+		return ""
+	end
+	if issecretvalue(formattedName) then
+		return formattedName
+	end
+	if formattedName == nil or formattedName == "" then
 		return formattedName or ""
 	end
 	local name = UnitName(unit)
-	if not name or issecretvalue(name) then
+	if issecretvalue(name) then
+		return formattedName
+	end
+	if name == nil then
 		return formattedName
 	end
 	if not IsInRaid() then
