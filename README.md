@@ -1,235 +1,187 @@
 # ElvUI_mhTags
 
 [![Version](https://img.shields.io/badge/Version-10-brightgreen)](https://github.com/masomh-personal/ElvUI_mhTags)
-[![ElvUI](https://img.shields.io/badge/Requires-ElvUI%2014.0+-blue)](https://www.tukui.org/download.php?ui=elvui)
-[![WoW](https://img.shields.io/badge/WoW-12.0.0%20Midnight+-orange)](https://worldofwarcraft.com)
-[![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
+[![ElvUI](https://img.shields.io/badge/Requires-ElvUI%2015.0+-blue)](https://www.tukui.org/download.php?ui=elvui)
+[![WoW](https://img.shields.io/badge/WoW-12.0.5%20Midnight+-orange)](https://worldofwarcraft.com)
+[![License](https://img.shields.io/badge/License-GPL--3.0-yellow)](LICENSE)
 
-**29 custom tags for ElvUI unit frames.** Lightweight, performant, and WoW 12.0 (Midnight) optimized.
+Custom ElvUI unit-frame tags for WoW Retail 12.0.5+ (Midnight).
 
-> **⚠️ Important**: This addon requires **WoW 12.0+ (Midnight)** and **ElvUI 14.0+**. Health gradient coloring has been removed due to Blizzard's secret value restrictions - see [WoW 12.0 Limitations](#wow-120-midnight-limitations) for details.
+ElvUI_mhTags adds 70 focused tags for health, power, names, classifications, levels, status text, combined nameplates, and reusable color prefixes. It is Retail-only and intentionally targets Midnight's addon API restrictions.
+
+> Important: WoW 12 introduced secret values for combat-sensitive data. This addon uses `UnitHealthPercent()`, `UnitPowerPercent()`, `UnitHealthMissing()`, `issecretvalue()`, and `CurveConstants.ScaleTo100` directly. Health-gradient tags were removed because secret values cannot be compared, used for arithmetic, or used as table keys.
+
+## Requirements
+
+- World of Warcraft Retail 12.0.5+ (Midnight)
+- ElvUI 15.0+
+- Retail addon folder: `World of Warcraft/_retail_/Interface/AddOns/ElvUI_mhTags`
 
 ## Installation
 
-1. Download from [CurseForge](https://www.curseforge.com/wow/addons/mh-custom-tags-elvui-plugin) or [GitHub](https://github.com/masomh-personal/ElvUI_mhTags/releases)
-2. Extract to `World of Warcraft/_retail_/Interface/AddOns/`
-3. `/reload` in-game
+1. Download from [CurseForge](https://www.curseforge.com/wow/addons/mh-custom-tags-elvui-plugin) or [GitHub Releases](https://github.com/masomh-personal/ElvUI_mhTags/releases).
+2. Extract the `ElvUI_mhTags` folder into `World of Warcraft/_retail_/Interface/AddOns/`.
+3. Restart WoW or run `/reload`.
+4. Open ElvUI with `/ec`, go to a unit frame, open Custom Texts, and browse the `mhTags` categories.
 
-## Getting Started
+## Popular Tags
 
-**Open ElvUI** → `/ec` → Any unit frame → **Custom Texts** → Browse **mhTags** categories
+- `[mh-health-current-percent]`: current health and percent, for example `100k | 85%`
+- `[mh-health-percent{0}]`: health percent with custom decimal places, for example `85%`
+- `[mh-health-deficit]`: missing health or status, for example `-15k` or `DEAD`
+- `[mh-name-caps{20}]`: uppercase name capped to 20 characters
+- `[mh-classification-icon]`: boss, elite, rare, and elite-plus icon
+- `[mh-classification-name-level{14}]`: classification icon, name, and colored level in one tag
+- `[mh-color-custom{FF5733}][mh-health-current]|r`: custom color prefix around another tag
+- `[mh-status]`: AFK, DND, Dead, Ghost, or Offline status with icon
 
-### Popular Tags
+## Tag Reference
 
-| Tag                             | Example        | Use For                       |
-| ------------------------------- | -------------- | ----------------------------- |
-| `[mh-health-current-percent]`   | `100k \| 85%`  | Standard health display       |
-| `[mh-health-percent{0}]`        | `85%`          | Percent with status check     |
-| `[mh-health-deficit]`           | `-15k`         | Missing health (healer focus) |
-| `[mh-name-caps{20}]`            | `PLAYERNAME`   | Uppercase name, max 20 chars  |
-| `[mh-classification-icon]`     | 🛡️             | Elite/Rare/Boss icon          |
-| `[mh-status]`                   | `AFK` + icon   | Status indicator              |
+### Health Tags
 
-## Complete Tag Reference (29 Tags)
+- `[mh-health-current]`: current health, formatted
+- `[mh-health-current-absorb]`: absorb shield plus current health
+- `[mh-health-percent{N}]`: health percent with status check, default 1 decimal
+- `[mh-health-percent-nosign{N}]`: health percent without `%`, default 1 decimal
+- `[mh-health-current-percent]`: current health then percent
+- `[mh-health-percent-current]`: percent then current health
+- `[mh-health-current-percent-absorb]`: absorb, current health, and percent
+- `[mh-health-deficit]`: missing health with status check
+- `[mh-health-deficit-nostatus]`: missing health only
+- `[mh-health-deficit-percent{N}]`: missing health percent, default 1 decimal
 
-### Health Tags (10)
+### Name Tags
 
-| Tag | Example Output | Description |
-|-----|----------------|-------------|
-| `[mh-health-current]` | `100k` | Current health formatted |
-| `[mh-health-current-absorb]` | `(25k) 100k` | Absorb shield + current health (may show `(0)` for secret zero absorbs) |
-| `[mh-health-percent{N}]` | `85.2%` | Health percent, `{N}` = decimals (default 1) |
-| `[mh-health-percent-nosign{N}]` | `85.2` | Health percent without % sign |
-| `[mh-health-current-percent]` | `100k \| 85%` | Current health and percent combined |
-| `[mh-health-percent-current]` | `85% \| 100k` | Percent and current (reversed order) |
-| `[mh-health-current-percent-absorb]` | `(25k) 100k \| 85%` | Absorb + current + percent (may show `(0)` for secret zero absorbs) |
-| `[mh-health-deficit]` | `-15k` or `DEAD` | Missing health with status check |
-| `[mh-health-deficit-nostatus]` | `-15k` | Missing health only (no status) |
-| `[mh-health-deficit-percent{N}]` | `-15%` | Missing health as percent |
+- `[mh-name-caps{N}]`: uppercase unit name, default 28 characters
+- `[mh-name-caps-or-status{N}]`: status when present, otherwise uppercase name
+- `[mh-name-caps-with-raid-group{N}]`: uppercase name plus raid group number
+- `[mh-name-abbrev]`: abbreviated uppercase name
+- `[mh-name-abbrev-reverse]`: reverse abbreviated uppercase name
+- `[mh-name-abbrev-if-long{N}]`: abbreviates only when longer than the threshold, default 25
+- `[mh-name-abbrev-if-long-reverse{N}]`: reverse abbreviation only when longer than the threshold
 
-> **⚠️ Removed in v10**: Colored/gradient health tags were removed due to WoW 12.0 secret value restrictions. See [WoW 12.0 Limitations](#wow-120-midnight-limitations).
+### Classification Tags
 
-### Name Tags (7)
+- `[mh-classification-icon{N}]`: classification icon with optional size
+- `[mh-classification-icon-fixed]`: classification icon at default size
+- `[mh-classification-text]`: colored bracketed classification text
+- `[mh-classification-symbols]`: compact classification symbol
+- `[mh-classification-plain]`: plain classification text
 
-| Tag | Example Output | Description |
-|-----|----------------|-------------|
-| `[mh-name-caps{N}]` | `PLAYERNAME` | Uppercase name, `{N}` = max chars (default 28) |
-| `[mh-name-caps-or-status{N}]` | `PLAYERNAME` + 💀 | Status with icon when AFK/Dead/etc.; otherwise name in CAPS |
-| `[mh-name-caps-with-raid-group{N}]` | `PLAYERNAME (5)` | Name in CAPS; in raid, appends group number |
-| `[mh-name-abbrev]` | `C.T. Dummy` | Abbreviated name (first letters + last word) |
-| `[mh-name-abbrev-reverse]` | `Cleave T.D.` | Abbreviated (first word + last letters) |
-| `[mh-name-abbrev-if-long{N}]` | `C.T. Dummy` | Abbreviate only if name longer than N chars (default 25) |
-| `[mh-name-abbrev-if-long-reverse{N}]` | `Cleave T.D.` | Same as above, last word full |
+### Combined Tags
 
-### Classification Tags (5)
+- `[mh-classification-name-level{N}]`: classification icon, uppercase name, and colored level
+- `[mh-classification-name-level-smart{N}]`: same as above, but hides max-level player/unit matches
+- `[mh-classification-name{N}]`: classification icon and uppercase name
+- `[mh-classification-name-level-raid-group{N}]`: classification icon, uppercase name, raid group, and level
 
-| Tag | Example Output | Description |
-|-----|----------------|-------------|
-| `[mh-classification-icon{N}]` | ⭐ | Unit classification icon (Boss/Elite/Rare); `{N}` = icon size (default 14) |
-| `[mh-classification-icon-fixed]` | ⭐ | Same icon at fixed size (no size argument) |
-| `[mh-classification-text]` | `[Elite]` | Classification as text in brackets |
-| `[mh-classification-symbols]` | `E` | Single symbol (B/E/R/R+/E+) |
-| `[mh-classification-plain]` | `Elite` | Plain text without brackets |
+### Power Tags
 
-### Power Tags (1)
+- `[mh-power-percent{N}]`: current power percent, default 0 decimals
 
-| Tag | Example Output | Description |
-|-----|----------------|-------------|
-| `[mh-power-percent{N}]` | `85` | Power percent (0–100); `{N}` = decimal places (default 0) |
+### Misc Tags
 
-### Misc Tags (6)
+- `[mh-smartlevel]`: level, hidden when both player and unit are max level
+- `[mh-absorb]`: absorb shield amount in parentheses
+- `[mh-diff-level]`: level colored by difficulty
+- `[mh-diff-level-hide]`: difficulty-colored level, hidden at max level
+- `[mh-status]`: status with icon
+- `[mh-status-noicon]`: status text only
 
-| Tag | Example Output | Description |
-|-----|----------------|-------------|
-| `[mh-smartlevel]` | `80` or `` | Shows level; hides if both player and unit are max |
-| `[mh-absorb]` | `(25k)` | Absorb shield amount in yellow |
-| `[mh-diff-level]` | `85` | Level with difficulty color (always shows) |
-| `[mh-diff-level-hide]` | `85` or `` | Level with color; hides when you and unit both max |
-| `[mh-status]` | `AFK` + 🔴 | Status text with icon (AFK/DND/Dead/Ghost/Offline) |
-| `[mh-status-noicon]` | `AFK` | Status text only, no icon |
+### Color Prefix Tags
 
-## Syntax Guide
+Color tags return an opening color code and are meant to wrap other tags. Always close them with `|r`.
 
-### Decimal Places `{N}`
+- Basic colors: `red`, `green`, `blue`, `cyan`, `magenta`, `black`, `gray`, `grey`, `purple`, `lime`, `brown`
+- Class colors: `deathknight`, `demonhunter`, `druid`, `evoker`, `hunter`, `mage`, `monk`, `paladin`, `priest`, `rogue`, `shaman`, `warlock`, `warrior`
+- Emerald palette: `emerald-green`, `emerald-red`, `emerald-blue`, `emerald-yellow`, `emerald-cyan`, `emerald-orange`
+- Pastel palette: `pastel-green`, `pastel-red`, `pastel-blue`, `pastel-yellow`, `pastel-cyan`, `pastel-orange`
+- Custom hex: `[mh-color-custom{RRGGBB}]`
 
-```
-[mh-health-percent{0}]     → 85%
-[mh-health-percent{1}]     → 85.3%
-[mh-health-percent{2}]     → 85.34%
+Example:
+
+```text
+[mh-color-pastel-green][mh-health-current-percent]|r
 ```
 
-### Max Characters `{N}`
+## Decimal and Length Arguments
 
+Decimal arguments are clamped to `0-3` decimal places.
+
+```text
+[mh-health-percent{0}]  -> 85%
+[mh-health-percent{1}]  -> 85.3%
+[mh-health-percent{2}]  -> 85.34%
+[mh-power-percent{0}]   -> 85
 ```
-[mh-name-caps{15}]  → Max 15 characters
-[mh-name-caps{25}]  → Max 25 characters
+
+Name and combined tags use `{N}` as a maximum character length.
+
+```text
+[mh-name-caps{15}]
+[mh-classification-name-level{18}]
 ```
 
-## Performance
+## Midnight Limitations
 
-- **300-500 KB** memory in 40-person raids
-- Pre-cached icon strings and format patterns
-- Raid group: O(raid size) scan, only on roster/name events (no per-frame cost)
-- Zero memory leaks
-- **WoW 12.0+**: Uses native `UnitHealthPercent()` and `UnitPowerPercent()` APIs directly
-- Pre-built classification text tables (created once at load)
-- Icon cache fast-path for default sizes
+Blizzard's secret value system can restrict health, power, unit state, and some nameplate information in competitive or protected contexts. Secret values can be displayed by approved formatting paths, but they cannot safely be transformed like normal Lua values.
 
-**Utility commands:**
+Blocked or unsafe operations include:
 
-| Command          | Description                              |
-| ---------------- | ---------------------------------------- |
-| `/mhtags`        | Display addon memory usage               |
-| `/mhtags debug`  | Show version info and WoW 12.0 notes |
-| `/mhtags help`   | List available commands                  |
+- Comparing secret values, for example `percent >= 50`
+- Arithmetic on secret values, for example `100 - percent`
+- Using secret values as table keys
+- Calling string manipulation methods on secret-derived strings
+- Converting secret-derived strings back through `tonumber()`
 
-## Compatibility
+Supported display paths used by this addon include:
 
-|           | Version                              |
-| --------- | ------------------------------------ |
-| **WoW**   | Retail 12.0.0+ (Midnight) **only**   |
-| **ElvUI** | 14.0+ required                       |
+- `UnitHealthPercent(unit, false, CurveConstants.ScaleTo100)`
+- `UnitPowerPercent(unit, powerType, false, CurveConstants.ScaleTo100)`
+- `UnitHealthMissing(unit)`
+- `AbbreviateNumbers(value)`
+- `string.format(pattern, value)`
+- `issecretvalue(value)` before unsafe operations
 
-### WoW 12.0 (Midnight) Limitations
+Known behavior:
 
-This addon is optimized exclusively for WoW 12.0 (Midnight) and later.
+- Health-gradient and hide-at-full tags are removed because they require comparisons or color lookups based on secret values.
+- Absorb tags may show `(0)` when a zero absorb is secret. The addon cannot compare or inspect the value to hide it safely.
+- Deficit percent is hidden when arithmetic is blocked by secret values.
+- Secret names are displayed as-is and are not uppercased, shortened, or abbreviated.
 
-#### What Changed in WoW 12.0
+## Slash Commands
 
-Blizzard introduced a **"secret value" system** to protect combat-sensitive data in competitive content. This affects:
-- **Nameplates** (enemy units)
-- **Rated PvP** (arena, RBGs)
-- **Competitive content** (Mythic+ leaderboards, etc.)
+- `/mhtags`: show addon memory usage
+- `/mhtags debug`: show addon, ElvUI, and target WoW version info
+- `/mhtags help`: list commands
 
-#### What Are Secret Values?
+## Release Process
 
-When health/power values are "secret," they carry a C-level taint that **cannot be removed by any Lua operation**. The taint propagates to all derived values.
+CurseForge project ID: `949599`.
 
-**Blocked Operations on Secret Values:**
+Before publishing:
 
-| Operation | Example | Result |
-|-----------|---------|--------|
-| Comparison | `percent >= 50` | ❌ Lua error |
-| Arithmetic | `percent * 100` | ❌ Lua error |
-| Table key | `colors[percent]` | ❌ Lua error |
-| `tonumber()` | `tonumber(format('%d', secret))` | ❌ Returns `nil` |
-| `string.byte()` | `string.byte(secretStr, 1)` | ❌ Lua error |
-| `string.len()` | `#secretStr` | ❌ Lua error |
-| `string.gsub()` | `secretStr:gsub(...)` | ❌ Lua error |
+- Update `ElvUI_mhTags.toc`, `core.lua`, `README.md`, and `CHANGELOG.md` to the release version.
+- Create a GitHub release tag such as `v10`.
+- Attach or publish the addon zip with the folder name `ElvUI_mhTags`.
+- Let the linked CurseForge project import/sync the GitHub release through the existing CurseForge setup.
 
-**Allowed Operations:**
+## Packaging Notes
 
-| Operation | Example | Result |
-|-----------|---------|--------|
-| `string.format()` | `format('%d', secret)` | ✅ Returns tainted string (display only) |
-| `issecretvalue()` | `issecretvalue(percent)` | ✅ Returns `true`/`false` |
-| `AbbreviateNumbers()` | `AbbreviateNumbers(health)` | ✅ Returns formatted string |
-| `string.concat()` | `string.concat(a, b, c)` | ✅ WoW 12.0 secret-safe concatenation |
-
-#### Impact on This Addon
-
-**Removed Features (v10):**
-- **All colored health tags** - Gradient coloring requires table lookups (`colors[floor(percent)]`) which are blocked
-- **Health color tag** (`mh-healthcolor`) - Cannot return dynamic color codes for secret values
-
-**Removed Tags (v10):**
-
-*Colored/Gradient Tags (9):*
-- `mh-health-current-percent-colored`
-- `mh-health-percent-current-colored`
-- `mh-health-current-percent-colored-status`
-- `mh-health-percent-current-colored-status`
-- `mh-health-current-colored`
-- `mh-health-percent-colored`
-- `mh-health-percent-colored-status`
-- `mh-health-percent-nosign-colored-status`
-- `mh-healthcolor`
-
-*"Hide at Full" Tags (2):*
-- `mh-health-current-percent-hidefull`
-- `mh-health-percent-current-hidefull`
-
-> These required comparing `percent >= 100` which is blocked for secret values.
-
-**What Still Works:**
-- All non-colored health tags display values correctly
-- Decimal formatting works (e.g., `{2}` for 2 decimal places)
-- `string.format()` displays percentages/numbers even for secret values
-- `AbbreviateNumbers()` formats large values (e.g., `2.5M`)
-- Status checks (AFK, Dead, Offline) work normally
-- Absorb shields display correctly (when present)
-
-**Known Limitations:**
-- **Absorb zero detection**: Tags with absorbs (e.g., `[mh-health-current-percent-absorb]`) may show `(0)` when absorb is zero and secret. All comparison methods are blocked: numeric comparison (`absorbAmount <= 0`), string comparison (`result == "0"`), and string length (`#result == 1`). **Workaround**: Use `[mh-absorb]` as a separate text element, or use non-absorb tags like `[mh-health-current-percent]` on frames where this occurs.
-
-**Fallback Behavior:**
-When health/power values are secret, tags display `---` (configurable via `MHCT.SECRET_VALUE_FALLBACK_TEXT`).
-
-#### Why Can't We Work Around This?
-
-We extensively tested multiple approaches:
-
-1. **String laundering** - Format to string, then `tonumber()` back → `tonumber()` blocked on tainted strings
-2. **Character extraction** - `string.byte()` each character → `string.byte()` blocked
-3. **Pattern matching** - `string:match()` → Pattern functions blocked
-4. **String key lookup** - `colors["85"]` with secret-derived key → Table indexing blocked
-
-The taint is applied at the **C/engine level before Lua**, making it impossible to circumvent through any Lua manipulation.
-
-#### Alternatives for Colored Health
-
-If you need health-based coloring, consider:
-- **Reaction-based colors** - Use `UnitReaction()` (not affected by secrets) for hostile/friendly coloring
-- **Class-based colors** - Use `UnitClass()` for class colors
-- **ElvUI's built-in health bars** - The bar itself can still show colors based on health %
-
-**Configurable fallback:** `MHCT.SECRET_VALUE_FALLBACK_TEXT` (default: `"---"`)
+- Package folder name: `ElvUI_mhTags`
+- CurseForge project ID: `949599`
+- Retail game flavor: `retail`
+- TOC interface: `120005`
+- Minimum ElvUI: `15.0`
+- License: GPL-3.0
+- Binary icon assets in `icons/` are required for status and classification texture tags.
 
 ## Support
 
 - [GitHub Issues](https://github.com/masomh-personal/ElvUI_mhTags/issues)
 - [CurseForge](https://www.curseforge.com/wow/addons/mh-custom-tags-elvui-plugin)
 
-**Bug reports:** Include WoW version, ElvUI version, error message, and steps to reproduce.
+Bug reports should include WoW version, ElvUI version, tag string, error message, and reproduction steps.
 
-**Created by mhDesigns** for the World of Warcraft community
+Created by mhDesigns for the World of Warcraft community.

@@ -2,17 +2,17 @@
 
 All notable changes to ElvUI_mhTags will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
+This project uses simple integer versions: 1, 2, 3, and so on.
 
 ---
 
-## [10.0] - January 23, 2026
+## [10] - April 25, 2026
 
 ### Breaking Changes
 
-- **WoW 12.0+ Only** - This addon now exclusively supports WoW 12.0 (Midnight) and later
-  - Pre-12.0 clients are no longer supported
+- **WoW 12.0.5+ Only** - This addon now exclusively supports WoW 12.0.5 (Midnight) and later
+  - Pre-12.0.5 clients are no longer supported
   - Removed all backwards compatibility fallback code
   - ElvUI 15.0+ is now required
 
@@ -32,21 +32,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `MHCT.GetPowerPercent(unit, powerType)` - Returns 0-100 percent, handles secret values via `CurveConstants.ScaleTo100`
   - `MHCT.FormatLargeNumber(value)` - Formats with K/M/B suffix using `AbbreviateNumbers()`, secret-safe
   - `MHCT.FormatPercent(value, decimals, includeSign)` - Formats percent string, secret-safe
-  - `MHCT.SafeCall(func, default, ...)` - Wraps function calls in pcall with default fallback
 
 - **Configurable Secret Value Fallback** - `MHCT.SECRET_VALUE_FALLBACK_TEXT` constant for customizing display when values are secret
 
 - **Enhanced Slash Commands**:
   - `/mhtags` - Shows memory usage (default)
-  - `/mhtags debug` - Shows version info and WoW 12.0 limitation notes
+  - `/mhtags debug` - Shows version info and WoW 12.0.5 target notes
   - `/mhtags help` - Shows available commands
 
 ### Changed
 
-- **Updated for WoW 12.0 (Midnight)** - Interface version bumped to 120000
+- **Updated for WoW 12.0.5 (Midnight)** - Interface version bumped to 120005
 
 - **Major Code Refactoring** - Simplified architecture for WoW 12.0+ only:
-  - Uses WoW 12.0 APIs directly: `UnitHealthPercent()`, `UnitHealthMissing()`, `UnitPowerPercent()`, `UnitPowerMissing()`
+  - Uses WoW 12.0 APIs directly: `UnitHealthPercent()`, `UnitHealthMissing()`, `UnitPowerPercent()`
   - Uses `issecretvalue()` directly in tag functions for secret value detection
   - Uses `CurveConstants.ScaleTo100` to get 0-100 range percentages directly from APIs
   - Uses `AbbreviateNumbers()` / `AbbreviateLargeNumbers()` for formatting (accepts secret values)
@@ -55,8 +54,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Modernized TOC metadata**:
   - Added `## Category: Unit Frames` for addon list categorization (WoW 11.1.0+)
   - Added `## Group: ElvUI` for addon grouping in list
-  - Added `## X-License: MIT`
+  - Added `## X-Curse-Project-ID: 949599`
+  - Added `## X-License: GPL-3.0`
   - Added `## X-Localizations: enUS`
+  - Added `## X-Flavor: Retail`
+  - Updated `## X-Min-ElvUI` to 15.0
+  - Updated `## X-WoW-Version` to 12.0.5
+
+- **Release Documentation Updated**:
+  - Reworked the README for CurseForge readiness, complete tag coverage, Midnight API limitations, and the existing manual GitHub release flow
+
+- **Status Tags Fixed**:
+  - Restored AFK, DND, Ghost, and Offline handling for status tags
+  - Replaced slash-command `:trim()` usage with WoW's `strtrim()` helper
+
+- **Argument Handling Hardened**:
+  - Clamped health and power decimal tag arguments to the supported `0-3` range
+  - Routed health percent tags through the shared `MHCT.GetHealthPercent()` helper for consistent secret-value handling
+  - Localized `UnitPowerType`, `pairs`, and `pcall` usage in hot paths
 
 - **Health Tags Updated for Secret Values** - Non-colored tags properly handle secrets:
   - `[mh-health-current]` - Shows formatted HP or fallback text
@@ -64,8 +79,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `[mh-health-percent]` - Shows percent or fallback for secrets
   - `[mh-health-current-percent]` - Shows current | percent
   - `[mh-health-percent-current]` - Shows percent | current
-  - `[mh-health-current-percent-hidefull]` - Hides percent at full health
-  - `[mh-health-percent-current-hidefull]` - Hides percent at full health
   - `[mh-health-current-percent-absorb]` - Includes absorb with secret handling
   - `[mh-health-deficit]` - Shows missing HP or empty for secrets
 
