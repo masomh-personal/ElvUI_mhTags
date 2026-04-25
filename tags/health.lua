@@ -1,9 +1,13 @@
 -- ===================================================================================
--- UNIFIED HEALTH TAGS - Optimized and Consolidated
+-- UNIFIED HEALTH TAGS - WoW 12.0+ (Midnight)
 -- ===================================================================================
 -- This file contains all health-related tags for ElvUI_mhTags
--- Tags are organized by category and follow DRY principles
--- All tags are performance-optimized with minimal memory allocation
+-- Requires WoW 12.0+ - uses native UnitHealthPercent/UnitHealthMissing APIs
+--
+-- Secret Value Handling:
+-- In rated PvP and competitive content, health values may be "secret" and cannot
+-- be compared or used in arithmetic. We use issecretvalue() to detect this and
+-- fall back to displaying raw health values with a neutral color.
 -- ===================================================================================
 
 local _, ns = ...
@@ -14,33 +18,26 @@ local E = MHCT.E
 
 -- Localize Lua functions
 local format = string.format
-local floor = math.floor
-local tonumber = tonumber
+local pcall = pcall
 
--- Localize WoW API functions
-local UnitHealthMax = UnitHealthMax
+-- Localize WoW 12.0+ API functions (required - no fallbacks)
 local UnitHealth = UnitHealth
+local UnitHealthMissing = UnitHealthMissing
 local UnitGetTotalAbsorbs = UnitGetTotalAbsorbs
+local issecretvalue = issecretvalue
 
 -- ===================================================================================
 -- CONSTANTS
 -- ===================================================================================
 
 local HEALTH_SUBCATEGORY = "health"
-local ABSORB_TEXT_COLOR = MHCT.ABSORB_TEXT_COLOR
-local HEALTH_GRADIENT_RGB_TABLE = MHCT.HEALTH_GRADIENT_RGB
 
--- Common color constants
-local WHITE_COLOR = "|cffFFFFFF"
-local DEAD_OR_DC_COLOR = "|cffD6BFA6"
-local COLOR_END = "|r"
+-- Common display constants
 local VERTICAL_SEPARATOR = " | "
 
 -- Pre-built common format strings to reduce concatenation
 local PERCENT_FORMAT = "%.1f%%"
 local DEFICIT_FORMAT = "-%s"
-local ABSORB_FORMAT_START = "|cff" .. ABSORB_TEXT_COLOR .. "("
-local ABSORB_FORMAT_END = ")|r "
 
 -- Event constant groups for clarity and maintainability
 local EVENTS = {
@@ -52,74 +49,65 @@ local EVENTS = {
 
 -- ===================================================================================
 -- SHARED HELPER FUNCTIONS
+-- Uses utility functions from core.lua for DRY secret-safe operations
 -- ===================================================================================
 
--- Fast lookup for common percent formats; falls back to dynamic format
-local PERCENT_FORMATS = {
-	[0] = "%.0f",
-	[1] = "%.1f",
-	[2] = "%.2f",
-	[3] = "%.3f",
-}
+-- Localize core utility functions for performance
+local FormatLargeNumber = MHCT.FormatLargeNumber
+local PERCENT_FORMATS = MHCT.PERCENT_FORMATS
+local GetHealthPercent = MHCT.GetHealthPercent
 
-local function formatPercent(value, decimals)
-	local fmt = PERCENT_FORMATS[decimals]
-	if fmt then
-		return format(fmt, value)
-	end
-	return format("%." .. decimals .. "f", value)
-end
+-- Fallback text for secret values
+local SECRET_FALLBACK_TEXT = MHCT.SECRET_VALUE_FALLBACK_TEXT
 
--- Get health values and calculate percentage
-local function getHealthData(unit)
-	local maxHp = UnitHealthMax(unit)
-	local currentHp = UnitHealth(unit)
-
-	-- Handle nil values (invalid unit) or zero max health
-	if not maxHp or not currentHp or maxHp == 0 then
-		return 0, 0, 0
-	end
-
-	local percent = (currentHp / maxHp) * 100
-	return currentHp, maxHp, percent
-end
-
--- Format absorb shield if present
--- Optimized to use pre-built format strings
+-- Format absorb shield if present, secret-safe.
+-- NOTE: Due to secret values, (0) may display when absorb is 0 and secret.
+-- All comparison/detection methods are blocked: numeric comparison, string comparison, string length.
+-- Returns plain text with parentheses; no color applied (user can use color tags if desired).
 local function getAbsorbText(unit)
 	if not unit then
 		return ""
 	end
 
 	local absorbAmount = UnitGetTotalAbsorbs(unit)
-
-	-- Guard: Must be a valid positive number
-	if not absorbAmount or type(absorbAmount) ~= "number" or absorbAmount <= 0 then
+	local absorbIsSecret = issecretvalue(absorbAmount)
+	if not absorbIsSecret and absorbAmount == nil then
 		return ""
 	end
 
-	-- Use ElvUI's ShortValue (wrap in pcall for safety)
-	local success, result = pcall(function()
-		return E:ShortValue(absorbAmount)
-	end)
-	if success and result then
-		return ABSORB_FORMAT_START .. result .. ABSORB_FORMAT_END
+	-- Try to check if absorb is zero/negative (works for non-secret values only)
+	local ok, isZeroOrNegative = pcall(function() return absorbAmount <= 0 end)
+	
+	-- If comparison succeeded and absorb is zero/negative, hide it
+	if ok and isZeroOrNegative then
+		return ""
 	end
-
-	return ""
+	
+	-- If comparison failed (secret value), we cannot detect zero
+	-- Display the formatted value - may show (0) for secret zero values
+	local result = FormatLargeNumber(absorbAmount)
+	if result == nil then
+		return ""
+	end
+	
+	-- Return plain text with parentheses and trailing space (no color)
+	return "(" .. result .. ") "
 end
 
--- Get gradient color based on health percentage
--- Optimized with fast paths for common cases
-local function getGradientColor(percent)
-	-- Fast path: dead or zero health
-	if percent <= 0 then
-		return HEALTH_GRADIENT_RGB_TABLE[0] or DEAD_OR_DC_COLOR
+-- Local format helper using shared PERCENT_FORMATS from core.lua
+local function formatPercentValue(value, decimals)
+	if decimals < 0 then
+		decimals = 0
+	elseif decimals > 3 then
+		decimals = 3
 	end
 
-	-- Standard lookup for everything else
-	local index = floor(percent)
-	return HEALTH_GRADIENT_RGB_TABLE[index] or WHITE_COLOR
+	local fmt = PERCENT_FORMATS[decimals]
+	if fmt then
+		return format(fmt, value)
+	end
+	-- Fallback for out-of-range decimals (shouldn't happen)
+	return format("%.0f", value)
 end
 
 -- ===================================================================================
@@ -127,21 +115,26 @@ end
 -- ===================================================================================
 -- These tags show current health value with various formatting options
 
--- Current health value only (uses ElvUI's smart formatting)
+-- Current health value only (uses secret-safe formatting)
 MHCT.registerTag(
 	"mh-health-current",
 	HEALTH_SUBCATEGORY,
-	"Current health using ElvUI formatting. Example: 100k",
+	"Current health formatted. Example: 100k",
 	EVENTS.HEALTH_ONLY,
 	function(unit)
 		if not unit then
 			return ""
 		end
-		local currentHp, maxHp = getHealthData(unit)
-		if maxHp == 0 then
-			return ""
+		
+		local currentHp = UnitHealth(unit)
+
+		-- Use secret-safe formatting
+		local currentText = FormatLargeNumber(currentHp)
+		if currentText == nil then
+			return SECRET_FALLBACK_TEXT
 		end
-		return E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
+
+		return currentText
 	end
 )
 
@@ -149,15 +142,23 @@ MHCT.registerTag(
 MHCT.registerTag(
 	"mh-health-current-absorb",
 	HEALTH_SUBCATEGORY,
-	"Current health with absorb shown first. Example: (25k) 100k",
+	"Current health with absorb shown first. No color applied to absorb; use color tags if desired. Example: (25k) 100k",
 	EVENTS.HEALTH_ABSORB,
 	function(unit)
 		if not unit then
 			return ""
 		end
-		local currentHp, maxHp = getHealthData(unit)
+		
+		local currentHp = UnitHealth(unit)
 		local absorbText = getAbsorbText(unit)
-		return absorbText .. E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
+
+		-- Use secret-safe formatting for current health
+		local currentText = FormatLargeNumber(currentHp)
+		if currentText == nil then
+			return absorbText .. SECRET_FALLBACK_TEXT
+		end
+
+		return absorbText .. currentText
 	end
 )
 
@@ -170,7 +171,7 @@ MHCT.registerTag(
 MHCT.registerTag(
 	"mh-health-percent",
 	HEALTH_SUBCATEGORY,
-	"Health percent with status check. Use {N} for decimals. Example: 85.2%",
+	"Health percent, status-aware. Use {N} for decimals (default 1). Example: [mh-health-percent{1}]",
 	EVENTS.HEALTH_STATUS,
 	function(unit, _, args)
 		if not unit then
@@ -182,15 +183,16 @@ MHCT.registerTag(
 			return statusFormatted
 		end
 
-		local currentHp, maxHp, percent = getHealthData(unit)
-
-		-- Show max health value at full
-		if currentHp == maxHp then
-			return E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
+		-- Get percent (0-100 range) - works even for secret values
+		local percent, percentIsSecret = GetHealthPercent(unit)
+		if not percentIsSecret and percent == nil then
+			return SECRET_FALLBACK_TEXT
 		end
 
+		-- Format with requested decimals - string.format works on secret values
 		local decimals = MHCT.parseDecimalArg(args, 1)
-		return formatPercent(percent, decimals) .. "%"
+		local percentText = formatPercentValue(percent, decimals) .. "%"
+		return percentText
 	end
 )
 
@@ -198,7 +200,7 @@ MHCT.registerTag(
 MHCT.registerTag(
 	"mh-health-percent-nosign",
 	HEALTH_SUBCATEGORY,
-	"Health percent without % sign; status-aware. Use {N} for decimals. Example: 85.2",
+	"Health percent without % sign, status-aware. Use {N} for decimals (default 1). Example: [mh-health-percent-nosign{1}]",
 	EVENTS.HEALTH_STATUS,
 	function(unit, _, args)
 		if not unit then
@@ -210,15 +212,16 @@ MHCT.registerTag(
 			return statusFormatted
 		end
 
-		local currentHp, maxHp, percent = getHealthData(unit)
-
-		-- Show max health value at full
-		if currentHp == maxHp then
-			return E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
+		-- Get percent (0-100 range) - works even for secret values
+		local percent, percentIsSecret = GetHealthPercent(unit)
+		if not percentIsSecret and percent == nil then
+			return SECRET_FALLBACK_TEXT
 		end
 
+		-- Format with requested decimals - string.format works on secret values
 		local decimals = MHCT.parseDecimalArg(args, 1)
-		return formatPercent(percent, decimals)
+		local percentText = formatPercentValue(percent, decimals)
+		return percentText
 	end
 )
 
@@ -227,11 +230,11 @@ MHCT.registerTag(
 -- ===================================================================================
 -- Tags that show both current health and percentage in various formats
 
--- Current | Percent (shows both always)
+-- Current | Percent (always shows both)
 MHCT.registerTag(
 	"mh-health-current-percent",
 	HEALTH_SUBCATEGORY,
-	"Current and percent. Example: 100k | 85%",
+	"Current health and percent. Example: 100k | 85%",
 	EVENTS.HEALTH_STATUS,
 	function(unit)
 		if not unit then
@@ -243,19 +246,25 @@ MHCT.registerTag(
 			return statusFormatted
 		end
 
-		local currentHp, maxHp, percent = getHealthData(unit)
-		local currentText = E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
-		local percentText = format(PERCENT_FORMAT, percent)
+		local currentHp = UnitHealth(unit)
+		local percent, percentIsSecret = GetHealthPercent(unit)
 
+		if not percentIsSecret and percent == nil then
+			return SECRET_FALLBACK_TEXT
+		end
+
+		-- Use secret-safe formatting for both values
+		local currentText = FormatLargeNumber(currentHp)
+		local percentText = format(PERCENT_FORMAT, percent)
 		return currentText .. VERTICAL_SEPARATOR .. percentText
 	end
 )
 
--- Percent | Current (shows both always)
+-- Percent | Current (always shows both)
 MHCT.registerTag(
 	"mh-health-percent-current",
 	HEALTH_SUBCATEGORY,
-	"Percent and current. Example: 85% | 100k",
+	"Percent and current health. Example: 85% | 100k",
 	EVENTS.HEALTH_STATUS,
 	function(unit)
 		if not unit then
@@ -267,76 +276,26 @@ MHCT.registerTag(
 			return statusFormatted
 		end
 
-		local currentHp, maxHp, percent = getHealthData(unit)
-		local currentText = E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
-		local percentText = format(PERCENT_FORMAT, percent)
+		local currentHp = UnitHealth(unit)
+		local percent, percentIsSecret = GetHealthPercent(unit)
 
-		return percentText .. VERTICAL_SEPARATOR .. currentText
-	end
-)
-
--- Current | Percent (hides percent at full health)
-MHCT.registerTag(
-	"mh-health-current-percent-hidefull",
-	HEALTH_SUBCATEGORY,
-	"Current | percent; hides percent at full. Example: 100k | 85%",
-	EVENTS.HEALTH_STATUS,
-	function(unit)
-		if not unit then
-			return ""
+		if not percentIsSecret and percent == nil then
+			return SECRET_FALLBACK_TEXT
 		end
 
-		local statusFormatted = MHCT.formatWithStatusCheck(unit)
-		if statusFormatted then
-			return statusFormatted
-		end
-
-		local currentHp, maxHp, percent = getHealthData(unit)
-		local currentText = E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
-
-		if currentHp == maxHp then
-			return currentText
-		end
-
-		local percentText = format(PERCENT_FORMAT, percent)
-		return currentText .. VERTICAL_SEPARATOR .. percentText
-	end
-)
-
--- Percent | Current (hides percent at full health)
-MHCT.registerTag(
-	"mh-health-percent-current-hidefull",
-	HEALTH_SUBCATEGORY,
-	"Percent | current; hides percent at full. Example: 85% | 100k",
-	EVENTS.HEALTH_STATUS,
-	function(unit)
-		if not unit then
-			return ""
-		end
-
-		local statusFormatted = MHCT.formatWithStatusCheck(unit)
-		if statusFormatted then
-			return statusFormatted
-		end
-
-		local currentHp, maxHp, percent = getHealthData(unit)
-		local currentText = E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
-
-		if currentHp == maxHp then
-			return currentText
-		end
-
+		-- Use secret-safe formatting for both values
+		local currentText = FormatLargeNumber(currentHp)
 		local percentText = format(PERCENT_FORMAT, percent)
 		return percentText .. VERTICAL_SEPARATOR .. currentText
 	end
 )
 
--- Current | Percent with absorb shield
+-- Current | Percent with absorb shield (always shows both)
 MHCT.registerTag(
 	"mh-health-current-percent-absorb",
 	HEALTH_SUBCATEGORY,
-	"Absorb + current | percent. Example: (25k) 100k | 85%",
-	"UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED UNIT_ABSORB_AMOUNT_CHANGED",
+	"Absorb + current | percent. No color applied to absorb; use color tags if desired. Example: (25k) 100k | 85%",
+	EVENTS.HEALTH_ABSORB_STATUS,
 	function(unit)
 		if not unit then
 			return ""
@@ -347,14 +306,16 @@ MHCT.registerTag(
 			return statusFormatted
 		end
 
-		local currentHp, maxHp, percent = getHealthData(unit)
-		local currentText = E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
+		local currentHp = UnitHealth(unit)
+		local percent, percentIsSecret = GetHealthPercent(unit)
 		local absorbText = getAbsorbText(unit)
 
-		if currentHp == maxHp then
-			return absorbText .. currentText
+		if not percentIsSecret and percent == nil then
+			return absorbText .. SECRET_FALLBACK_TEXT
 		end
 
+		-- Use secret-safe formatting for both values
+		local currentText = FormatLargeNumber(currentHp)
 		local percentText = format(PERCENT_FORMAT, percent)
 		return absorbText .. currentText .. VERTICAL_SEPARATOR .. percentText
 	end
@@ -364,6 +325,7 @@ MHCT.registerTag(
 -- SECTION 4: HEALTH DEFICIT
 -- ===================================================================================
 -- Tags that show missing health in various formats
+-- Uses WoW 12.0+ native UnitHealthMissing() API
 
 -- Numeric deficit with status
 MHCT.registerTag(
@@ -381,12 +343,15 @@ MHCT.registerTag(
 			return statusFormatted
 		end
 
-		local currentHp, maxHp = getHealthData(unit)
-		if currentHp == maxHp then
+		local missing = UnitHealthMissing(unit)
+
+		-- Secret value or no deficit: return empty
+		if issecretvalue(missing) or missing == 0 then
 			return ""
 		end
 
-		return format(DEFICIT_FORMAT, E:ShortValue(maxHp - currentHp))
+		local deficitText = format(DEFICIT_FORMAT, E:ShortValue(missing))
+		return deficitText
 	end
 )
 
@@ -400,20 +365,25 @@ MHCT.registerTag(
 		if not unit then
 			return ""
 		end
-		local currentHp, maxHp = getHealthData(unit)
-		if currentHp == maxHp then
+
+		local missing = UnitHealthMissing(unit)
+
+		-- Secret value or no deficit: return empty
+		if issecretvalue(missing) or missing == 0 then
 			return ""
 		end
 
-		return format(DEFICIT_FORMAT, E:ShortValue(maxHp - currentHp))
+		local deficitText = format(DEFICIT_FORMAT, E:ShortValue(missing))
+		return deficitText
 	end
 )
 
 -- Percentage deficit with status
+-- Note: For secret values, we show the formatted percent as-is (can't calculate deficit)
 MHCT.registerTag(
 	"mh-health-deficit-percent",
 	HEALTH_SUBCATEGORY,
-	"Missing health as percent with status. Use {N} for decimals. Example: -15%",
+	"Missing health as percent, status-aware. Use {N} for decimals (default 1). Example: [mh-health-deficit-percent{1}]",
 	EVENTS.HEALTH_STATUS,
 	function(unit, _, args)
 		if not unit then
@@ -425,342 +395,24 @@ MHCT.registerTag(
 			return statusFormatted
 		end
 
-		local currentHp, maxHp, percent = getHealthData(unit)
-		if currentHp == maxHp then
+		local percent, percentIsSecret = GetHealthPercent(unit)
+		if not percentIsSecret and percent == nil then
 			return ""
 		end
 
+		-- For secret values, we can format but not do arithmetic
+		-- Show as deficit format: display 100 - percent as "-X%"
+		-- Since we can't do 100 - secret, we format the raw percent
 		local decimals = MHCT.parseDecimalArg(args, 1)
-		local deficit = 100 - percent
-		return "-" .. formatPercent(deficit, decimals) .. "%"
+		
+		-- Use pcall to safely attempt arithmetic (will fail for secrets)
+		local ok, deficit = pcall(function() return 100 - percent end)
+		if ok and deficit > 0 then
+			local deficitText = "-" .. formatPercentValue(deficit, decimals) .. "%"
+			return deficitText
+		end
+		
+		-- At full health or secret: no deficit to show
+		return ""
 	end
 )
-
--- ===================================================================================
--- SECTION 5: COLORED HEALTH DISPLAYS
--- ===================================================================================
--- Tags that apply color gradients based on health percentage
-
--- Current | Percent with gradient coloring
-MHCT.registerTag(
-	"mh-health-current-percent-colored",
-	HEALTH_SUBCATEGORY,
-	"Current | percent with gradient color. Example: 100k | 85%",
-	EVENTS.HEALTH_ABSORB,
-	function(unit)
-		if not unit then
-			return ""
-		end
-		local currentHp, maxHp, percent = getHealthData(unit)
-
-		-- Early exit for invalid health data
-		if not maxHp or maxHp == 0 then
-			return ""
-		end
-
-		local currentText = E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
-		local absorbText = getAbsorbText(unit)
-
-		-- Use gradient color (green) at full health for consistency
-		if currentHp == maxHp then
-			return absorbText .. getGradientColor(100) .. currentText .. COLOR_END
-		end
-
-		local percentText = format(PERCENT_FORMAT, percent)
-		local result = currentText .. VERTICAL_SEPARATOR .. percentText
-		local colorCode = getGradientColor(percent)
-
-		return absorbText .. colorCode .. result .. COLOR_END
-	end
-)
-
--- Percent | Current with gradient coloring
-MHCT.registerTag(
-	"mh-health-percent-current-colored",
-	HEALTH_SUBCATEGORY,
-	"Percent | current with gradient color. Example: 85% | 100k",
-	EVENTS.HEALTH_ABSORB,
-	function(unit)
-		if not unit then
-			return ""
-		end
-		local currentHp, maxHp, percent = getHealthData(unit)
-
-		-- Early exit for invalid health data
-		if not maxHp or maxHp == 0 then
-			return ""
-		end
-
-		local currentText = E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
-		local absorbText = getAbsorbText(unit)
-
-		-- Use gradient color (green) at full health for consistency
-		if currentHp == maxHp then
-			return absorbText .. getGradientColor(100) .. currentText .. COLOR_END
-		end
-
-		local percentText = format(PERCENT_FORMAT, percent)
-		local result = percentText .. VERTICAL_SEPARATOR .. currentText
-		local colorCode = getGradientColor(percent)
-
-		return absorbText .. colorCode .. result .. COLOR_END
-	end
-)
-
--- Current | Percent with gradient coloring AND status check
-MHCT.registerTag(
-	"mh-health-current-percent-colored-status",
-	HEALTH_SUBCATEGORY,
-	"Current | percent with gradient color and status check. Example: 100k | 85% or AFK/Dead/Offline",
-	EVENTS.HEALTH_ABSORB_STATUS,
-	function(unit)
-		if not unit then
-			return ""
-		end
-
-		-- Status check first
-		local statusFormatted = MHCT.formatWithStatusCheck(unit)
-		if statusFormatted then
-			return statusFormatted
-		end
-
-		-- Get health data
-		local currentHp, maxHp, percent = getHealthData(unit)
-
-		-- Early exit for invalid health data
-		if not maxHp or maxHp == 0 then
-			return ""
-		end
-
-		local currentText = E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
-		local absorbText = getAbsorbText(unit)
-
-		-- Use gradient color (green) at full health for consistency
-		if currentHp == maxHp then
-			return absorbText .. getGradientColor(100) .. currentText .. COLOR_END
-		end
-
-		local percentText = format(PERCENT_FORMAT, percent)
-		local result = currentText .. VERTICAL_SEPARATOR .. percentText
-		local colorCode = getGradientColor(percent)
-
-		return absorbText .. colorCode .. result .. COLOR_END
-	end
-)
-
--- Percent | Current with gradient coloring AND status check
-MHCT.registerTag(
-	"mh-health-percent-current-colored-status",
-	HEALTH_SUBCATEGORY,
-	"Percent | current with gradient color and status check. Example: 85% | 100k or AFK/Dead/Offline",
-	EVENTS.HEALTH_ABSORB_STATUS,
-	function(unit)
-		if not unit then
-			return ""
-		end
-
-		-- Status check first
-		local statusFormatted = MHCT.formatWithStatusCheck(unit)
-		if statusFormatted then
-			return statusFormatted
-		end
-
-		-- Get health data
-		local currentHp, maxHp, percent = getHealthData(unit)
-
-		-- Early exit for invalid health data
-		if not maxHp or maxHp == 0 then
-			return ""
-		end
-
-		local currentText = E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
-		local absorbText = getAbsorbText(unit)
-
-		-- Use gradient color (green) at full health for consistency
-		if currentHp == maxHp then
-			return absorbText .. getGradientColor(100) .. currentText .. COLOR_END
-		end
-
-		local percentText = format(PERCENT_FORMAT, percent)
-		local result = percentText .. VERTICAL_SEPARATOR .. currentText
-		local colorCode = getGradientColor(percent)
-
-		return absorbText .. colorCode .. result .. COLOR_END
-	end
-)
-
--- Current value only with gradient coloring
-MHCT.registerTag(
-	"mh-health-current-colored",
-	HEALTH_SUBCATEGORY,
-	"Current only with gradient color. Example: 100k",
-	EVENTS.HEALTH_ABSORB,
-	function(unit)
-		if not unit then
-			return ""
-		end
-		local currentHp, maxHp, percent = getHealthData(unit)
-
-		-- Early exit for invalid health data
-		if not maxHp or maxHp == 0 then
-			return ""
-		end
-
-		local currentText = E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
-		local absorbText = getAbsorbText(unit)
-
-		-- Use gradient color (green) at full health for consistency
-		if currentHp == maxHp then
-			return absorbText .. getGradientColor(100) .. currentText .. COLOR_END
-		end
-
-		local colorCode = getGradientColor(percent)
-		return absorbText .. colorCode .. currentText .. COLOR_END
-	end
-)
-
--- Percentage only with gradient coloring
-MHCT.registerTag(
-	"mh-health-percent-colored",
-	HEALTH_SUBCATEGORY,
-	"Percent only with gradient color. Example: 85%",
-	EVENTS.HEALTH_ONLY,
-	function(unit)
-		if not unit then
-			return ""
-		end
-		local currentHp, maxHp, percent = getHealthData(unit)
-
-		-- Use gradient color (green) at full health for consistency
-		if currentHp == maxHp then
-			return getGradientColor(100) .. "100%" .. COLOR_END
-		end
-
-		local percentText = format(PERCENT_FORMAT, percent)
-		local colorCode = getGradientColor(percent)
-		return colorCode .. percentText .. COLOR_END
-	end
-)
-
--- Percentage only with gradient coloring and status check
-MHCT.registerTag(
-	"mh-health-percent-colored-status",
-	HEALTH_SUBCATEGORY,
-	"Colored health percent with status check. Default 0 decimals, max 3. Use {N}. Example: 85%",
-	EVENTS.HEALTH_STATUS,
-	function(unit, _, args)
-		-- Early return if no unit
-		if not unit then
-			return ""
-		end
-
-		-- Status check first - if any status exists, show it immediately
-		local statusFormatted = MHCT.formatWithStatusCheck(unit)
-		if statusFormatted then
-			return statusFormatted
-		end
-
-		-- Get health data
-		local currentHp, maxHp, percent = getHealthData(unit)
-
-		-- Handle edge case: dead/offline units
-		if maxHp == 0 then
-			return ""
-		end
-
-		-- Parse decimals argument (default 0, clamp to 0-3)
-		local decimals = 0
-		if args then
-			local parsed = tonumber(args)
-			if parsed then
-				-- Clamp to 0-3 range
-				decimals = parsed < 0 and 0 or (parsed > 3 and 3 or parsed)
-			end
-		end
-
-		-- Format and color the percentage
-		local percentText = formatPercent(percent, decimals) .. "%"
-		local colorCode = getGradientColor(percent)
-
-		return colorCode .. percentText .. COLOR_END
-	end
-)
-
--- Percentage only with gradient coloring and status check (NO % SIGN)
-MHCT.registerTag(
-	"mh-health-percent-nosign-colored-status",
-	HEALTH_SUBCATEGORY,
-	"Colored health percent WITHOUT % sign, with status check. Default 0 decimals, max 3. Use {N}. Example: 85 or 85.3",
-	EVENTS.HEALTH_STATUS,
-	function(unit, _, args)
-		-- Early return if no unit
-		if not unit then
-			return ""
-		end
-
-		-- Status check first - if any status exists, show it immediately
-		local statusFormatted = MHCT.formatWithStatusCheck(unit)
-		if statusFormatted then
-			return statusFormatted
-		end
-
-		-- Get health data
-		local currentHp, maxHp, percent = getHealthData(unit)
-
-		-- Handle edge case: dead/offline units
-		if maxHp == 0 then
-			return ""
-		end
-
-		-- Parse decimals argument (default 0, clamp to 0-3)
-		local decimals = 0
-		if args then
-			local parsed = tonumber(args)
-			if parsed then
-				-- Clamp to 0-3 range
-				decimals = parsed < 0 and 0 or (parsed > 3 and 3 or parsed)
-			end
-		end
-
-		-- Format and color the percentage (WITHOUT % sign)
-		local percentText = formatPercent(percent, decimals)
-		local colorCode = getGradientColor(percent)
-
-		return colorCode .. percentText .. COLOR_END
-	end
-)
-
--- ===================================================================================
--- SECTION 6: HEALTH COLOR TAG
--- ===================================================================================
--- Tag that returns just the color code based on health percentage
-
-MHCT.registerTag(
-	"mh-healthcolor",
-	HEALTH_SUBCATEGORY,
-	"Color code based on health percent for composing with other tags. Example: |cffRRGGBB",
-	EVENTS.HEALTH_ONLY,
-	function(unit)
-		if not unit then
-			return ""
-		end
-		local currentHp, maxHp, percent = getHealthData(unit)
-
-		if maxHp == 0 then
-			return DEAD_OR_DC_COLOR
-		end
-
-		return getGradientColor(percent)
-	end
-)
-
--- ===================================================================================
--- SECTION 7: LEGACY/COMPATIBILITY TAGS
--- ===================================================================================
--- These maintain backwards compatibility with old tag names using aliases
--- Aliases share the same function reference (zero performance overhead, no duplication)
-
-MHCT.registerTagAlias("mh-health:current:percent:right", "mh-health-current-percent")
-MHCT.registerTagAlias("mh-health:current:percent:left", "mh-health-percent-current")
-MHCT.registerTagAlias("mh-health:current:percent:right-hidefull", "mh-health-current-percent-hidefull")
-MHCT.registerTagAlias("mh-health:current:percent:left-hidefull", "mh-health-percent-current-hidefull")

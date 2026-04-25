@@ -12,6 +12,7 @@
 # IDE and editor settings
 .vscode/
 .idea/
+.cursor/
 *.sublime-project
 *.sublime-workspace
 

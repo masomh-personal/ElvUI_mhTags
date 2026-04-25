@@ -9,13 +9,19 @@ ns.MHCT = {}
 local MHCT = ns.MHCT
 
 -------------------------------------
+-- ADDON VERSION INFO
+-------------------------------------
+MHCT.ADDON_VERSION = "10"
+MHCT.ADDON_NAME = "ElvUI_mhTags"
+
+-------------------------------------
 -- FUNCTION LOCALIZATION
 -- Localizing all functions improves performance by avoiding global lookups
 -------------------------------------
 -- Lua functions
-local floor = math.floor
 local format = string.format
 local ipairs = ipairs
+local pairs = pairs
 local tonumber = tonumber
 local gsub = string.gsub
 local gmatch = string.gmatch
@@ -23,25 +29,38 @@ local sub = string.sub
 local tinsert = table.insert
 local concat = table.concat
 local strupper = strupper
+local strtrim = strtrim
 
--- WoW API functions
+-- WoW API functions (only those used in core.lua)
 local UnitIsAFK = UnitIsAFK
 local UnitIsDND = UnitIsDND
 local UnitIsFeignDeath = UnitIsFeignDeath
 local UnitIsDead = UnitIsDead
 local UnitIsGhost = UnitIsGhost
 local UnitIsConnected = UnitIsConnected
-local UnitHealthMax = UnitHealthMax
-local UnitHealth = UnitHealth
 local UnitIsPlayer = UnitIsPlayer
 local UnitEffectiveLevel = UnitEffectiveLevel
 local UnitClassification = UnitClassification
 local GetCreatureDifficultyColor = GetCreatureDifficultyColor
 local GetMaxPlayerLevel = GetMaxPlayerLevel
+local UnitName = UnitName
+local UnitPowerType = UnitPowerType
+local IsInRaid = IsInRaid
 local GetNumGroupMembers = GetNumGroupMembers
 local GetRaidRosterInfo = GetRaidRosterInfo
-local IsInRaid = IsInRaid
-local wipe = wipe
+
+-------------------------------------
+-- WOW 12.0+ API LOCALIZATION
+-- This addon requires WoW 12.0 (Midnight) or later
+-- These APIs are used directly without fallbacks
+-------------------------------------
+local UnitHealthPercent = UnitHealthPercent
+local UnitPowerPercent = UnitPowerPercent
+local issecretvalue = issecretvalue
+
+-- Export for tag files
+MHCT.issecretvalue = issecretvalue
+
 -- Cache max player level at load time (doesn't change during session)
 local MAX_PLAYER_LEVEL_VALUE = GetMaxPlayerLevel()
 
@@ -83,24 +102,33 @@ end
 -- Validate ElvUI API before proceeding
 validateElvUIAPI()
 
--- Check ElvUI version compatibility (soft warning)
-local function checkElvUIVersion()
-	local minVersion = 13.0
-	local currentVersion = tonumber(E.version) or 0
+-------------------------------------
+-- VERSION COMPATIBILITY CHECKS
+-- Validates ElvUI version for WoW 12.0+
+-------------------------------------
+local function checkCompatibility()
+	local minElvUIVersion = 15.0
+	local currentElvUIVersion = tonumber(E.version) or 0
 
-	if currentVersion > 0 and currentVersion < minVersion then
+	-- ElvUI version check
+	if currentElvUIVersion > 0 and currentElvUIVersion < minElvUIVersion then
 		print(
 			format(
-				"|cffFFFF00[ElvUI_mhTags Warning]|r This addon is designed for ElvUI %.1f or higher. "
-					.. "Current version: %.1f. Some features may not work correctly.",
-				minVersion,
-				currentVersion
+				"|cffFF0000[ElvUI_mhTags Error]|r This addon requires ElvUI %.1f or higher for WoW 12.0.5 (Midnight). "
+					.. "Current version: %.2f. Please update ElvUI.",
+				minElvUIVersion,
+				currentElvUIVersion
 			)
 		)
 	end
+
+	-- Debug info (shown with /mhtags debug)
+	MHCT.debugInfo = {
+		elvuiVersion = currentElvUIVersion,
+	}
 end
 
-checkElvUIVersion()
+checkCompatibility()
 
 -- Export ElvUI references for tag modules to avoid duplicate unpacking
 MHCT.E = E
@@ -112,9 +140,12 @@ MHCT.L = L
 MHCT.TAG_CATEGORY_NAME = "|cff0388fcmh|r|cffccff33Tags|r"
 MHCT.MAX_PLAYER_LEVEL = MAX_PLAYER_LEVEL_VALUE
 MHCT.DEFAULT_ICON_SIZE = 14
-MHCT.ABSORB_TEXT_COLOR = "ccff33"
 MHCT.DEFAULT_TEXT_LENGTH = 28
 MHCT.DEFAULT_DECIMAL_PLACE = 0
+
+-- Fallback display for secret values (rated arena, RBGs, competitive content)
+-- Displayed when health/power values are restricted by Blizzard's secret value system
+MHCT.SECRET_VALUE_FALLBACK_TEXT = "---"
 
 -- Status color constants
 local STATUS_COLOR = "D6BFA6"
@@ -126,17 +157,14 @@ local ELITE_SYMBOL = "+"
 local ELITE_PLUS_SYMBOL = "◆"
 local BOSS_SYMBOL = "??"
 
--- Format pattern caching
-local FORMAT_PATTERNS = {
-	DECIMAL_WITH_PERCENT = {}, -- Stores patterns like "%.0f%%", "%.1f%%", etc.
-	DECIMAL_WITHOUT_PERCENT = {}, -- Stores patterns like "%.0f", "%.1f", etc.
+-- Pre-cached format patterns for percent formatting (0-3 decimals covers all use cases)
+-- Exported for use by tag files to avoid duplication
+MHCT.PERCENT_FORMATS = {
+	[0] = "%.0f",
+	[1] = "%.1f",
+	[2] = "%.2f",
+	[3] = "%.3f",
 }
-
--- Cache all reasonable decimal patterns (0-5 decimals)
-for i = 0, 5 do
-	FORMAT_PATTERNS.DECIMAL_WITH_PERCENT[i] = format("%%.%df%%%%", i)
-	FORMAT_PATTERNS.DECIMAL_WITHOUT_PERCENT[i] = format("%%.%df", i)
-end
 
 -- Icon table with texture paths
 MHCT.iconTable = {
@@ -177,18 +205,183 @@ for status, _ in pairs(STATUS_ICON_MAP) do
 	FORMATTED_STATUS_CACHE[status] = format("|cff%s%s|r", STATUS_COLOR, strupper(status))
 end
 
--- Static color sequence for gradient
-local GRADIENT_COLORS = {
-	0.996,
-	0.32,
-	0.32, -- Start color (red) at 0% health
-	0.98,
-	0.84,
-	0.58, -- Mid color (yellow) at 50% health
-	0.44,
-	0.92,
-	0.44, -- End color (green) at 100% health
-}
+-- Pre-cached icon strings at default size (most common use case)
+-- Avoids format() call in hot path for common icons
+local CACHED_ICONS = {}
+for iconName, iconFormat in pairs(MHCT.iconTable) do
+	CACHED_ICONS[iconName] = format(iconFormat, MHCT.DEFAULT_ICON_SIZE, MHCT.DEFAULT_ICON_SIZE, 0, 0)
+end
+MHCT.CACHED_ICONS = CACHED_ICONS
+
+-------------------------------------
+-- SECRET VALUE UTILITIES (WoW 12.0+ Midnight)
+-- These functions handle "secret values" that cannot be compared or used
+-- in arithmetic operations. Common on nameplates and in competitive PvP.
+-------------------------------------
+
+-- Localize pcall for performance
+local pcall = pcall
+
+-- Safe boolean API call for WoW 12.x secret booleans.
+-- Returns: true, false, or "secret" (for secret/error/nil cases).
+local function getSafeBooleanState(apiFunc, unit)
+	if not apiFunc or not unit then
+		return "secret"
+	end
+
+	local ok, value = pcall(apiFunc, unit)
+	if not ok then
+		return "secret"
+	end
+
+	if issecretvalue(value) then
+		return "secret"
+	end
+
+	if value == nil then
+		return "secret"
+	end
+
+	if value == true then
+		return true
+	end
+
+	return false
+end
+
+-- Check if CurveConstants.ScaleTo100 is available (converts 0-1 to 0-100 range)
+local CURVE_SCALE_TO_100 = CurveConstants and CurveConstants.ScaleTo100 or nil
+MHCT.CURVE_SCALE_TO_100 = CURVE_SCALE_TO_100
+
+-- Get health percent in 0-100 range, secret-safe
+-- Returns: percent (0-100), isSecret (boolean)
+-- Uses CurveConstants.ScaleTo100 when available for direct 0-100 output
+MHCT.GetHealthPercent = function(unit)
+	if not unit then
+		return nil, false
+	end
+
+	local percent = nil
+	local isSecret = false
+	local hasPercent = false
+
+	-- Try CurveConstants.ScaleTo100 first (returns 0-100 directly)
+	if CURVE_SCALE_TO_100 then
+		local ok, pct = pcall(UnitHealthPercent, unit, false, CURVE_SCALE_TO_100)
+		if ok and issecretvalue(pct) then
+			percent = pct
+			isSecret = true
+			hasPercent = true
+		elseif ok and pct ~= nil then
+			percent = pct
+			hasPercent = true
+		end
+	end
+
+	-- Fallback: standard UnitHealthPercent (0-1 range), convert to 0-100
+	if not hasPercent then
+		local ok, pct = pcall(UnitHealthPercent, unit)
+		if ok and issecretvalue(pct) then
+			isSecret = true
+			percent = pct -- Will be 0-1, tag must handle this
+		elseif ok and pct ~= nil then
+			if not isSecret then
+				-- Can do arithmetic on non-secret values
+				percent = pct * 100
+			end
+		end
+	end
+
+	return percent, isSecret
+end
+
+-- Get power percent in 0-100 range, secret-safe
+-- Returns: percent (0-100), isSecret (boolean)
+-- powerType: optional, defaults to unit's primary power type
+MHCT.GetPowerPercent = function(unit, powerType)
+	if not unit then
+		return nil, false
+	end
+
+	-- Get power type if not specified
+	if not powerType then
+		powerType = UnitPowerType(unit)
+	end
+
+	local percent = nil
+	local isSecret = false
+	local hasPercent = false
+
+	-- Try CurveConstants.ScaleTo100 first (returns 0-100 directly)
+	if CURVE_SCALE_TO_100 then
+		local ok, pct = pcall(UnitPowerPercent, unit, powerType, false, CURVE_SCALE_TO_100)
+		if ok and issecretvalue(pct) then
+			percent = pct
+			isSecret = true
+			hasPercent = true
+		elseif ok and pct ~= nil then
+			percent = pct
+			hasPercent = true
+		end
+	end
+
+	-- Fallback: standard UnitPowerPercent (0-1 range), convert to 0-100
+	if not hasPercent then
+		local ok, pct = pcall(UnitPowerPercent, unit, powerType)
+		if ok and issecretvalue(pct) then
+			isSecret = true
+			percent = pct -- Will be 0-1, tag must handle this
+		elseif ok and pct ~= nil then
+			if not isSecret then
+				percent = pct * 100
+			end
+		end
+	end
+
+	return percent, isSecret
+end
+
+-- Format a number with K/M/B suffix, secret-safe
+-- Uses AbbreviateNumbers (Midnight) or AbbreviateLargeNumbers (legacy)
+MHCT.FormatLargeNumber = function(value)
+	if value == nil then
+		return MHCT.SECRET_VALUE_FALLBACK_TEXT
+	end
+	-- Prefer AbbreviateNumbers (Midnight API) over AbbreviateLargeNumbers (legacy)
+	local abbr = AbbreviateNumbers or AbbreviateLargeNumbers
+	if abbr then
+		local ok, result = pcall(abbr, value)
+		if ok and result then
+			return result
+		end
+	end
+	-- Final fallback: string.format (works with secrets)
+	return format("%d", value)
+end
+
+-- Format percent value using cached patterns
+-- percentValue: 0-100 range, decimals: 0-3, includeSign: append %
+MHCT.FormatPercent = function(percentValue, decimals, includeSign)
+	if percentValue == nil then
+		return MHCT.SECRET_VALUE_FALLBACK_TEXT
+	end
+	decimals = decimals or 0
+	-- Clamp to cached range
+	if decimals < 0 then
+		decimals = 0
+	end
+	if decimals > 3 then
+		decimals = 3
+	end
+
+	local pattern = MHCT.PERCENT_FORMATS[decimals]
+	local result = format(pattern, percentValue)
+
+	if includeSign == nil or includeSign then
+		return result .. "%"
+	end
+	return result
+end
 
 -------------------------------------
 -- HELPER FUNCTIONS
@@ -215,28 +408,37 @@ end
 
 -- Removed - not used anywhere in the codebase
 
--- Optimized unit status check for ElvUI V14.0
+-- Optimized unit status check for ElvUI V15.0
 MHCT.statusCheck = function(unit)
 	if not unit then
 		return nil
 	end
 
-	-- Fast path: check connection first (most common case)
-	if not UnitIsConnected(unit) then
+	local connectedState = getSafeBooleanState(UnitIsConnected, unit)
+	if connectedState == false then
 		return L["Offline"]
 	end
 
-	-- Check death states (common in combat)
-	if UnitIsDead(unit) and not UnitIsFeignDeath(unit) then
-		return L["Dead"]
-	elseif UnitIsGhost(unit) then
+	local ghostState = getSafeBooleanState(UnitIsGhost, unit)
+	if ghostState == true then
 		return L["Ghost"]
 	end
 
-	-- Check status flags (less common)
-	if UnitIsAFK(unit) then
+	-- Only override tags with death when death is confirmed.
+	-- Any secret/unknown state should fall through so health still shows.
+	local deadState = getSafeBooleanState(UnitIsDead, unit)
+	local feignState = getSafeBooleanState(UnitIsFeignDeath, unit)
+	if deadState == true and feignState == false then
+		return L["Dead"]
+	end
+
+	local afkState = getSafeBooleanState(UnitIsAFK, unit)
+	if afkState == true then
 		return L["AFK"]
-	elseif UnitIsDND(unit) then
+	end
+
+	local dndState = getSafeBooleanState(UnitIsDND, unit)
+	if dndState == true then
 		return L["DND"]
 	end
 
@@ -244,26 +446,36 @@ MHCT.statusCheck = function(unit)
 end
 
 -- Get formatted icon with size and offset
+-- Uses pre-cached strings when using default size and no offset (common case)
 MHCT.getFormattedIcon = function(name, size, x, y)
 	local iconName = name or "default"
-	local iconSize = size or MHCT.DEFAULT_ICON_SIZE
-	local xOffset = x or 0
-	local yOffset = y or 0
+	local defaultSize = MHCT.DEFAULT_ICON_SIZE
 
-	-- Validate icon exists
+	-- Fast path: use cached icon for default size with no offset
+	if (not size or size == defaultSize) and (not x or x == 0) and (not y or y == 0) then
+		return CACHED_ICONS[iconName] or CACHED_ICONS["default"]
+	end
+
+	-- Slow path: custom size or offset requires format()
 	local iconFormat = MHCT.iconTable[iconName] or MHCT.iconTable["default"]
-
-	return format(iconFormat, iconSize, iconSize, xOffset, yOffset)
+	return format(iconFormat, size or defaultSize, size or defaultSize, x or 0, y or 0)
 end
 
 -- Optimized unit classification for ElvUI V14.0
 MHCT.classificationType = function(unit)
-	if not unit or UnitIsPlayer(unit) then
+	if not unit then
+		return nil
+	end
+	local isPlayerState = getSafeBooleanState(UnitIsPlayer, unit)
+	if isPlayerState == true or isPlayerState == "secret" then
 		return nil
 	end
 
 	local unitLevel = UnitEffectiveLevel(unit)
 	local classification = UnitClassification(unit)
+	if issecretvalue(unitLevel) or issecretvalue(classification) or classification == nil then
+		return nil
+	end
 
 	-- Fast path for rare types
 	if classification == "rare" or classification == "rareelite" then
@@ -285,7 +497,10 @@ end
 
 -- Format difficulty level with colors and symbols - optimized
 MHCT.difficultyLevelFormatter = function(unit, unitLevel)
-	if not unit or not unitLevel then
+	if not unit then
+		return ""
+	end
+	if issecretvalue(unitLevel) or unitLevel == nil then
 		return ""
 	end
 
@@ -328,6 +543,14 @@ MHCT.statusFormatter = function(status, size, reverse)
 	local iconSize = size or MHCT.DEFAULT_ICON_SIZE
 	local iconName = STATUS_ICON_MAP[status]
 	local formattedStatus = FORMATTED_STATUS_CACHE[status] -- O(1) lookup, no strupper() or format()
+	if not formattedStatus then
+		formattedStatus = format("|cff%s%s|r", STATUS_COLOR, strupper(tostring(status)))
+	end
+
+	if not iconName then
+		return formattedStatus
+	end
+
 	local icon = MHCT.getFormattedIcon(iconName, iconSize)
 
 	if reverse then
@@ -389,44 +612,6 @@ MHCT.abbreviate = function(str, reverse, unit)
 	return concat(result)
 end
 
--- Removed - not used directly, replaced with pre-computed gradient table
-
--- Simplified gradient table - only create key health percentages
-MHCT.createGradientTable = function()
-	local gradientTable = {}
-
-	-- Use simpler interpolation for key percentages only
-	-- Red (0-30%), Yellow (30-70%), Green (70-100%)
-	for i = 0, 100 do
-		local r, g, b
-		if i <= 30 then
-			-- Red to yellow gradient (0-30%)
-			local factor = i / 30
-			r = 0.996
-			g = 0.32 + (0.84 - 0.32) * factor
-			b = 0.32 + (0.58 - 0.32) * factor
-		elseif i <= 70 then
-			-- Yellow to green gradient (30-70%)
-			local factor = (i - 30) / 40
-			r = 0.98 - (0.98 - 0.44) * factor
-			g = 0.84 + (0.92 - 0.84) * factor
-			b = 0.58 - (0.58 - 0.44) * factor
-		else
-			-- Green (70-100%)
-			r = 0.44
-			g = 0.92
-			b = 0.44
-		end
-
-		gradientTable[i] = format("|cff%02X%02X%02X", r * 255, g * 255, b * 255)
-	end
-
-	return gradientTable
-end
-
--- Create the gradient table once at load time
-MHCT.HEALTH_GRADIENT_RGB = MHCT.createGradientTable()
-
 -- Format unit status check
 MHCT.formatWithStatusCheck = function(unit)
 	if not unit then
@@ -441,99 +626,49 @@ MHCT.formatWithStatusCheck = function(unit)
 	return nil
 end
 
--- Optimized health percent formatter for ElvUI V14.0
-MHCT.formatHealthPercent = function(unit, decimalPlaces, showSign)
+-- Append raid group number to formatted name when in raid (e.g. "NAME" -> "NAME |cff00FFFF(3)|r")
+-- Shared by mh-name-caps-with-raid-group and mh-classification-name-level-raid-group
+MHCT.appendRaidGroupToName = function(unit, formattedName)
 	if not unit then
 		return ""
 	end
-
-	local maxHp = UnitHealthMax(unit)
-	if maxHp == 0 then
-		return ""
+	if issecretvalue(formattedName) then
+		return formattedName
 	end
-
-	local currentHp = UnitHealth(unit)
-	if currentHp == maxHp then
-		return E:GetFormattedText("CURRENT", currentHp, maxHp, nil, true)
+	if formattedName == nil or formattedName == "" then
+		return formattedName or ""
 	end
-
-	local decimals = tonumber(decimalPlaces) or MHCT.DEFAULT_DECIMAL_PLACE
-	local percent = (currentHp / maxHp) * 100
-
-	-- Use cached format patterns for better performance
-	local fmt = FORMAT_PATTERNS.DECIMAL_WITHOUT_PERCENT[decimals] or format("%%.%df", decimals)
-
-	if showSign then
-		return format(fmt .. "%%", percent)
-	else
-		return format(fmt, percent)
+	local name = UnitName(unit)
+	if issecretvalue(name) then
+		return formattedName
 	end
-end
-
--- Optimized health deficit formatter for ElvUI V14.0
-MHCT.formatHealthDeficit = function(unit)
-	if not unit then
-		return ""
+	if name == nil then
+		return formattedName
 	end
-
-	local currentHp = UnitHealth(unit)
-	local maxHp = UnitHealthMax(unit)
-
-	if currentHp == maxHp or maxHp == 0 then
-		return ""
+	if not IsInRaid() then
+		return formattedName
 	end
-
-	return format("-%s", E:ShortValue(maxHp - currentHp))
+	for i = 1, GetNumGroupMembers() do
+		local raidName, _, group = GetRaidRosterInfo(i)
+		if raidName == name then
+			return format("%s |cff00FFFF(%s)|r", formattedName, group)
+		end
+	end
+	return formattedName
 end
 
 -------------------------------------
 -- TAG REGISTRATION
 -------------------------------------
 
--- Internal registry to track tag functions and events (needed for aliases in ElvUI 14.0+)
-local tagRegistry = {}
-
--- Simple tag registration for ElvUI V14.0+
+-- Simple tag registration for ElvUI 15.0+
 MHCT.registerTag = function(name, subCategory, description, events, func)
 	local fullCategory = MHCT.TAG_CATEGORY_NAME .. " [" .. subCategory .. "]"
 
 	E:AddTagInfo(name, fullCategory, description)
 	E:AddTag(name, events, func)
 
-	-- Store for alias creation (ElvUI 14.0+ doesn't expose tag methods)
-	tagRegistry[name] = {
-		func = func,
-		events = events,
-		category = fullCategory,
-		description = description,
-	}
-
 	return name
-end
-
--- Create tag alias for backwards compatibility (shares function reference, no duplication)
-MHCT.registerTagAlias = function(oldName, newName)
-	-- Get the existing tag from our internal registry
-	local tagData = tagRegistry[newName]
-	local tagInfo = E.TagInfo[newName]
-
-	if tagData and tagInfo then
-		-- Register alias with deprecation notice, using the same wrapped function
-		E:AddTagInfo(
-			oldName,
-			tagInfo.category,
-			tagInfo.description .. " (DEPRECATED - Use [" .. newName .. "] instead)"
-		)
-		-- Use the same wrapped function reference (no duplication)
-		E:AddTag(oldName, tagData.events, tagData.func)
-
-		-- Store alias in registry too (in case someone aliases an alias)
-		tagRegistry[oldName] = tagData
-		return oldName
-	end
-
-	-- If new tag doesn't exist, silently fail (developer error, should be caught during development)
-	return nil
 end
 
 -------------------------------------
@@ -542,7 +677,24 @@ end
 
 SLASH_MHTAGS1 = "/mhtags"
 SlashCmdList["MHTAGS"] = function(msg)
-	UpdateAddOnMemoryUsage()
-	local memoryUsage = GetAddOnMemoryUsage("ElvUI_mhTags")
-	print(format("|cff0388fcElvUI_mhTags:|r Memory usage: |cffffcc00%.2f KB|r", memoryUsage))
+	local cmd = msg and strtrim(msg:lower()) or ""
+
+	if cmd == "debug" or cmd == "info" then
+		-- Show debug/compatibility info
+		local info = MHCT.debugInfo or {}
+		print("|cff0388fc[ElvUI_mhTags]|r Debug Information:")
+		print(format("  Addon Version: |cffffcc00%s|r", MHCT.ADDON_VERSION))
+		print(format("  ElvUI Version: |cffffcc00%.2f|r", info.elvuiVersion or 0))
+		print("  Target WoW Version: |cffffcc0012.0.5+ (Midnight)|r")
+	elseif cmd == "help" then
+		print("|cff0388fc[ElvUI_mhTags]|r Commands:")
+		print("  |cffffcc00/mhtags|r - Show memory usage")
+		print("  |cffffcc00/mhtags debug|r - Show version info")
+		print("  |cffffcc00/mhtags help|r - Show this help")
+	else
+		-- Default: show memory usage
+		UpdateAddOnMemoryUsage()
+		local memoryUsage = GetAddOnMemoryUsage("ElvUI_mhTags")
+		print(format("|cff0388fc[ElvUI_mhTags v%s]|r Memory: |cffffcc00%.2f KB|r", MHCT.ADDON_VERSION, memoryUsage))
+	end
 end

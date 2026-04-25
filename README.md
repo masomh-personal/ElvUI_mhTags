@@ -1,150 +1,143 @@
 # ElvUI_mhTags
 
-[![Version](https://img.shields.io/badge/Version-6.1.0-brightgreen)](https://github.com/masomh-personal/ElvUI_mhTags)
-[![ElvUI](https://img.shields.io/badge/Requires-ElvUI-blue)](https://www.tukui.org/download.php?ui=elvui)
-[![WoW](https://img.shields.io/badge/WoW-11.0.5+-orange)](https://worldofwarcraft.com)
-[![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
+[![Version](https://img.shields.io/badge/Version-10-brightgreen)](https://github.com/masomh-personal/ElvUI_mhTags)
+[![ElvUI](https://img.shields.io/badge/Requires-ElvUI%2015.0+-blue)](https://www.tukui.org/download.php?ui=elvui)
+[![WoW](https://img.shields.io/badge/WoW-12.0.5%20Midnight+-orange)](https://worldofwarcraft.com)
+[![License](https://img.shields.io/badge/License-GPL--3.0-yellow)](LICENSE)
 
-**39 custom tags for ElvUI unit frames.** Lightweight, performant, and flexible.
+Custom tags for ElvUI unit frames on WoW Retail 12.0.5+ (Midnight).
 
-> ⚠️ **On Hold Until Midnight** — New features paused until the expansion's API changes are finalized. Bug fixes continue as needed.
+ElvUI_mhTags adds health, power, name, classification, level, status, combined, and color-prefix tags for ElvUI Custom Texts. It is lightweight, Retail-only, and updated for Midnight's secret-value restrictions.
+
+## Midnight Notes
+
+WoW 12 introduced secret values for some combat-sensitive data. This can affect health, power, absorb, and nameplate-related information in protected content.
+
+Because secret values cannot be compared, used for arithmetic, or used as table keys, this addon does not include health-gradient or hide-at-full health tags.
+
+Known behavior:
+
+- Absorb tags may show `(0)` when a zero absorb value is secret.
+- Deficit percent is hidden when WoW blocks the arithmetic needed to calculate it.
+- Secret names display as-is and are not uppercased, shortened, or abbreviated.
+
+## Requirements
+
+- World of Warcraft Retail 12.0.5+ (Midnight)
+- ElvUI 15.0+
 
 ## Installation
 
-1. Download from [CurseForge](https://www.curseforge.com/wow/addons/mh-custom-tags-elvui-plugin) or [GitHub](https://github.com/masomh-personal/ElvUI_mhTags/releases)
-2. Extract to `World of Warcraft/_retail_/Interface/AddOns/`
-3. `/reload` in-game
+1. Download from [CurseForge](https://www.curseforge.com/wow/addons/mh-custom-tags-elvui-plugin) or [GitHub Releases](https://github.com/masomh-personal/ElvUI_mhTags/releases).
+2. Extract `ElvUI_mhTags` into `World of Warcraft/_retail_/Interface/AddOns/`.
+3. Restart WoW or run `/reload`.
 
-## Getting Started
+## Usage
 
-**Open ElvUI** → `/ec` → Any unit frame → **Custom Texts** → Browse **mhTags** categories
+Open ElvUI with `/ec`, choose a unit frame, open Custom Texts, and browse the `mhTags` categories.
 
-### Popular Tags
+Popular examples:
 
-| Tag                                     | Example        | Use For                       |
-| --------------------------------------- | -------------- | ----------------------------- |
-| `[mh-health-current-percent]`           | `100k \| 85%`  | Standard health display       |
-| `[mh-health-percent-colored-status{0}]` | `85%` / `DEAD` | Color-coded with status       |
-| `[mh-health-deficit]`                   | `-15k`         | Missing health (healer focus) |
-| `[mh-dynamic:name:caps{20}]`            | `PLAYERNAME`   | Uppercase name, max 20 chars  |
-| `[mh-classification:icon]`              | 🛡️             | Elite/Rare/Boss icon          |
-| `[mh-status]`                           | `AFK` + icon   | Status indicator              |
+- `[mh-health-current-percent]`: `100k | 85%`
+- `[mh-health-percent{0}]`: `85%`
+- `[mh-health-deficit]`: `-15k`, or a status such as `DEAD`
+- `[mh-name-caps{20}]`: uppercase name capped to 20 characters
+- `[mh-classification-name-level{14}]`: classification icon, name, and colored level
+- `[mh-status]`: AFK, DND, Dead, Ghost, or Offline status with icon
+- `[mh-color-custom{FF5733}][mh-health-current]|r`: custom color prefix around another tag
 
-## All Tags
+## Tags
 
-### Health (21 tags)
+### Health
 
-| Tag                                            | Output                 | Notes                  |
-| ---------------------------------------------- | ---------------------- | ---------------------- |
-| `[mh-health-current]`                          | `100k`                 | Current HP             |
-| `[mh-health-current-absorb]`                   | `(25k) 100k`           | With absorb shield     |
-| `[mh-health-percent{N}]`                       | `85.2%`                | `{N}` = decimal places |
-| `[mh-health-percent-nosign{N}]`                | `85.2`                 | No % sign              |
-| `[mh-health-percent-nosign-colored-status{N}]` | `85.2`                 | Gradient + status      |
-| `[mh-health-current-percent]`                  | `100k \| 85%`          | Combined display       |
-| `[mh-health-percent-current]`                  | `85% \| 100k`          | Reversed order         |
-| `[mh-health-current-percent-hidefull]`         | `100k \| 85%`          | Hides % at full        |
-| `[mh-health-percent-current-hidefull]`         | `85% \| 100k`          | Hides % at full        |
-| `[mh-health-current-percent-absorb]`           | `(25k) 100k \| 85%`    | All metrics            |
-| `[mh-health-deficit]`                          | `-15k` / `DEAD`        | Missing health         |
-| `[mh-health-deficit-nostatus]`                 | `-15k`                 | No status text         |
-| `[mh-health-deficit-percent{N}]`               | `-15%`                 | As percentage          |
-| `[mh-health-current-percent-colored]`          | `100k \| 85%`          | Gradient colored       |
-| `[mh-health-percent-current-colored]`          | `85% \| 100k`          | Gradient colored       |
-| `[mh-health-current-percent-colored-status]`   | `100k \| 85%` / `AFK`  | Colored + status       |
-| `[mh-health-percent-current-colored-status]`   | `85% \| 100k` / `DEAD` | Colored + status       |
-| `[mh-health-current-colored]`                  | `100k`                 | Current only, colored  |
-| `[mh-health-percent-colored]`                  | `85%`                  | Percent only, colored  |
-| `[mh-health-percent-colored-status{N}]`        | `85%` / `GHOST`        | Colored + status       |
-| `[mh-healthcolor]`                             | `\|cffRRGGBB`          | Color code only        |
+- `[mh-health-current]`: current health
+- `[mh-health-current-absorb]`: absorb amount plus current health
+- `[mh-health-percent{N}]`: health percent, default 1 decimal
+- `[mh-health-percent-nosign{N}]`: health percent without `%`, default 1 decimal
+- `[mh-health-current-percent]`: current health then percent
+- `[mh-health-percent-current]`: percent then current health
+- `[mh-health-current-percent-absorb]`: absorb amount, current health, and percent
+- `[mh-health-deficit]`: missing health, with status check
+- `[mh-health-deficit-nostatus]`: missing health only
+- `[mh-health-deficit-percent{N}]`: missing health percent, default 1 decimal
 
-### Name (7 tags)
+### Power
 
-| Tag                                          | Output              | Notes                     |
-| -------------------------------------------- | ------------------- | ------------------------- |
-| `[mh-dynamic:name:caps{N}]`                  | `PLAYERNAME`        | `{N}` = max chars         |
-| `[mh-dynamic:name:caps-statusicon{N}]`       | `PLAYERNAME` + icon | With status icon          |
-| `[mh-player:frame:name:caps-groupnumber{N}]` | `PLAYERNAME (5)`    | With raid group #         |
-| `[mh-name:caps:abbrev]`                      | `C.T. Dummy`        | Abbreviated               |
-| `[mh-name:caps:abbrev-reverse]`              | `Cleave T.D.`       | Abbreviated reverse       |
-| `[mh-name-caps-abbrev-V2{N}]`                | `C.T. Dummy`        | Smart abbrev if > N chars |
-| `[mh-name-caps-abbrev-reverse-V2{N}]`        | `Cleave T.D.`       | Smart abbrev reverse      |
+- `[mh-power-percent{N}]`: current power percent, default 0 decimals
 
-### Classification (5 tags)
+### Names
 
-| Tag                                | Output    | Notes                 |
-| ---------------------------------- | --------- | --------------------- |
-| `[mh-classification:icon]`         | Icon      | Elite/Rare/Boss       |
-| `[mh-classification:icon-V2]`      | Icon      | Fixed-size variant    |
-| `[mh-classification:text]`         | `[Elite]` | Colored with brackets |
-| `[mh-classification:text-compact]` | `E`       | Single letter         |
-| `[mh-classification:text-full]`    | `Elite`   | Full text             |
+- `[mh-name-caps{N}]`: uppercase unit name, default 28 characters
+- `[mh-name-caps-or-status{N}]`: status when present, otherwise uppercase name
+- `[mh-name-caps-with-raid-group{N}]`: uppercase name plus raid group number
+- `[mh-name-abbrev]`: abbreviated uppercase name
+- `[mh-name-abbrev-reverse]`: reverse abbreviated uppercase name
+- `[mh-name-abbrev-if-long{N}]`: abbreviates only when longer than the threshold, default 25
+- `[mh-name-abbrev-if-long-reverse{N}]`: reverse abbreviation only when longer than the threshold
 
-### Power (1 tag)
+### Classification
 
-| Tag                     | Output | Notes                |
-| ----------------------- | ------ | -------------------- |
-| `[mh-power-percent{N}]` | `85.3` | Mana/energy/rage/etc |
+- `[mh-classification-icon{N}]`: classification icon with optional size
+- `[mh-classification-icon-fixed]`: classification icon at default size
+- `[mh-classification-text]`: colored bracketed classification text
+- `[mh-classification-symbols]`: compact classification symbol
+- `[mh-classification-plain]`: plain classification text
 
-### Misc (7 tags)
+### Combined
 
-| Tag                               | Output        | Notes               |
-| --------------------------------- | ------------- | ------------------- |
-| `[mh-smartlevel]`                 | `80`          | Hides at max level  |
-| `[mh-absorb]`                     | `(25k)`       | Absorb shield value |
-| `[mh-difficultycolor:level]`      | `85`          | Difficulty colored  |
-| `[mh-difficultycolor:level-hide]` | `85`          | Hides when both max |
-| `[mh-status]`                     | `AFK` + icon  | Status with icon    |
-| `[mh-status-noicon]`              | `AFK`         | Text only           |
-| `[mh-healer-drinking]`            | `DRINKING...` | Healers only        |
+- `[mh-classification-name-level{N}]`: classification icon, uppercase name, and colored level
+- `[mh-classification-name-level-smart{N}]`: same as above, but hides level when player and unit are both max level
+- `[mh-classification-name{N}]`: classification icon and uppercase name
+- `[mh-classification-name-level-raid-group{N}]`: classification icon, uppercase name, raid group, and colored level
 
-## Syntax Guide
+### Misc
 
-### Decimal Places `{N}`
+- `[mh-smartlevel]`: level, hidden when player and unit are both max level
+- `[mh-absorb]`: absorb amount in parentheses
+- `[mh-diff-level]`: level colored by difficulty
+- `[mh-diff-level-hide]`: difficulty-colored level, hidden at max level
+- `[mh-status]`: status with icon
+- `[mh-status-noicon]`: status text only
 
-```
-[mh-health-percent{0}]     → 85%
-[mh-health-percent{1}]     → 85.3%
-[mh-health-percent{2}]     → 85.34%
+### Color Prefixes
+
+Color tags return an opening color code. Use them before another tag and close with `|r`.
+
+```text
+[mh-color-pastel-green][mh-health-current-percent]|r
+[mh-color-custom{FF5733}][mh-name-caps{20}]|r
 ```
 
-### Max Characters `{N}`
+Available color groups:
 
+- Basic: `red`, `green`, `blue`, `cyan`, `magenta`, `black`, `gray`, `grey`, `purple`, `lime`, `brown`
+- Class: `deathknight`, `demonhunter`, `druid`, `evoker`, `hunter`, `mage`, `monk`, `paladin`, `priest`, `rogue`, `shaman`, `warlock`, `warrior`
+- Emerald: `emerald-green`, `emerald-red`, `emerald-blue`, `emerald-yellow`, `emerald-cyan`, `emerald-orange`
+- Pastel: `pastel-green`, `pastel-red`, `pastel-blue`, `pastel-yellow`, `pastel-cyan`, `pastel-orange`
+- Custom: `[mh-color-custom{RRGGBB}]`
+
+## Arguments
+
+Use `{N}` to customize decimals, lengths, or icon sizes depending on the tag.
+
+```text
+[mh-health-percent{0}]  -> 85%
+[mh-health-percent{1}]  -> 85.3%
+[mh-health-percent{2}]  -> 85.34%
+[mh-name-caps{15}]      -> max 15 characters
 ```
-[mh-dynamic:name:caps{15}]  → Max 15 characters
-[mh-dynamic:name:caps{25}]  → Max 25 characters
-```
 
-## Performance
+Decimal arguments are clamped to `0-3`.
 
-- **300-500 KB** memory in 40-person raids
-- Pre-computed color gradients and format strings
-- O(1) raid roster lookups
-- Zero memory leaks
+## Commands
 
-**Utility command:** `/mhtags` — displays addon memory usage
-
-## Compatibility
-
-|           | Version                   |
-| --------- | ------------------------- |
-| **WoW**   | Retail 11.0.5+            |
-| **ElvUI** | 13.0+ (14.0+ recommended) |
-
-## v4.x Migration
-
-Old tags work via aliases (zero overhead):
-
-| v4.x                                | v5.0+                         |
-| ----------------------------------- | ----------------------------- |
-| `[mh-health:current:percent:right]` | `[mh-health-current-percent]` |
-| `[mh-health:current:percent:left]`  | `[mh-health-percent-current]` |
+- `/mhtags`: show addon memory usage
+- `/mhtags debug`: show addon, ElvUI, and target WoW version info
+- `/mhtags help`: list commands
 
 ## Support
 
 - [GitHub Issues](https://github.com/masomh-personal/ElvUI_mhTags/issues)
 - [CurseForge](https://www.curseforge.com/wow/addons/mh-custom-tags-elvui-plugin)
 
-**Bug reports:** Include WoW version, ElvUI version, error message, and steps to reproduce.
-
-**Created by mhDesigns** for the World of Warcraft community
+Bug reports should include your WoW version, ElvUI version, tag string, error message, and reproduction steps.

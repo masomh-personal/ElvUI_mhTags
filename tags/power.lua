@@ -1,64 +1,66 @@
 -- ===================================================================================
--- POWER RELATED TAGS - Optimized for efficiency
+-- POWER RELATED TAGS - WoW 12.0+ (Midnight)
+-- ===================================================================================
+-- Requires WoW 12.0+ - uses native UnitPowerPercent API with CurveConstants.ScaleTo100
+--
+-- Secret Value Handling:
+-- Power values may be "secret" on nameplates and in competitive content.
+-- We use MHCT.GetPowerPercent() which handles secrets via CurveConstants.ScaleTo100.
+-- For secret values, we format with string.format() which accepts secrets.
 -- ===================================================================================
 local _, ns = ...
 local MHCT = ns.MHCT
 
--- Get ElvUI references from core (shared to avoid duplicate unpacking)
-local E = MHCT.E
-
 -- Localize Lua functions
 local format = string.format
-local tonumber = tonumber
 
--- Localize WoW API functions
-local UnitPowerType = UnitPowerType
-local UnitPower = UnitPower
-local UnitPowerMax = UnitPowerMax
+-- Localize core utility functions
+local GetPowerPercent = MHCT.GetPowerPercent
+local PERCENT_FORMATS = MHCT.PERCENT_FORMATS
 
 -- Local constants
 local POWER_SUBCATEGORY = "power"
 local DEFAULT_DECIMAL_PLACE = MHCT.DEFAULT_DECIMAL_PLACE
 
--- Pre-built format strings for common decimal cases (performance optimization)
-local PERCENT_FORMATS = {
-	[0] = "%.0f",
-	[1] = "%.1f",
-	[2] = "%.2f",
-}
-
 -- ===================================================================================
 -- HELPER FUNCTIONS
 -- ===================================================================================
 
--- Optimized power percent formatter
-local function formatPowerPercent(unit, decimalPlaces)
-	if not unit then return "" end
-	local powerType = UnitPowerType(unit)
-	local maxPower = UnitPowerMax(unit, powerType)
+-- Format power percent using secret-safe utility from core.lua
+-- Returns formatted percent string or empty string for zero/unavailable
+local function formatPowerPercent(unit, decimalPlaces, powerType)
+	if not unit then
+		return ""
+	end
+	if decimalPlaces < 0 then
+		decimalPlaces = 0
+	elseif decimalPlaces > 3 then
+		decimalPlaces = 3
+	end
 
-	-- Early return for invalid max power
-	if maxPower <= 0 then
+	-- Get percent (0-100 range) using secret-safe utility
+	local percent, isSecret = GetPowerPercent(unit, powerType)
+
+	-- For secret values, we can still format using string.format
+	-- (CurveConstants.ScaleTo100 gives us 0-100 even for secrets)
+	if isSecret then
+		if percent == nil then
+			return ""
+		end
+		-- Basic format for secret values
+		return format("%.0f", percent)
+	end
+
+	if percent == nil then
 		return ""
 	end
 
-	local currentPower = UnitPower(unit, powerType)
-
-	-- Early return for zero power
-	if currentPower == 0 then
-		return "0"
-	end
-
-	-- Calculate percentage
-	local percent = (currentPower / maxPower) * 100
-
-	-- Use pre-built format strings for common cases, build dynamically for others
+	-- Non-secret: use requested decimal places
 	local fmt = PERCENT_FORMATS[decimalPlaces]
 	if fmt then
 		return format(fmt, percent)
-	else
-		return format("%." .. decimalPlaces .. "f", percent)
 	end
+	return format("%.0f", percent)
 end
 
 -- ===================================================================================
@@ -66,13 +68,16 @@ end
 -- ===================================================================================
 
 -- Main power percent tag with simpler name
+-- Uses MHCT.GetPowerPercent() for secret-safe 0-100 percent
 MHCT.registerTag(
 	"mh-power-percent",
 	POWER_SUBCATEGORY,
-	"Simple power percent, no percentage sign with dynamic number of decimals (dynamic number within {} of tag)",
+	"Power percent (0–100). Use {N} for decimal places (default 0). Example: [mh-power-percent{1}]",
 	"UNIT_DISPLAYPOWER UNIT_POWER_FREQUENT UNIT_MAXPOWER",
 	function(unit, _, args)
-		if not unit then return "" end
+		if not unit then
+			return ""
+		end
 		return formatPowerPercent(unit, MHCT.parseDecimalArg(args, DEFAULT_DECIMAL_PLACE))
 	end
 )

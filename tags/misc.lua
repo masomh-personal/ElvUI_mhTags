@@ -1,28 +1,36 @@
 -- ===================================================================================
 -- MISCELLANEOUS TAGS - Optimized for efficiency
 -- ===================================================================================
+--
+-- WoW 12.0+ Compatibility:
+-- This file uses standard WoW APIs that are compatible with 12.0's secret value system.
+-- Level and absorb APIs are not affected by the new restrictions.
+-- ===================================================================================
 local _, ns = ...
 local MHCT = ns.MHCT
 
--- Get ElvUI references from core (shared to avoid duplicate unpacking)
-local E = MHCT.E
-
 -- Localize Lua functions
 local format = string.format
-local lower = string.lower
+local pcall = pcall
 
 -- Localize WoW API functions
 local UnitEffectiveLevel = UnitEffectiveLevel
 local UnitGetTotalAbsorbs = UnitGetTotalAbsorbs
 local strupper = strupper
-local C_UnitAuras = C_UnitAuras
-local UnitGroupRolesAssigned = UnitGroupRolesAssigned
-local UnitAffectingCombat = UnitAffectingCombat
+local issecretvalue = issecretvalue
 
 -- Local constants
 local MISC_SUBCATEGORY = "misc"
 local MAX_PLAYER_LEVEL = MHCT.MAX_PLAYER_LEVEL
-local ABSORB_TEXT_COLOR = MHCT.ABSORB_TEXT_COLOR
+
+-- Check whether two level values can be safely compared.
+-- Secret values cannot be compared in WoW 12.x.
+local function canCompareLevels(levelA, levelB)
+	if issecretvalue(levelA) or issecretvalue(levelB) then
+		return false
+	end
+	return levelA ~= nil and levelB ~= nil
+end
 
 -- ===================================================================================
 -- LEVEL TAGS
@@ -42,7 +50,10 @@ MHCT.registerTag(
 		local playerLevel = UnitEffectiveLevel("player")
 
 		-- Optimize conditional logic - check if we need to show level at all
-		if playerLevel == MAX_PLAYER_LEVEL and unitLevel == MAX_PLAYER_LEVEL then
+		if canCompareLevels(playerLevel, unitLevel)
+			and playerLevel == MAX_PLAYER_LEVEL
+			and unitLevel == MAX_PLAYER_LEVEL
+		then
 			return ""
 		end
 
@@ -56,7 +67,7 @@ MHCT.registerTag(
 MHCT.registerTag(
 	"mh-absorb",
 	MISC_SUBCATEGORY,
-	"Simple absorb tag in parentheses (with yellow text color)",
+	"Absorb shield amount in parentheses. No color applied; use with color tags if desired. Example: [mh-color-yellow][mh-absorb]|r",
 	"UNIT_ABSORB_AMOUNT_CHANGED",
 	function(unit)
 		if not unit then
@@ -64,18 +75,26 @@ MHCT.registerTag(
 		end
 
 		local absorbAmount = UnitGetTotalAbsorbs(unit)
+		local absorbIsSecret = issecretvalue(absorbAmount)
 
-		-- Guard: Must be a valid positive number
-		if not absorbAmount or type(absorbAmount) ~= "number" or absorbAmount <= 0 then
+		-- Guard: only nil means unavailable (secret values are still displayable)
+		if not absorbIsSecret and absorbAmount == nil then
 			return ""
 		end
 
-		-- Use ElvUI's ShortValue (wrap in pcall for safety)
-		local success, result = pcall(function()
-			return E:ShortValue(absorbAmount)
-		end)
-		if success and result then
-			return format("|cff%s(%s)|r", ABSORB_TEXT_COLOR, result)
+		-- Try to check if absorb is zero/negative (works for non-secret values only)
+		local ok, isZeroOrNegative = pcall(function() return absorbAmount <= 0 end)
+		
+		-- If comparison succeeded and absorb is zero/negative, hide it
+		if ok and isZeroOrNegative then
+			return ""
+		end
+		
+		-- If comparison failed (secret value), we cannot detect zero
+		-- Display the formatted value - may show (0) for secret zero values
+		local result = MHCT.FormatLargeNumber(absorbAmount)
+		if result ~= nil then
+			return format("(%s)", result)
 		end
 
 		return ""
@@ -95,7 +114,11 @@ local function formatDifficultyLevel(unit, hideAtMax)
 	local playerLevel = UnitEffectiveLevel("player")
 
 	-- Check if we should hide the level
-	if hideAtMax and playerLevel == unitLevel and playerLevel == MAX_PLAYER_LEVEL then
+	if hideAtMax
+		and canCompareLevels(playerLevel, unitLevel)
+		and playerLevel == unitLevel
+		and playerLevel == MAX_PLAYER_LEVEL
+	then
 		return ""
 	end
 
@@ -104,9 +127,9 @@ end
 
 -- Then use this helper in both difficulty level tags
 MHCT.registerTag(
-	"mh-difficultycolor:level",
+	"mh-diff-level",
 	MISC_SUBCATEGORY,
-	"Traditional ElvUI difficulty color + level with more modern updates (will always show level)",
+	"Unit level colored by difficulty (gray/green/red). Always shows level.",
 	"UNIT_LEVEL PLAYER_LEVEL_UP",
 	function(unit)
 		if not unit then
@@ -117,9 +140,9 @@ MHCT.registerTag(
 )
 
 MHCT.registerTag(
-	"mh-difficultycolor:level-hide",
+	"mh-diff-level-hide",
 	MISC_SUBCATEGORY,
-	"Traditional ElvUI difficulty color + level with more modern updates (will always show level and only hide level when you reach max level and unit level is equal to player level)",
+	"Unit level colored by difficulty. Hides when you and the unit are both max level.",
 	"UNIT_LEVEL PLAYER_LEVEL_UP",
 	function(unit)
 		if not unit then
@@ -168,76 +191,3 @@ MHCT.registerTag(
 	end
 )
 
--- ===================================================================================
--- HEALER DRINKING TAG
--- ===================================================================================
-
--- Exact match buffs that indicate drinking/eating (case-insensitive)
--- These are the actual active drinking states, not persistent stat buffs
-local DRINKING_BUFFS = {
-	["drink"] = true,
-	["food"] = true,
-	["food & drink"] = true,
-	["refreshment"] = true,
-}
-
--- Pre-built drinking text constant (avoid allocating on every call)
-local DRINKING_TEXT = "|cff1f6bffDRINKING...|r"
-
--- Check if unit has a drinking/eating buff
-local function isDrinking(unit)
-	if not unit then
-		return false
-	end
-
-	-- Scan all buffs using modern C_UnitAuras API (WoW 10.0+)
-	for i = 1, 40 do
-		local auraData = C_UnitAuras.GetBuffDataByIndex(unit, i)
-		if not auraData then
-			break -- No more buffs
-		end
-
-		local name = auraData.name
-		if name then
-			local nameLower = lower(name)
-			if DRINKING_BUFFS[nameLower] then
-				return true
-			end
-		end
-	end
-
-	return false
-end
-
--- Healer drinking tag - shows for healers in any scenario (solo, party, raid)
-MHCT.registerTag(
-	"mh-healer-drinking",
-	MISC_SUBCATEGORY,
-	"Shows 'DRINKING...' only for healers drinking/eating (works in any scenario: solo, party, or raid). Example: DRINKING...",
-	"UNIT_AURA UNIT_POWER_UPDATE",
-	function(unit)
-		-- Guard: Unit must exist
-		if not unit then
-			return ""
-		end
-
-		-- Guard: Cannot drink in combat (check FIRST before other checks)
-		if UnitAffectingCombat(unit) then
-			return ""
-		end
-
-		-- Guard: Only show for healers (most units won't be healers)
-		local role = UnitGroupRolesAssigned(unit)
-		if role ~= "HEALER" then
-			return ""
-		end
-
-		-- Check if drinking/eating (all guards passed)
-		if isDrinking(unit) then
-			return DRINKING_TEXT
-		end
-
-		-- Default: return empty (not drinking or guards failed)
-		return ""
-	end
-)
