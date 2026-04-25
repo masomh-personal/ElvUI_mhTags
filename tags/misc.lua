@@ -11,6 +11,7 @@ local MHCT = ns.MHCT
 
 -- Localize Lua functions
 local format = string.format
+local pcall = pcall
 
 -- Localize WoW API functions
 local UnitEffectiveLevel = UnitEffectiveLevel

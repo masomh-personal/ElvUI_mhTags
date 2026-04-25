@@ -21,6 +21,7 @@ MHCT.ADDON_NAME = "ElvUI_mhTags"
 -- Lua functions
 local format = string.format
 local ipairs = ipairs
+local pairs = pairs
 local tonumber = tonumber
 local gsub = string.gsub
 local gmatch = string.gmatch
@@ -28,6 +29,7 @@ local sub = string.sub
 local tinsert = table.insert
 local concat = table.concat
 local strupper = strupper
+local strtrim = strtrim
 
 -- WoW API functions (only those used in core.lua)
 local UnitIsAFK = UnitIsAFK
@@ -42,6 +44,7 @@ local UnitClassification = UnitClassification
 local GetCreatureDifficultyColor = GetCreatureDifficultyColor
 local GetMaxPlayerLevel = GetMaxPlayerLevel
 local UnitName = UnitName
+local UnitPowerType = UnitPowerType
 local IsInRaid = IsInRaid
 local GetNumGroupMembers = GetNumGroupMembers
 local GetRaidRosterInfo = GetRaidRosterInfo
@@ -104,15 +107,15 @@ validateElvUIAPI()
 -- Validates ElvUI version for WoW 12.0+
 -------------------------------------
 local function checkCompatibility()
-	local minElvUIVersion = 14.0
+	local minElvUIVersion = 15.0
 	local currentElvUIVersion = tonumber(E.version) or 0
 
 	-- ElvUI version check
 	if currentElvUIVersion > 0 and currentElvUIVersion < minElvUIVersion then
 		print(
 			format(
-				"|cffFF0000[ElvUI_mhTags Error]|r This addon requires ElvUI %.1f or higher for WoW 12.0 (Midnight). "
-					.. "Current version: %.1f. Please update ElvUI.",
+				"|cffFF0000[ElvUI_mhTags Error]|r This addon requires ElvUI %.1f or higher for WoW 12.0.5 (Midnight). "
+					.. "Current version: %.2f. Please update ElvUI.",
 				minElvUIVersion,
 				currentElvUIVersion
 			)
@@ -405,18 +408,38 @@ end
 
 -- Removed - not used anywhere in the codebase
 
--- Optimized unit status check for ElvUI V14.0
+-- Optimized unit status check for ElvUI V15.0
 MHCT.statusCheck = function(unit)
 	if not unit then
 		return nil
 	end
 
-	-- Only override tags with status when unit is confirmed dead.
+	local connectedState = getSafeBooleanState(UnitIsConnected, unit)
+	if connectedState == false then
+		return L["Offline"]
+	end
+
+	local ghostState = getSafeBooleanState(UnitIsGhost, unit)
+	if ghostState == true then
+		return L["Ghost"]
+	end
+
+	-- Only override tags with death when death is confirmed.
 	-- Any secret/unknown state should fall through so health still shows.
 	local deadState = getSafeBooleanState(UnitIsDead, unit)
 	local feignState = getSafeBooleanState(UnitIsFeignDeath, unit)
 	if deadState == true and feignState == false then
 		return L["Dead"]
+	end
+
+	local afkState = getSafeBooleanState(UnitIsAFK, unit)
+	if afkState == true then
+		return L["AFK"]
+	end
+
+	local dndState = getSafeBooleanState(UnitIsDND, unit)
+	if dndState == true then
+		return L["DND"]
 	end
 
 	return nil
@@ -638,7 +661,7 @@ end
 -- TAG REGISTRATION
 -------------------------------------
 
--- Simple tag registration for ElvUI 14.0+
+-- Simple tag registration for ElvUI 15.0+
 MHCT.registerTag = function(name, subCategory, description, events, func)
 	local fullCategory = MHCT.TAG_CATEGORY_NAME .. " [" .. subCategory .. "]"
 
@@ -654,15 +677,15 @@ end
 
 SLASH_MHTAGS1 = "/mhtags"
 SlashCmdList["MHTAGS"] = function(msg)
-	local cmd = msg and msg:lower():trim() or ""
+	local cmd = msg and strtrim(msg:lower()) or ""
 
 	if cmd == "debug" or cmd == "info" then
 		-- Show debug/compatibility info
 		local info = MHCT.debugInfo or {}
 		print("|cff0388fc[ElvUI_mhTags]|r Debug Information:")
 		print(format("  Addon Version: |cffffcc00%s|r", MHCT.ADDON_VERSION))
-		print(format("  ElvUI Version: |cffffcc00%.1f|r", info.elvuiVersion or 0))
-		print("  Target WoW Version: |cffffcc0012.0+ (Midnight)|r")
+		print(format("  ElvUI Version: |cffffcc00%.2f|r", info.elvuiVersion or 0))
+		print("  Target WoW Version: |cffffcc0012.0.5+ (Midnight)|r")
 	elseif cmd == "help" then
 		print("|cff0388fc[ElvUI_mhTags]|r Commands:")
 		print("  |cffffcc00/mhtags|r - Show memory usage")

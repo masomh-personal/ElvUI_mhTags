@@ -32,6 +32,11 @@ local function formatPowerPercent(unit, decimalPlaces, powerType)
 	if not unit then
 		return ""
 	end
+	if decimalPlaces < 0 then
+		decimalPlaces = 0
+	elseif decimalPlaces > 3 then
+		decimalPlaces = 3
+	end
 
 	-- Get percent (0-100 range) using secret-safe utility
 	local percent, isSecret = GetPowerPercent(unit, powerType)
@@ -54,9 +59,8 @@ local function formatPowerPercent(unit, decimalPlaces, powerType)
 	local fmt = PERCENT_FORMATS[decimalPlaces]
 	if fmt then
 		return format(fmt, percent)
-	else
-		return format("%." .. decimalPlaces .. "f", percent)
 	end
+	return format("%.0f", percent)
 end
 
 -- ===================================================================================
