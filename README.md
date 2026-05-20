@@ -2,10 +2,10 @@
 
 [![Version](https://img.shields.io/badge/Version-11-brightgreen)](https://github.com/masomh-personal/ElvUI_mhTags)
 [![ElvUI](https://img.shields.io/badge/Requires-ElvUI%2015.0+-blue)](https://www.tukui.org/download.php?ui=elvui)
-[![WoW](https://img.shields.io/badge/WoW-12.0.5%20Midnight+-orange)](https://worldofwarcraft.com)
+[![WoW](https://img.shields.io/badge/WoW-12.0.7%20Midnight-orange)](https://worldofwarcraft.com)
 [![License](https://img.shields.io/badge/License-GPL--3.0-yellow)](LICENSE)
 
-Custom tags for ElvUI unit frames on WoW Retail 12.0.5+ (Midnight).
+Custom tags for ElvUI unit frames on WoW Retail 12.0.7 (Midnight).
 
 ElvUI_mhTags adds health, power, name, classification, level, status, combined, and color-prefix tags for ElvUI Custom Texts. It is lightweight, Retail-only, and updated for Midnight's secret-value restrictions.
 
@@ -21,7 +21,7 @@ Known behavior:
 
 ## Requirements
 
-- World of Warcraft Retail 12.0.5+ (Midnight)
+- World of Warcraft Retail 12.0.7 (Midnight)
 - ElvUI 15.0+
 
 ## Installation

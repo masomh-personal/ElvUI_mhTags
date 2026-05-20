@@ -1,6 +1,6 @@
-## Interface: 120005
+## Interface: 120007
 ## Title: |cff1784d1ElvUI|r |cffccff33MH Tags|r
-## Notes: Custom tags for ElvUI unit frames. WoW 12.0.5+ (Midnight) only. Includes secret-safe health gradient coloring via ColorCurve.
+## Notes: Custom tags for ElvUI unit frames. WoW 12.0.7 (Midnight) Retail. Includes secret-safe health gradient coloring via ColorCurve.
 ## Author: mhDesigns
 ## Version: 11
 ## X-Category: Unit Frames
@@ -13,7 +13,7 @@
 ## X-License: GPL-3.0
 ## X-Localizations: enUS
 ## X-Min-ElvUI: 15.0
-## X-WoW-Version: 12.0.5
+## X-WoW-Version: 12.0.7
 ## X-Flavor: Retail
 
 core.lua

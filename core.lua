@@ -62,7 +62,7 @@ local CreateColor = CreateColor
 local CreateColorCurve = C_CurveUtil and C_CurveUtil.CreateColorCurve
 local LuaCurveTypeLinear = Enum.LuaCurveType and Enum.LuaCurveType.Linear
 -- AbbreviateNumbers is AllowedWhenTainted in 12.0+ and accepts secret values natively.
--- Guaranteed to exist since TOC floor is 120005.
+-- Guaranteed to exist since TOC floor is 120007 (WoW 12.0.7).
 local AbbreviateNumbers = AbbreviateNumbers
 -- TruncateWhenZero (12.0.5+): returns nil when a value is zero, even for secret zeros.
 -- Used to suppress absorb display when absorb is 0 but its value is restricted.
@@ -123,7 +123,7 @@ local function checkCompatibility()
 	if currentElvUIVersion > 0 and currentElvUIVersion < minElvUIVersion then
 		print(
 			format(
-				"|cffFF0000[ElvUI_mhTags Error]|r This addon requires ElvUI %.1f or higher for WoW 12.0.5 (Midnight). "
+				"|cffFF0000[ElvUI_mhTags Error]|r This addon requires ElvUI %.1f or higher for WoW 12.0.7 (Midnight). "
 					.. "Current version: %.2f. Please update ElvUI.",
 				minElvUIVersion,
 				currentElvUIVersion
@@ -379,7 +379,7 @@ end
 --   Non-secret: direct comparison (absorbAmount <= 0)
 --   Secret:     C_StringUtil.TruncateWhenZero (12.0.5+) returns nil for secret zeros,
 --               allowing us to suppress "(0)" that previously leaked through.
---               Without TruncateWhenZero (shouldn't happen given TOC 120005), we fall
+--               Without TruncateWhenZero (shouldn't happen given TOC 120007), we fall
 --               through and show the value — worst case is a visible "(0)".
 MHCT.getAbsorbText = function(unit, withTrailingSpace)
 	if not unit then return "" end
@@ -766,7 +766,7 @@ SlashCmdList["MHTAGS"] = function(msg)
 		print("|cff0388fc[ElvUI_mhTags]|r Debug Information:")
 		print(format("  Addon Version: |cffffcc00%s|r", MHCT.ADDON_VERSION))
 		print(format("  ElvUI Version: |cffffcc00%.2f|r", info.elvuiVersion or 0))
-		print("  Target WoW Version: |cffffcc0012.0.5+ (Midnight)|r")
+		print("  Target WoW Version: |cffffcc0012.0.7 (Midnight)|r")
 	elseif cmd == "help" then
 		print("|cff0388fc[ElvUI_mhTags]|r Commands:")
 		print("  |cffffcc00/mhtags|r - Show memory usage")

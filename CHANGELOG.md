@@ -9,7 +9,7 @@ This project uses simple integer versions: 1, 2, 3, and so on.
 
 ## [11] - May 20, 2026
 
-v11 requires WoW 12.0.5+ (Midnight) and ElvUI 15.0+. It refactors the codebase around shared core helpers and restores health-percent text coloring using Blizzard's ColorCurve API.
+v11 requires WoW 12.0.7 (Midnight) and ElvUI 15.0+. It refactors the codebase around shared core helpers and restores health-percent text coloring using Blizzard's ColorCurve API.
 
 ### Added
 
@@ -21,7 +21,7 @@ v11 requires WoW 12.0.5+ (Midnight) and ElvUI 15.0+. It refactors the codebase a
 - **Centralized tag logic** — absorb, percent formatting, name handling, and max-level comparisons moved into `core.lua`; tag files delegate instead of duplicating
 - **Health deficit tags** — use `MHCT.FormatLargeNumber` (`AbbreviateNumbers`) for consistent abbreviation with other health tags
 - **12.0+ API cleanup** — `AbbreviateNumbers` and `C_StringUtil.TruncateWhenZero` for number/absorb formatting; load-time `CurveConstants.ScaleTo100` path for percent helpers; removed unnecessary `pcall` wrappers on boolean APIs
-- **Documentation** — README and TOC updated for v11; midnight notes reflect ColorCurve gradient support
+- **Documentation** — README and TOC updated for v11 and WoW 12.0.7 (`Interface: 120007`)
 
 ### Fixed
 
