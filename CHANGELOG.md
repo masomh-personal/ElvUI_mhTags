@@ -25,7 +25,7 @@ v11 requires WoW 12.0.5 (Midnight) and ElvUI 15.0+. It refactors the codebase ar
 
 ### Fixed
 
-- **Absorb display** — `(0)` no longer shown when absorb is zero or a secret zero; uses `TruncateWhenZero` + `WrapString` for C-side empty detection, then `AbbreviateNumbers` for display (secret values stay abbreviated; never compare secret strings to `""` in Lua)
+- **Absorb display** — `(0)` no longer shown when absorb is zero. Non-secret absorbs use `AbbreviateNumbers` (e.g. `(92.6K)`); secret absorbs use `TruncateWhenZero` + `WrapString` and show the raw integer (e.g. `(92587)`). Blizzard does not currently expose an API to combine abbreviation with hide-when-zero on secret values — confirmed by oUF maintainer and Blizzard forum (Feb 2026).
 - **Status/classification colors** — shared via `MHCT.COLORS` so tags stay in sync
 
 ---

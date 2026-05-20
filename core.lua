@@ -378,23 +378,27 @@ end
 -- withTrailingSpace: true for inline use before a health value (e.g. "(25k) 100k").
 --
 -- Zero-detection strategy:
---   Non-secret: direct comparison (absorbAmount <= 0), then AbbreviateNumbers
---   Secret:     TruncateWhenZero + WrapString gate (C-side empty check); display via
---               AbbreviateNumbers (secret-safe). Never compare TruncateWhenZero output to "" in Lua.
+--   Non-secret: absorbAmount <= 0, then AbbreviateNumbers in parens (e.g. "(92.6K)")
+--   Secret:     TruncateWhenZero + WrapString only. Blizzard's APIs do not currently support
+--               combining AbbreviateNumbers with hide-when-zero on secret values
+--               (TruncateWhenZero only accepts numbers, AbbreviateNumbers always emits "0").
+--               Shows raw integer in parens when present. Confirmed by oUF maintainer p3lim
+--               and on the Blizzard forums; cannot be worked around in addon code.
 MHCT.getAbsorbText = function(unit, withTrailingSpace)
 	if not unit then return "" end
 
 	local absorbAmount = UnitGetTotalAbsorbs(unit)
+	if absorbAmount == nil then return "" end
 
 	if not issecretvalue(absorbAmount) then
-		if absorbAmount == nil or absorbAmount <= 0 then return "" end
+		if absorbAmount <= 0 then return "" end
 		local result = AbbreviateNumbers(absorbAmount)
 		if result == nil or result == "" or result == "0" then return "" end
 		local text = strconcat("(", result, ")")
 		return withTrailingSpace and strconcat(text, " ") or text
 	end
 
-	-- Secret absorb: TruncateWhenZero only accepts numbers (not abbreviated strings).
+	-- Secret path: never call AbbreviateNumbers — it always formats zero as "0".
 	if type(absorbAmount) ~= "number" or not TruncateWhenZero or not WrapString then
 		return ""
 	end
@@ -402,15 +406,8 @@ MHCT.getAbsorbText = function(unit, withTrailingSpace)
 	local infix = TruncateWhenZero(absorbAmount)
 	if infix == nil then return "" end
 
-	-- WrapString returns normal "" when infix is empty (zero absorb); only compare when not secret.
-	local gate = WrapString(infix)
-	if not issecretvalue(gate) and gate == "" then return "" end
-
-	local result = AbbreviateNumbers(absorbAmount)
-	if not issecretvalue(result) and (result == nil or result == "" or result == "0") then return "" end
-
-	local text = strconcat("(", result, ")")
-	return withTrailingSpace and strconcat(text, " ") or text
+	local suffix = withTrailingSpace and ") " or ")"
+	return WrapString(infix, "(", suffix)
 end
 
 -- Build a ColorCurveObject from HEALTH_GRADIENT_STOPS (0%, 50%, 100%).
