@@ -11,7 +11,7 @@ local MHCT = ns.MHCT
 -------------------------------------
 -- ADDON VERSION INFO
 -------------------------------------
-MHCT.ADDON_VERSION = "10"
+MHCT.ADDON_VERSION = "11"
 MHCT.ADDON_NAME = "ElvUI_mhTags"
 
 -------------------------------------

@@ -1,6 +1,6 @@
 # ElvUI_mhTags
 
-[![Version](https://img.shields.io/badge/Version-10-brightgreen)](https://github.com/masomh-personal/ElvUI_mhTags)
+[![Version](https://img.shields.io/badge/Version-11-brightgreen)](https://github.com/masomh-personal/ElvUI_mhTags)
 [![ElvUI](https://img.shields.io/badge/Requires-ElvUI%2015.0+-blue)](https://www.tukui.org/download.php?ui=elvui)
 [![WoW](https://img.shields.io/badge/WoW-12.0.5%20Midnight+-orange)](https://worldofwarcraft.com)
 [![License](https://img.shields.io/badge/License-GPL--3.0-yellow)](LICENSE)
@@ -11,12 +11,11 @@ ElvUI_mhTags adds health, power, name, classification, level, status, combined, 
 
 ## Midnight Notes
 
-WoW 12 introduced secret values for some combat-sensitive data. This can affect health, power, absorb, and nameplate-related information in protected content.
-
-Because secret values cannot be compared, used for arithmetic, or used as table keys, this addon does not include health-gradient or hide-at-full health tags.
+WoW 12 introduced secret values for some combat-sensitive data. This addon uses Blizzard's 12.0 APIs (`AbbreviateNumbers`, `C_StringUtil.TruncateWhenZero`, `ColorCurveObject`, and related helpers) to stay compatible.
 
 Known behavior:
 
+- Health text gradient uses `[mh-color-health-gradient]` with Blizzard's ColorCurve API (not Lua percent math).
 - Deficit percent is hidden when WoW blocks the arithmetic needed to calculate it.
 - Secret names display as-is and are not uppercased, shortened, or abbreviated.
 
@@ -38,6 +37,7 @@ Open ElvUI with `/ec`, choose a unit frame, open Custom Texts, and browse the `m
 Popular examples:
 
 - `[mh-health-current-percent]`: `100k | 85%`
+- `[mh-color-health-gradient][mh-health-current-percent]|r`: health text with emerald gradient by percent
 - `[mh-health-percent{0}]`: `85%`
 - `[mh-health-deficit]`: `-15k`, or a status such as `DEAD`
 - `[mh-name-caps{20}]`: uppercase name capped to 20 characters
