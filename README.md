@@ -17,7 +17,6 @@ Because secret values cannot be compared, used for arithmetic, or used as table 
 
 Known behavior:
 
-- Absorb tags may show `(0)` when a zero absorb value is secret.
 - Deficit percent is hidden when WoW blocks the arithmetic needed to calculate it.
 - Secret names display as-is and are not uppercased, shortened, or abbreviated.
 
