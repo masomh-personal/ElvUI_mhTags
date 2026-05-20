@@ -9,7 +9,7 @@ This project uses simple integer versions: 1, 2, 3, and so on.
 
 ## [11] - May 20, 2026
 
-v11 requires WoW 12.0.7 (Midnight) and ElvUI 15.0+. It refactors the codebase around shared core helpers and restores health-percent text coloring using Blizzard's ColorCurve API.
+v11 requires WoW 12.0.5 (Midnight) and ElvUI 15.0+. It refactors the codebase around shared core helpers and restores health-percent text coloring using Blizzard's ColorCurve API.
 
 ### Added
 
@@ -21,11 +21,11 @@ v11 requires WoW 12.0.7 (Midnight) and ElvUI 15.0+. It refactors the codebase ar
 - **Centralized tag logic** — absorb, percent formatting, name handling, and max-level comparisons moved into `core.lua`; tag files delegate instead of duplicating
 - **Health deficit tags** — use `MHCT.FormatLargeNumber` (`AbbreviateNumbers`) for consistent abbreviation with other health tags
 - **12.0+ API cleanup** — `AbbreviateNumbers` and `C_StringUtil.TruncateWhenZero` for number/absorb formatting; load-time `CurveConstants.ScaleTo100` path for percent helpers; removed unnecessary `pcall` wrappers on boolean APIs
-- **Documentation** — README and TOC updated for v11 and WoW 12.0.7 (`Interface: 120007`)
+- **Documentation** — README and TOC updated for v11 and WoW 12.0.5 (`Interface: 120005`)
 
 ### Fixed
 
-- **Absorb display** — `(0)` no longer shown when absorb is zero or a secret zero; fix checks `C_StringUtil.TruncateWhenZero` for `""` (empty string is truthy in Lua, so `not TruncateWhenZero(...)` never suppressed output)
+- **Absorb display** — `(0)` no longer shown when absorb is zero or a secret zero; uses `TruncateWhenZero` + `WrapString` for C-side empty detection, then `AbbreviateNumbers` for display (secret values stay abbreviated; never compare secret strings to `""` in Lua)
 - **Status/classification colors** — shared via `MHCT.COLORS` so tags stay in sync
 
 ---

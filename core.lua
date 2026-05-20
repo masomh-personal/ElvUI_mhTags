@@ -62,11 +62,13 @@ local CreateColor = CreateColor
 local CreateColorCurve = C_CurveUtil and C_CurveUtil.CreateColorCurve
 local LuaCurveTypeLinear = Enum.LuaCurveType and Enum.LuaCurveType.Linear
 -- AbbreviateNumbers is AllowedWhenTainted in 12.0+ and accepts secret values natively.
--- Guaranteed to exist since TOC floor is 120007 (WoW 12.0.7).
+-- Guaranteed to exist since TOC floor is 120005 (WoW 12.0.5).
 local AbbreviateNumbers = AbbreviateNumbers
--- TruncateWhenZero (12.0.5+): returns "" when a value is zero (including secret zeros).
--- Used to suppress absorb display when absorb is 0 but its value is restricted.
+-- TruncateWhenZero (12.0.5+): formats to integer string, or "" when zero (including secret zeros).
+-- WrapString (12.0+): joins prefix+infix+suffix only when infix is non-empty (C-side check; safe for secrets).
 local TruncateWhenZero = C_StringUtil and C_StringUtil.TruncateWhenZero
+local WrapString = C_StringUtil and C_StringUtil.WrapString
+local strconcat = string.concat
 local issecretvalue = issecretvalue
 
 -- Cache max player level at load time (doesn't change during session)
@@ -123,7 +125,7 @@ local function checkCompatibility()
 	if currentElvUIVersion > 0 and currentElvUIVersion < minElvUIVersion then
 		print(
 			format(
-				"|cffFF0000[ElvUI_mhTags Error]|r This addon requires ElvUI %.1f or higher for WoW 12.0.7 (Midnight). "
+				"|cffFF0000[ElvUI_mhTags Error]|r This addon requires ElvUI %.1f or higher for WoW 12.0.5 (Midnight). "
 					.. "Current version: %.2f. Please update ElvUI.",
 				minElvUIVersion,
 				currentElvUIVersion
@@ -376,31 +378,39 @@ end
 -- withTrailingSpace: true for inline use before a health value (e.g. "(25k) 100k").
 --
 -- Zero-detection strategy:
---   Non-secret: direct comparison (absorbAmount <= 0)
---   Secret:     C_StringUtil.TruncateWhenZero returns "" for zero (not nil — empty string
---               is truthy in Lua, so we must check == "" explicitly).
+--   Non-secret: direct comparison (absorbAmount <= 0), then AbbreviateNumbers
+--   Secret:     TruncateWhenZero + WrapString gate (C-side empty check); display via
+--               AbbreviateNumbers (secret-safe). Never compare TruncateWhenZero output to "" in Lua.
 MHCT.getAbsorbText = function(unit, withTrailingSpace)
 	if not unit then return "" end
 
 	local absorbAmount = UnitGetTotalAbsorbs(unit)
 
 	if not issecretvalue(absorbAmount) then
-		-- Non-secret: nil or zero/negative means no absorb to display
 		if absorbAmount == nil or absorbAmount <= 0 then return "" end
-	else
-		-- Secret value: can't compare directly; TruncateWhenZero handles secret zeros
-		if TruncateWhenZero then
-			local truncated = TruncateWhenZero(absorbAmount)
-			if truncated == nil or truncated == "" then return "" end
-		end
+		local result = AbbreviateNumbers(absorbAmount)
+		if result == nil or result == "" or result == "0" then return "" end
+		local text = strconcat("(", result, ")")
+		return withTrailingSpace and strconcat(text, " ") or text
 	end
 
-	local result = MHCT.FormatLargeNumber(absorbAmount)
-	-- Belt-and-suspenders: AbbreviateNumbers may still emit "0" if zero slipped through
-	if result == nil or result == "" or result == "0" then return "" end
+	-- Secret absorb: TruncateWhenZero only accepts numbers (not abbreviated strings).
+	if type(absorbAmount) ~= "number" or not TruncateWhenZero or not WrapString then
+		return ""
+	end
 
-	local text = "(" .. result .. ")"
-	return withTrailingSpace and (text .. " ") or text
+	local infix = TruncateWhenZero(absorbAmount)
+	if infix == nil then return "" end
+
+	-- WrapString returns normal "" when infix is empty (zero absorb); only compare when not secret.
+	local gate = WrapString(infix)
+	if not issecretvalue(gate) and gate == "" then return "" end
+
+	local result = AbbreviateNumbers(absorbAmount)
+	if not issecretvalue(result) and (result == nil or result == "" or result == "0") then return "" end
+
+	local text = strconcat("(", result, ")")
+	return withTrailingSpace and strconcat(text, " ") or text
 end
 
 -- Build a ColorCurveObject from HEALTH_GRADIENT_STOPS (0%, 50%, 100%).
@@ -768,7 +778,7 @@ SlashCmdList["MHTAGS"] = function(msg)
 		print("|cff0388fc[ElvUI_mhTags]|r Debug Information:")
 		print(format("  Addon Version: |cffffcc00%s|r", MHCT.ADDON_VERSION))
 		print(format("  ElvUI Version: |cffffcc00%.2f|r", info.elvuiVersion or 0))
-		print("  Target WoW Version: |cffffcc0012.0.7 (Midnight)|r")
+		print("  Target WoW Version: |cffffcc0012.0.5 (Midnight)|r")
 	elseif cmd == "help" then
 		print("|cff0388fc[ElvUI_mhTags]|r Commands:")
 		print("  |cffffcc00/mhtags|r - Show memory usage")
