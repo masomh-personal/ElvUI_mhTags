@@ -25,7 +25,7 @@ v11 requires WoW 12.0.7 (Midnight) and ElvUI 15.0+. It refactors the codebase ar
 
 ### Fixed
 
-- **Absorb display** — `(0)` no longer shown when absorb is a secret zero (`C_StringUtil.TruncateWhenZero`)
+- **Absorb display** — `(0)` no longer shown when absorb is zero or a secret zero; fix checks `C_StringUtil.TruncateWhenZero` for `""` (empty string is truthy in Lua, so `not TruncateWhenZero(...)` never suppressed output)
 - **Status/classification colors** — shared via `MHCT.COLORS` so tags stay in sync
 
 ---

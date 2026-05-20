@@ -64,7 +64,7 @@ local LuaCurveTypeLinear = Enum.LuaCurveType and Enum.LuaCurveType.Linear
 -- AbbreviateNumbers is AllowedWhenTainted in 12.0+ and accepts secret values natively.
 -- Guaranteed to exist since TOC floor is 120007 (WoW 12.0.7).
 local AbbreviateNumbers = AbbreviateNumbers
--- TruncateWhenZero (12.0.5+): returns nil when a value is zero, even for secret zeros.
+-- TruncateWhenZero (12.0.5+): returns "" when a value is zero (including secret zeros).
 -- Used to suppress absorb display when absorb is 0 but its value is restricted.
 local TruncateWhenZero = C_StringUtil and C_StringUtil.TruncateWhenZero
 local issecretvalue = issecretvalue
@@ -377,10 +377,8 @@ end
 --
 -- Zero-detection strategy:
 --   Non-secret: direct comparison (absorbAmount <= 0)
---   Secret:     C_StringUtil.TruncateWhenZero (12.0.5+) returns nil for secret zeros,
---               allowing us to suppress "(0)" that previously leaked through.
---               Without TruncateWhenZero (shouldn't happen given TOC 120007), we fall
---               through and show the value — worst case is a visible "(0)".
+--   Secret:     C_StringUtil.TruncateWhenZero returns "" for zero (not nil — empty string
+--               is truthy in Lua, so we must check == "" explicitly).
 MHCT.getAbsorbText = function(unit, withTrailingSpace)
 	if not unit then return "" end
 
@@ -390,12 +388,16 @@ MHCT.getAbsorbText = function(unit, withTrailingSpace)
 		-- Non-secret: nil or zero/negative means no absorb to display
 		if absorbAmount == nil or absorbAmount <= 0 then return "" end
 	else
-		-- Secret value: can't compare directly, but TruncateWhenZero handles secret zeros
-		if TruncateWhenZero and not TruncateWhenZero(absorbAmount) then return "" end
+		-- Secret value: can't compare directly; TruncateWhenZero handles secret zeros
+		if TruncateWhenZero then
+			local truncated = TruncateWhenZero(absorbAmount)
+			if truncated == nil or truncated == "" then return "" end
+		end
 	end
 
 	local result = MHCT.FormatLargeNumber(absorbAmount)
-	if result == nil then return "" end
+	-- Belt-and-suspenders: AbbreviateNumbers may still emit "0" if zero slipped through
+	if result == nil or result == "" or result == "0" then return "" end
 
 	local text = "(" .. result .. ")"
 	return withTrailingSpace and (text .. " ") or text
