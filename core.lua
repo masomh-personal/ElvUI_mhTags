@@ -28,6 +28,7 @@ local gmatch = string.gmatch
 local sub = string.sub
 local tinsert = table.insert
 local concat = table.concat
+local unpack = unpack
 local strupper = strupper
 local strtrim = strtrim
 
@@ -57,6 +58,9 @@ local GetRaidRosterInfo = GetRaidRosterInfo
 local UnitHealthPercent = UnitHealthPercent
 local UnitPowerPercent = UnitPowerPercent
 local UnitGetTotalAbsorbs = UnitGetTotalAbsorbs
+local CreateColor = CreateColor
+local CreateColorCurve = C_CurveUtil and C_CurveUtil.CreateColorCurve
+local LuaCurveTypeLinear = Enum.LuaCurveType and Enum.LuaCurveType.Linear
 -- AbbreviateNumbers is AllowedWhenTainted in 12.0+ and accepts secret values natively.
 -- Guaranteed to exist since TOC floor is 120005.
 local AbbreviateNumbers = AbbreviateNumbers
@@ -159,6 +163,32 @@ MHCT.COLORS = {
 	RARE   = "fc49f3", -- light magenta
 	ELITE  = "ffcc00", -- gold
 }
+
+-- Emerald palette (hex values match mh-color-emerald-* in tags/color.lua)
+MHCT.EMERALD_HEX = {
+	RED    = "C85050",
+	YELLOW = "C8C850",
+	GREEN  = "50C878",
+}
+
+-- Convert 6-char hex ("RRGGBB") to normalized RGB (0-1) for ColorCurve stop definitions.
+local function gradientStopFromHex(hex)
+	return tonumber(sub(hex, 1, 2), 16) / 255,
+		tonumber(sub(hex, 3, 4), 16) / 255,
+		tonumber(sub(hex, 5, 6), 16) / 255
+end
+
+-- Health gradient: emerald-red (0%) -> emerald-yellow (50%) -> emerald-green (100%)
+do
+	local lr, lg, lb = gradientStopFromHex(MHCT.EMERALD_HEX.RED)
+	local mr, mg, mb = gradientStopFromHex(MHCT.EMERALD_HEX.YELLOW)
+	local hr, hg, hb = gradientStopFromHex(MHCT.EMERALD_HEX.GREEN)
+	MHCT.HEALTH_GRADIENT_STOPS = {
+		LOW  = { lr, lg, lb },
+		MID  = { mr, mg, mb },
+		HIGH = { hr, hg, hb },
+	}
+end
 
 -- Local aliases for use within core.lua
 local STATUS_COLOR = MHCT.COLORS.STATUS
@@ -369,6 +399,32 @@ MHCT.getAbsorbText = function(unit, withTrailingSpace)
 
 	local text = "(" .. result .. ")"
 	return withTrailingSpace and (text .. " ") or text
+end
+
+-- Build a ColorCurveObject from HEALTH_GRADIENT_STOPS (0%, 50%, 100%).
+-- Midnight secret values block numeric percent + table lookup for text coloring, but
+-- UnitHealthPercent(unit, false, colorCurve) evaluates the gradient on the C side and
+-- returns a ColorMixin safe for GenerateHexColor(). See ColorCurveObject on warcraft.wiki.
+local HEALTH_COLOR_CURVE
+if CreateColorCurve and CreateColor and LuaCurveTypeLinear then
+	HEALTH_COLOR_CURVE = CreateColorCurve()
+	HEALTH_COLOR_CURVE:SetType(LuaCurveTypeLinear)
+	local lr, lg, lb = unpack(MHCT.HEALTH_GRADIENT_STOPS.LOW)
+	local mr, mg, mb = unpack(MHCT.HEALTH_GRADIENT_STOPS.MID)
+	local hr, hg, hb = unpack(MHCT.HEALTH_GRADIENT_STOPS.HIGH)
+	HEALTH_COLOR_CURVE:AddPoint(0.0, CreateColor(lr, lg, lb))
+	HEALTH_COLOR_CURVE:AddPoint(0.5, CreateColor(mr, mg, mb))
+	HEALTH_COLOR_CURVE:AddPoint(1.0, CreateColor(hr, hg, hb))
+end
+MHCT.HEALTH_COLOR_CURVE = HEALTH_COLOR_CURVE
+
+-- Returns opening color escape "|cffRRGGBB" for the unit's current health gradient color.
+-- nil when the curve is unavailable or evaluation fails (caller should use fallback).
+MHCT.getHealthGradientColorPrefix = function(unit)
+	if not unit or not HEALTH_COLOR_CURVE then return nil end
+	local ok, color = pcall(UnitHealthPercent, unit, false, HEALTH_COLOR_CURVE)
+	if not ok or not color then return nil end
+	return "|c" .. color:GenerateHexColor()
 end
 
 -------------------------------------

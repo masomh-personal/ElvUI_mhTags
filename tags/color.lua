@@ -140,3 +140,22 @@ MHCT.registerTag(
 		return ""
 	end
 )
+
+-- ===================================================================================
+-- HEALTH GRADIENT COLOR
+-- Uses UnitHealthPercent + ColorCurveObject (Midnight secret-safe API).
+-- Numeric percent + precomputed table lookup cannot work when health is a secret value;
+-- the curve is evaluated on the C side and GenerateHexColor() produces the color code.
+-- Falls back to emerald-green when evaluation fails.
+-- ===================================================================================
+local SECRET_FALLBACK_COLOR = "|cff50C878" -- emerald-green; same hex as mh-color-emerald-green
+
+MHCT.registerTag(
+	"mh-color-health-gradient",
+	COLOR_SUBCATEGORY,
+	"Color prefix: 3-stop emerald gradient by health percent (emerald-red at low, emerald-yellow at mid, emerald-green at full). Composes with any health tag. Example: [mh-color-health-gradient][mh-health-current-percent]|r",
+	"UNIT_HEALTH UNIT_MAXHEALTH",
+	function(unit)
+		return MHCT.getHealthGradientColorPrefix(unit) or SECRET_FALLBACK_COLOR
+	end
+)

@@ -105,7 +105,10 @@ Color tags return an opening color code. Use them before another tag and close w
 ```text
 [mh-color-pastel-green][mh-health-current-percent]|r
 [mh-color-custom{FF5733}][mh-name-caps{20}]|r
+[mh-color-health-gradient][mh-health-current-percent]|r
 ```
+
+- `[mh-color-health-gradient]`: health-percent gradient prefix using the emerald palette (emerald-red at low, emerald-yellow at mid, emerald-green at full). Uses Blizzard's ColorCurve API for Midnight secret-value compatibility. Example: `[mh-color-health-gradient][mh-health-current-percent]|r`
 
 Available color groups:
 
