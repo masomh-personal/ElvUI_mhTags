@@ -9,57 +9,17 @@
 local _, ns = ...
 local MHCT = ns.MHCT
 
--- Get ElvUI references from core (shared to avoid duplicate unpacking)
-local E = MHCT.E
-
--- Localize Lua functions
-local tonumber = tonumber
-
 -- Localize WoW API functions
-local UnitName = UnitName
+-- strupper is still needed directly in formatAbbreviatedName
 local strupper = strupper
-local issecretvalue = issecretvalue
 
 -- Local constants
 local NAME_SUBCATEGORY = "name"
 local DEFAULT_TEXT_LENGTH = MHCT.DEFAULT_TEXT_LENGTH
 
--- Helper: Get name safely, handling secret values
--- Returns: name, isSecret
--- For secret values, we return them as-is (can't transform but can display)
-local function getValidName(unit)
-	if not unit then
-		return nil, false
-	end
-	local name = UnitName(unit)
-	-- Secret values can still be displayed by FontString, but can't be transformed
-	if issecretvalue(name) then
-		return name, true
-	end
-	if name == nil then
-		return nil, false
-	end
-	-- Non-secret: check if empty
-	if name == "" then
-		return nil, false
-	end
-	return name, false
-end
-
--- Helper: Format name with uppercase and length limit (only works on non-secret)
-local function formatName(name, isSecret, length)
-	if isSecret then
-		-- Can't transform secret names, return as-is
-		return name
-	end
-	return E:ShortenString(strupper(name), length)
-end
-
 -- ===================================================================================
 -- NAME RELATED TAGS
 -- ===================================================================================
-
--- Removed - no need to cache empty string
 
 MHCT.registerTag(
 	"mh-name-caps",
@@ -67,13 +27,11 @@ MHCT.registerTag(
 	"Unit name in CAPS. Use {N} for max character length (default 28). Example: [mh-name-caps{20}]",
 	"UNIT_NAME_UPDATE",
 	function(unit, _, args)
-		local name, isSecret = getValidName(unit)
-		if name == nil then
-			return ""
-		end
-
 		local length = MHCT.parseDecimalArg(args, DEFAULT_TEXT_LENGTH)
-		return formatName(name, isSecret, length)
+		-- MHCT.getFormattedUnitName handles secret/nil/empty and CAPS+shorten in one call
+		local name = MHCT.getFormattedUnitName(unit, length)
+		if name == nil then return "" end
+		return name
 	end
 )
 
@@ -83,22 +41,15 @@ MHCT.registerTag(
 	"Shows status with icon when AFK, Dead, Offline, etc.; otherwise unit name in CAPS. Use {N} for max name length (default 28). Example: [mh-name-caps-or-status{20}]",
 	"UNIT_NAME_UPDATE UNIT_CONNECTION PLAYER_FLAGS_CHANGED UNIT_HEALTH INSTANCE_ENCOUNTER_ENGAGE_UNIT",
 	function(unit, _, args)
-		if not unit then
-			return ""
-		end
-		-- Check for status first (less common case)
+		if not unit then return "" end
+		-- Status check first; status wins over name display
 		local statusFormatted = MHCT.formatWithStatusCheck(unit)
-		if statusFormatted then
-			return statusFormatted
-		end
-
-		local name, isSecret = getValidName(unit)
-		if name == nil then
-			return ""
-		end
+		if statusFormatted then return statusFormatted end
 
 		local length = MHCT.parseDecimalArg(args, DEFAULT_TEXT_LENGTH)
-		return formatName(name, isSecret, length)
+		local name = MHCT.getFormattedUnitName(unit, length)
+		if name == nil then return "" end
+		return name
 	end
 )
 
@@ -108,39 +59,29 @@ MHCT.registerTag(
 	"Unit name in CAPS. In raid, appends raid group number (e.g. Name (3)). Use {N} for max name length (default 28). Example: [mh-name-caps-with-raid-group{20}]",
 	"UNIT_NAME_UPDATE GROUP_ROSTER_UPDATE",
 	function(unit, _, args)
-		local name, isSecret = getValidName(unit)
-		if name == nil then
-			return ""
-		end
-
 		local length = MHCT.parseDecimalArg(args, DEFAULT_TEXT_LENGTH)
-		local formatted = formatName(name, isSecret, length)
-		return MHCT.appendRaidGroupToName(unit, formatted)
+		local name = MHCT.getFormattedUnitName(unit, length)
+		if name == nil then return "" end
+		return MHCT.appendRaidGroupToName(unit, name)
 	end
 )
 
 -- ===================================================================================
--- Helper function for name abbreviation with configurable parameters
+-- Helper for abbreviation tags — uses MHCT.getUnitNameSafe so secret/nil handling
+-- is centralized in core.lua rather than repeated here.
 local function formatAbbreviatedName(unit, reverse, lengthThreshold)
-	local name, isSecret = getValidName(unit)
-	if name == nil then
-		return ""
-	end
+	local name, isSecret = MHCT.getUnitNameSafe(unit)
+	if name == nil then return "" end
+	-- Secret names can't be transformed (strupper/#len would error on them)
+	if isSecret then return name end
 
-	-- Secret names can't be transformed, return as-is
-	if isSecret then
-		return name
-	end
-
-	-- Convert to uppercase once
 	local uppercaseName = strupper(name)
 
-	-- If length threshold is provided, only abbreviate if name is longer
+	-- Only abbreviate when name exceeds the threshold (if one is given)
 	if lengthThreshold and #name <= lengthThreshold then
 		return uppercaseName
 	end
 
-	-- Use the abbreviate function with the uppercase name
 	return MHCT.abbreviate(uppercaseName, reverse, unit)
 end
 
@@ -171,7 +112,8 @@ MHCT.registerTag(
 	"Name in CAPS; abbreviates only if longer than {N} characters (default 25). Use {N} for length threshold. Example: [mh-name-abbrev-if-long{30}]",
 	"UNIT_NAME_UPDATE",
 	function(unit, _, nameLen)
-		return formatAbbreviatedName(unit, false, tonumber(nameLen) or 25)
+		-- Use parseDecimalArg for consistency with all other {N} tags
+		return formatAbbreviatedName(unit, false, MHCT.parseDecimalArg(nameLen, 25))
 	end
 )
 
@@ -181,6 +123,6 @@ MHCT.registerTag(
 	"Same as mh-name-abbrev-if-long but last word full. Use {N} for length threshold (default 25). Example: [mh-name-abbrev-if-long-reverse{30}]",
 	"UNIT_NAME_UPDATE",
 	function(unit, _, nameLen)
-		return formatAbbreviatedName(unit, true, tonumber(nameLen) or 25)
+		return formatAbbreviatedName(unit, true, MHCT.parseDecimalArg(nameLen, 25))
 	end
 )

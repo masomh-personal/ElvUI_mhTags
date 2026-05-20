@@ -13,17 +13,9 @@
 local _, ns = ...
 local MHCT = ns.MHCT
 
--- Get ElvUI references from core (shared to avoid duplicate unpacking)
-local E = MHCT.E
-
--- Localize Lua functions
-local format = string.format
-local pcall = pcall
-
 -- Localize WoW 12.0+ API functions (required - no fallbacks)
 local UnitHealth = UnitHealth
 local UnitHealthMissing = UnitHealthMissing
-local UnitGetTotalAbsorbs = UnitGetTotalAbsorbs
 local issecretvalue = issecretvalue
 
 -- ===================================================================================
@@ -34,10 +26,6 @@ local HEALTH_SUBCATEGORY = "health"
 
 -- Common display constants
 local VERTICAL_SEPARATOR = " | "
-
--- Pre-built common format strings to reduce concatenation
-local PERCENT_FORMAT = "%.1f%%"
-local DEFICIT_FORMAT = "-%s"
 
 -- Event constant groups for clarity and maintainability
 local EVENTS = {
@@ -54,61 +42,12 @@ local EVENTS = {
 
 -- Localize core utility functions for performance
 local FormatLargeNumber = MHCT.FormatLargeNumber
-local PERCENT_FORMATS = MHCT.PERCENT_FORMATS
-local GetHealthPercent = MHCT.GetHealthPercent
+local FormatPercent     = MHCT.FormatPercent
+local GetHealthPercent  = MHCT.GetHealthPercent
+local getAbsorbText     = MHCT.getAbsorbText
 
 -- Fallback text for secret values
 local SECRET_FALLBACK_TEXT = MHCT.SECRET_VALUE_FALLBACK_TEXT
-
--- Format absorb shield if present, secret-safe.
--- NOTE: Due to secret values, (0) may display when absorb is 0 and secret.
--- All comparison/detection methods are blocked: numeric comparison, string comparison, string length.
--- Returns plain text with parentheses; no color applied (user can use color tags if desired).
-local function getAbsorbText(unit)
-	if not unit then
-		return ""
-	end
-
-	local absorbAmount = UnitGetTotalAbsorbs(unit)
-	local absorbIsSecret = issecretvalue(absorbAmount)
-	if not absorbIsSecret and absorbAmount == nil then
-		return ""
-	end
-
-	-- Try to check if absorb is zero/negative (works for non-secret values only)
-	local ok, isZeroOrNegative = pcall(function() return absorbAmount <= 0 end)
-	
-	-- If comparison succeeded and absorb is zero/negative, hide it
-	if ok and isZeroOrNegative then
-		return ""
-	end
-	
-	-- If comparison failed (secret value), we cannot detect zero
-	-- Display the formatted value - may show (0) for secret zero values
-	local result = FormatLargeNumber(absorbAmount)
-	if result == nil then
-		return ""
-	end
-	
-	-- Return plain text with parentheses and trailing space (no color)
-	return "(" .. result .. ") "
-end
-
--- Local format helper using shared PERCENT_FORMATS from core.lua
-local function formatPercentValue(value, decimals)
-	if decimals < 0 then
-		decimals = 0
-	elseif decimals > 3 then
-		decimals = 3
-	end
-
-	local fmt = PERCENT_FORMATS[decimals]
-	if fmt then
-		return format(fmt, value)
-	end
-	-- Fallback for out-of-range decimals (shouldn't happen)
-	return format("%.0f", value)
-end
 
 -- ===================================================================================
 -- SECTION 1: BASIC HEALTH DISPLAY
@@ -148,11 +87,11 @@ MHCT.registerTag(
 		if not unit then
 			return ""
 		end
-		
-		local currentHp = UnitHealth(unit)
-		local absorbText = getAbsorbText(unit)
 
-		-- Use secret-safe formatting for current health
+		local currentHp = UnitHealth(unit)
+		-- withTrailingSpace=true so absorb and health are separated: "(25k) 100k"
+		local absorbText = getAbsorbText(unit, true)
+
 		local currentText = FormatLargeNumber(currentHp)
 		if currentText == nil then
 			return absorbText .. SECRET_FALLBACK_TEXT
@@ -189,10 +128,8 @@ MHCT.registerTag(
 			return SECRET_FALLBACK_TEXT
 		end
 
-		-- Format with requested decimals - string.format works on secret values
 		local decimals = MHCT.parseDecimalArg(args, 1)
-		local percentText = formatPercentValue(percent, decimals) .. "%"
-		return percentText
+		return FormatPercent(percent, decimals, true)
 	end
 )
 
@@ -212,16 +149,14 @@ MHCT.registerTag(
 			return statusFormatted
 		end
 
-		-- Get percent (0-100 range) - works even for secret values
 		local percent, percentIsSecret = GetHealthPercent(unit)
 		if not percentIsSecret and percent == nil then
 			return SECRET_FALLBACK_TEXT
 		end
 
-		-- Format with requested decimals - string.format works on secret values
 		local decimals = MHCT.parseDecimalArg(args, 1)
-		local percentText = formatPercentValue(percent, decimals)
-		return percentText
+		-- includeSign=false: returns raw number, no % appended
+		return FormatPercent(percent, decimals, false)
 	end
 )
 
@@ -253,9 +188,9 @@ MHCT.registerTag(
 			return SECRET_FALLBACK_TEXT
 		end
 
-		-- Use secret-safe formatting for both values
 		local currentText = FormatLargeNumber(currentHp)
-		local percentText = format(PERCENT_FORMAT, percent)
+		-- Fixed at 1 decimal to match original PERCENT_FORMAT ("%.1f%%")
+		local percentText = FormatPercent(percent, 1, true)
 		return currentText .. VERTICAL_SEPARATOR .. percentText
 	end
 )
@@ -283,9 +218,8 @@ MHCT.registerTag(
 			return SECRET_FALLBACK_TEXT
 		end
 
-		-- Use secret-safe formatting for both values
 		local currentText = FormatLargeNumber(currentHp)
-		local percentText = format(PERCENT_FORMAT, percent)
+		local percentText = FormatPercent(percent, 1, true)
 		return percentText .. VERTICAL_SEPARATOR .. currentText
 	end
 )
@@ -308,15 +242,15 @@ MHCT.registerTag(
 
 		local currentHp = UnitHealth(unit)
 		local percent, percentIsSecret = GetHealthPercent(unit)
-		local absorbText = getAbsorbText(unit)
+		-- withTrailingSpace=true so absorb prefixes inline: "(25k) 100k | 85%"
+		local absorbText = getAbsorbText(unit, true)
 
 		if not percentIsSecret and percent == nil then
 			return absorbText .. SECRET_FALLBACK_TEXT
 		end
 
-		-- Use secret-safe formatting for both values
 		local currentText = FormatLargeNumber(currentHp)
-		local percentText = format(PERCENT_FORMAT, percent)
+		local percentText = FormatPercent(percent, 1, true)
 		return absorbText .. currentText .. VERTICAL_SEPARATOR .. percentText
 	end
 )
@@ -350,8 +284,9 @@ MHCT.registerTag(
 			return ""
 		end
 
-		local deficitText = format(DEFICIT_FORMAT, E:ShortValue(missing))
-		return deficitText
+		-- FormatLargeNumber matches the abbreviation style of mh-health-current
+		-- (AbbreviateNumbers, e.g. "15k") so paired tags stay visually consistent
+		return "-" .. MHCT.FormatLargeNumber(missing)
 	end
 )
 
@@ -373,13 +308,14 @@ MHCT.registerTag(
 			return ""
 		end
 
-		local deficitText = format(DEFICIT_FORMAT, E:ShortValue(missing))
-		return deficitText
+		return "-" .. MHCT.FormatLargeNumber(missing)
 	end
 )
 
 -- Percentage deficit with status
--- Note: For secret values, we show the formatted percent as-is (can't calculate deficit)
+-- Note: Secret values (restricted PvP/encounters) cannot have arithmetic applied —
+-- 100 - secret would error. We already know isSecret from GetHealthPercent, so we
+-- branch directly instead of using a pcall closure.
 MHCT.registerTag(
 	"mh-health-deficit-percent",
 	HEALTH_SUBCATEGORY,
@@ -396,23 +332,18 @@ MHCT.registerTag(
 		end
 
 		local percent, percentIsSecret = GetHealthPercent(unit)
-		if not percentIsSecret and percent == nil then
+
+		-- Can't compute deficit on secret values; also nothing to show at full health
+		if percentIsSecret or percent == nil then
 			return ""
 		end
 
-		-- For secret values, we can format but not do arithmetic
-		-- Show as deficit format: display 100 - percent as "-X%"
-		-- Since we can't do 100 - secret, we format the raw percent
-		local decimals = MHCT.parseDecimalArg(args, 1)
-		
-		-- Use pcall to safely attempt arithmetic (will fail for secrets)
-		local ok, deficit = pcall(function() return 100 - percent end)
-		if ok and deficit > 0 then
-			local deficitText = "-" .. formatPercentValue(deficit, decimals) .. "%"
-			return deficitText
+		local deficit = 100 - percent
+		if deficit <= 0 then
+			return ""
 		end
-		
-		-- At full health or secret: no deficit to show
-		return ""
+
+		local decimals = MHCT.parseDecimalArg(args, 1)
+		return "-" .. FormatPercent(deficit, decimals, true)
 	end
 )

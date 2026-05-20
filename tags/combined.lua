@@ -9,37 +9,15 @@
 local _, ns = ...
 local MHCT = ns.MHCT
 
-local E = MHCT.E
-local UnitName = UnitName
+-- UnitEffectiveLevel still used directly to fetch the unit's level for display.
+-- Level-comparison logic is delegated to MHCT.isAtMaxLevelTogether.
 local UnitEffectiveLevel = UnitEffectiveLevel
-local strupper = strupper
 local issecretvalue = issecretvalue
 
 local COMBINED_SUBCATEGORY = "combined"
 local DEFAULT_TEXT_LENGTH = MHCT.DEFAULT_TEXT_LENGTH
-local MAX_PLAYER_LEVEL = MHCT.MAX_PLAYER_LEVEL
 local EVENTS_COMBINED = "UNIT_CLASSIFICATION_CHANGED UNIT_NAME_UPDATE UNIT_LEVEL PLAYER_LEVEL_UP"
 local EVENTS_COMBINED_RAID = EVENTS_COMBINED .. " GROUP_ROSTER_UPDATE"
-
--- Helper: get unit name, handle secret values (same behavior as name.lua)
-local function getFormattedName(unit, length)
-	if not unit then
-		return nil
-	end
-	local name = UnitName(unit)
-	-- Check for secret value BEFORE doing any comparisons (WoW 12.0 group frames can return secrets)
-	if issecretvalue(name) then
-		return name
-	end
-	if name == nil then
-		return nil
-	end
-	-- Safe to compare now (not a secret)
-	if name == "" then
-		return nil
-	end
-	return E:ShortenString(strupper(name), length or DEFAULT_TEXT_LENGTH)
-end
 
 -- Helper: classification icon + name (optionally + difficulty level, optionally + raid group, optionally + smart level)
 -- Icon logic matches mh-classification-icon-fixed exactly (classificationType → ICON_MAP → getFormattedIcon).
@@ -55,8 +33,9 @@ local function getClassificationNameLevel(unit, includeLevel, nameLength, includ
 	local unitType = MHCT.classificationType(unit)
 	local iconStr = (unitType and MHCT.ICON_MAP[unitType]) and MHCT.getFormattedIcon(MHCT.ICON_MAP[unitType], MHCT.DEFAULT_ICON_SIZE) or ""
 
-	local nameStr = getFormattedName(unit, nameLength or DEFAULT_TEXT_LENGTH) or ""
-	-- Check for secret before comparing (PvP/targettarget can return secrets)
+	-- MHCT.getFormattedUnitName centralizes the secret/nil/empty guard and CAPS+shorten
+	local nameStr = MHCT.getFormattedUnitName(unit, nameLength or DEFAULT_TEXT_LENGTH) or ""
+	-- Secret names pass through as-is; skip raid group append since we can't compare them
 	local nameIsSecret = issecretvalue(nameStr)
 	if includeRaidGroup and not nameIsSecret and nameStr ~= "" then
 		nameStr = MHCT.appendRaidGroupToName(unit, nameStr)
@@ -66,24 +45,15 @@ local function getClassificationNameLevel(unit, includeLevel, nameLength, includ
 	local result = iconStr .. nameStr
 
 	if includeLevel then
-		local unitLevel = UnitEffectiveLevel(unit)
-		local shouldShowLevel = unitLevel ~= nil
-		-- Smart level: same logic as mh-smartlevel — hide when both player and unit are max level
-		-- Guard: only compare when both levels are comparable (WoW 12.0 can return secret values)
-		if useSmartLevel and unitLevel ~= nil and not issecretvalue(unitLevel) then
-			local playerLevel = UnitEffectiveLevel("player")
-			if playerLevel ~= nil
-				and not issecretvalue(playerLevel)
-				and playerLevel == MAX_PLAYER_LEVEL
-				and unitLevel == MAX_PLAYER_LEVEL
-			then
-				shouldShowLevel = false
-			end
-		end
-		if shouldShowLevel then
-			local levelStr = MHCT.difficultyLevelFormatter(unit, unitLevel)
-			if levelStr and levelStr ~= "" then
-				result = result .. " " .. levelStr
+		-- Smart level: hide entirely when player and unit are both confirmed max level.
+		-- Otherwise the difficulty formatter handles secret/nil internally.
+		if not (useSmartLevel and MHCT.isAtMaxLevelTogether(unit)) then
+			local unitLevel = UnitEffectiveLevel(unit)
+			if unitLevel ~= nil then
+				local levelStr = MHCT.difficultyLevelFormatter(unit, unitLevel)
+				if levelStr and levelStr ~= "" then
+					result = result .. " " .. levelStr
+				end
 			end
 		end
 	end

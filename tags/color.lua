@@ -116,8 +116,8 @@ local function validateHexColor(hex)
 	-- Remove # if present and convert to uppercase
 	hex = upper(hex:gsub("#", ""))
 
-	-- Validate: must be exactly 6 hex characters (0-9, A-F)
-	if match(hex, "^[0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F][0-9A-F]$") then
+	-- Validate: exactly 6 hex characters; input is already uppercased so %x matches fine
+	if match(hex, "^%x%x%x%x%x%x$") then
 		return hex
 	end
 

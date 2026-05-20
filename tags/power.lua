@@ -11,12 +11,9 @@
 local _, ns = ...
 local MHCT = ns.MHCT
 
--- Localize Lua functions
-local format = string.format
-
 -- Localize core utility functions
 local GetPowerPercent = MHCT.GetPowerPercent
-local PERCENT_FORMATS = MHCT.PERCENT_FORMATS
+local FormatPercent   = MHCT.FormatPercent
 
 -- Local constants
 local POWER_SUBCATEGORY = "power"
@@ -26,41 +23,20 @@ local DEFAULT_DECIMAL_PLACE = MHCT.DEFAULT_DECIMAL_PLACE
 -- HELPER FUNCTIONS
 -- ===================================================================================
 
--- Format power percent using secret-safe utility from core.lua
--- Returns formatted percent string or empty string for zero/unavailable
+-- Format power percent using secret-safe utilities from core.lua.
+-- Delegates clamping and formatting to MHCT.FormatPercent (no % sign for power).
+-- Secret values: CurveConstants.ScaleTo100 path in GetPowerPercent returns 0-100 even
+-- for secrets, so FormatPercent handles them correctly with no special-casing needed.
 local function formatPowerPercent(unit, decimalPlaces, powerType)
-	if not unit then
-		return ""
-	end
-	if decimalPlaces < 0 then
-		decimalPlaces = 0
-	elseif decimalPlaces > 3 then
-		decimalPlaces = 3
-	end
+	if not unit then return "" end
 
-	-- Get percent (0-100 range) using secret-safe utility
 	local percent, isSecret = GetPowerPercent(unit, powerType)
+	if percent == nil then return "" end
 
-	-- For secret values, we can still format using string.format
-	-- (CurveConstants.ScaleTo100 gives us 0-100 even for secrets)
-	if isSecret then
-		if percent == nil then
-			return ""
-		end
-		-- Basic format for secret values
-		return format("%.0f", percent)
-	end
-
-	if percent == nil then
-		return ""
-	end
-
-	-- Non-secret: use requested decimal places
-	local fmt = PERCENT_FORMATS[decimalPlaces]
-	if fmt then
-		return format(fmt, percent)
-	end
-	return format("%.0f", percent)
+	-- Power tags omit the % sign by convention (user can append it in ElvUI text format)
+	-- For secret values, fall back to 0 decimals since we can't know the precision
+	local decimals = isSecret and 0 or decimalPlaces
+	return FormatPercent(percent, decimals, false)
 end
 
 -- ===================================================================================

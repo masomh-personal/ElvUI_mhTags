@@ -16,24 +16,25 @@ local format = string.format
 local CLASSIFICATION_SUBCATEGORY = "classification"
 local DEFAULT_ICON_SIZE = MHCT.DEFAULT_ICON_SIZE
 
--- Classification color constants
-local BOSS_COLOR = "fc495e" -- light red
-local ELITE_COLOR = "ffcc00" -- gold
-local RARE_COLOR = "fc49f3" -- light magenta
+-- Use centralized color constants from core.lua to avoid duplicate definitions.
+-- core.lua sets MHCT.COLORS before any tag file loads.
+local BOSS_COLOR  = MHCT.COLORS.BOSS
+local ELITE_COLOR = MHCT.COLORS.ELITE
+local RARE_COLOR  = MHCT.COLORS.RARE
 
 -- Pre-built classification text tables (avoid creating tables per call)
 local CLASSIFICATION_TEXT = {
-	boss = format("|cff%s[Boss]|r", BOSS_COLOR),
-	elite = format("|cff%s[Elite]|r", ELITE_COLOR),
-	rare = format("|cff%s[Rare]|r", RARE_COLOR),
+	boss     = format("|cff%s[Boss]|r",      BOSS_COLOR),
+	elite    = format("|cff%s[Elite]|r",     ELITE_COLOR),
+	rare     = format("|cff%s[Rare]|r",      RARE_COLOR),
 	rareelite = format("|cff%s[Rare Elite]|r", RARE_COLOR),
-	eliteplus = format("|cff%s[Elite+]|r", ELITE_COLOR),
+	eliteplus = format("|cff%s[Elite+]|r",   ELITE_COLOR),
 }
 
 local CLASSIFICATION_COMPACT = {
-	boss = format("|cff%sB|r", BOSS_COLOR),
-	elite = format("|cff%sE|r", ELITE_COLOR),
-	rare = format("|cff%sR|r", RARE_COLOR),
+	boss     = format("|cff%sB|r",  BOSS_COLOR),
+	elite    = format("|cff%sE|r",  ELITE_COLOR),
+	rare     = format("|cff%sR|r",  RARE_COLOR),
 	rareelite = format("|cff%sR+|r", RARE_COLOR),
 	eliteplus = format("|cff%sE+|r", ELITE_COLOR),
 }

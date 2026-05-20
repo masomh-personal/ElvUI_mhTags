@@ -1,36 +1,24 @@
 -- ===================================================================================
--- MISCELLANEOUS TAGS - Optimized for efficiency
+-- MISCELLANEOUS TAGS
 -- ===================================================================================
 --
 -- WoW 12.0+ Compatibility:
--- This file uses standard WoW APIs that are compatible with 12.0's secret value system.
--- Level and absorb APIs are not affected by the new restrictions.
+-- UnitEffectiveLevel and UnitGetTotalAbsorbs CAN return secret values in restricted
+-- contexts (rated PvP, encounters). Level comparisons are routed through
+-- MHCT.isAtMaxLevelTogether; absorb display is handled by MHCT.getAbsorbText.
 -- ===================================================================================
 local _, ns = ...
 local MHCT = ns.MHCT
 
 -- Localize Lua functions
 local format = string.format
-local pcall = pcall
 
 -- Localize WoW API functions
 local UnitEffectiveLevel = UnitEffectiveLevel
-local UnitGetTotalAbsorbs = UnitGetTotalAbsorbs
 local strupper = strupper
-local issecretvalue = issecretvalue
 
 -- Local constants
 local MISC_SUBCATEGORY = "misc"
-local MAX_PLAYER_LEVEL = MHCT.MAX_PLAYER_LEVEL
-
--- Check whether two level values can be safely compared.
--- Secret values cannot be compared in WoW 12.x.
-local function canCompareLevels(levelA, levelB)
-	if issecretvalue(levelA) or issecretvalue(levelB) then
-		return false
-	end
-	return levelA ~= nil and levelB ~= nil
-end
 
 -- ===================================================================================
 -- LEVEL TAGS
@@ -43,26 +31,12 @@ MHCT.registerTag(
 	"Simple tag to show all unit levels if player is not max level. If max level, will show level of all non max level units",
 	"UNIT_LEVEL PLAYER_LEVEL_UP",
 	function(unit)
-		if not unit then
-			return ""
-		end
-		local unitLevel = UnitEffectiveLevel(unit)
-		local playerLevel = UnitEffectiveLevel("player")
-
-		-- Optimize conditional logic - check if we need to show level at all
-		if canCompareLevels(playerLevel, unitLevel)
-			and playerLevel == MAX_PLAYER_LEVEL
-			and unitLevel == MAX_PLAYER_LEVEL
-		then
-			return ""
-		end
-
-		-- Otherwise just return the level
-		return unitLevel
+		if not unit then return "" end
+		-- Hide level entirely when both player and unit are confirmed max level
+		if MHCT.isAtMaxLevelTogether(unit) then return "" end
+		return UnitEffectiveLevel(unit)
 	end
 )
-
--- Removed - direct formatting is simpler
 
 MHCT.registerTag(
 	"mh-absorb",
@@ -70,34 +44,8 @@ MHCT.registerTag(
 	"Absorb shield amount in parentheses. No color applied; use with color tags if desired. Example: [mh-color-yellow][mh-absorb]|r",
 	"UNIT_ABSORB_AMOUNT_CHANGED",
 	function(unit)
-		if not unit then
-			return ""
-		end
-
-		local absorbAmount = UnitGetTotalAbsorbs(unit)
-		local absorbIsSecret = issecretvalue(absorbAmount)
-
-		-- Guard: only nil means unavailable (secret values are still displayable)
-		if not absorbIsSecret and absorbAmount == nil then
-			return ""
-		end
-
-		-- Try to check if absorb is zero/negative (works for non-secret values only)
-		local ok, isZeroOrNegative = pcall(function() return absorbAmount <= 0 end)
-		
-		-- If comparison succeeded and absorb is zero/negative, hide it
-		if ok and isZeroOrNegative then
-			return ""
-		end
-		
-		-- If comparison failed (secret value), we cannot detect zero
-		-- Display the formatted value - may show (0) for secret zero values
-		local result = MHCT.FormatLargeNumber(absorbAmount)
-		if result ~= nil then
-			return format("(%s)", result)
-		end
-
-		return ""
+		-- withTrailingSpace=false: standalone tag, no trailing space needed
+		return MHCT.getAbsorbText(unit, false)
 	end
 )
 
@@ -105,24 +53,12 @@ MHCT.registerTag(
 -- DIFFICULTY TAGS
 -- ===================================================================================
 
--- Helper function for difficulty level formatting
+-- Helper function for difficulty level formatting.
+-- hideAtMax: when true, returns "" if both player and unit are max level.
 local function formatDifficultyLevel(unit, hideAtMax)
-	if not unit then
-		return ""
-	end
-	local unitLevel = UnitEffectiveLevel(unit)
-	local playerLevel = UnitEffectiveLevel("player")
-
-	-- Check if we should hide the level
-	if hideAtMax
-		and canCompareLevels(playerLevel, unitLevel)
-		and playerLevel == unitLevel
-		and playerLevel == MAX_PLAYER_LEVEL
-	then
-		return ""
-	end
-
-	return MHCT.difficultyLevelFormatter(unit, unitLevel)
+	if not unit then return "" end
+	if hideAtMax and MHCT.isAtMaxLevelTogether(unit) then return "" end
+	return MHCT.difficultyLevelFormatter(unit, UnitEffectiveLevel(unit))
 end
 
 -- Then use this helper in both difficulty level tags
@@ -170,8 +106,6 @@ MHCT.registerTag(
 	end
 )
 
--- Removed - direct formatting is simpler
-
 MHCT.registerTag(
 	"mh-status-noicon",
 	MISC_SUBCATEGORY,
@@ -187,7 +121,8 @@ MHCT.registerTag(
 			return ""
 		end
 
-		return format("|cffD6BFA6%s|r", strupper(status))
+		-- Use MHCT.COLORS.STATUS to stay in sync with the status color defined in core.lua
+		return format("|cff%s%s|r", MHCT.COLORS.STATUS, strupper(status))
 	end
 )
 
