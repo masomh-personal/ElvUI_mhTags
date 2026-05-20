@@ -46,6 +46,9 @@ $RECYCLE.BIN/
 *.old
 *.orig
 
+# Agent / scratch research files (not part of the addon)
+agent-tools/
+
 # Ignore files and folders related to packaged releases (e.g., if using tools like CurseForge)
 release/
 dist/
