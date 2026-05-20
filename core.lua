@@ -11,7 +11,7 @@ local MHCT = ns.MHCT
 -------------------------------------
 -- ADDON VERSION INFO
 -------------------------------------
-MHCT.ADDON_VERSION = "10"
+MHCT.ADDON_VERSION = "11"
 MHCT.ADDON_NAME = "ElvUI_mhTags"
 
 -------------------------------------
@@ -28,6 +28,7 @@ local gmatch = string.gmatch
 local sub = string.sub
 local tinsert = table.insert
 local concat = table.concat
+local unpack = unpack
 local strupper = strupper
 local strtrim = strtrim
 
@@ -56,15 +57,25 @@ local GetRaidRosterInfo = GetRaidRosterInfo
 -------------------------------------
 local UnitHealthPercent = UnitHealthPercent
 local UnitPowerPercent = UnitPowerPercent
+local UnitGetTotalAbsorbs = UnitGetTotalAbsorbs
+local CreateColor = CreateColor
+local CreateColorCurve = C_CurveUtil and C_CurveUtil.CreateColorCurve
+local LuaCurveTypeLinear = Enum.LuaCurveType and Enum.LuaCurveType.Linear
+-- AbbreviateNumbers is AllowedWhenTainted in 12.0+ and accepts secret values natively.
+-- Guaranteed to exist since TOC floor is 120005 (WoW 12.0.5).
+local AbbreviateNumbers = AbbreviateNumbers
+-- TruncateWhenZero (12.0.5+): formats to integer string, or "" when zero (including secret zeros).
+-- WrapString (12.0+): joins prefix+infix+suffix only when infix is non-empty (C-side check; safe for secrets).
+local TruncateWhenZero = C_StringUtil and C_StringUtil.TruncateWhenZero
+local WrapString = C_StringUtil and C_StringUtil.WrapString
+local strconcat = string.concat
 local issecretvalue = issecretvalue
-
--- Export for tag files
-MHCT.issecretvalue = issecretvalue
 
 -- Cache max player level at load time (doesn't change during session)
 local MAX_PLAYER_LEVEL_VALUE = GetMaxPlayerLevel()
 
--- ElvUI references - unpack once and share references
+-- ElvUI references - unpack once. Only E is shared with tag files (via MHCT.E);
+-- L is kept local since it's only used here for status string keys.
 local E, L = unpack(ElvUI)
 
 -------------------------------------
@@ -130,9 +141,8 @@ end
 
 checkCompatibility()
 
--- Export ElvUI references for tag modules to avoid duplicate unpacking
+-- Export E for tag modules (avoids re-unpacking ElvUI in each file)
 MHCT.E = E
-MHCT.L = L
 
 -------------------------------------
 -- CONSTANTS
@@ -147,10 +157,45 @@ MHCT.DEFAULT_DECIMAL_PLACE = 0
 -- Displayed when health/power values are restricted by Blizzard's secret value system
 MHCT.SECRET_VALUE_FALLBACK_TEXT = "---"
 
--- Status color constants
-local STATUS_COLOR = "D6BFA6"
-local BOSS_COLOR = "fc495e" -- light red
-local RARE_COLOR = "fc49f3" -- light magenta
+-- Shared color constants exported so tag files don't redefine them independently.
+-- classification.lua, misc.lua, and core.lua all reference these.
+MHCT.COLORS = {
+	STATUS = "D6BFA6",
+	BOSS   = "fc495e", -- light red
+	RARE   = "fc49f3", -- light magenta
+	ELITE  = "ffcc00", -- gold
+}
+
+-- Emerald palette (hex values match mh-color-emerald-* in tags/color.lua)
+MHCT.EMERALD_HEX = {
+	RED    = "C85050",
+	YELLOW = "C8C850",
+	GREEN  = "50C878",
+}
+
+-- Convert 6-char hex ("RRGGBB") to normalized RGB (0-1) for ColorCurve stop definitions.
+local function gradientStopFromHex(hex)
+	return tonumber(sub(hex, 1, 2), 16) / 255,
+		tonumber(sub(hex, 3, 4), 16) / 255,
+		tonumber(sub(hex, 5, 6), 16) / 255
+end
+
+-- Health gradient: emerald-red (0%) -> emerald-yellow (50%) -> emerald-green (100%)
+do
+	local lr, lg, lb = gradientStopFromHex(MHCT.EMERALD_HEX.RED)
+	local mr, mg, mb = gradientStopFromHex(MHCT.EMERALD_HEX.YELLOW)
+	local hr, hg, hb = gradientStopFromHex(MHCT.EMERALD_HEX.GREEN)
+	MHCT.HEALTH_GRADIENT_STOPS = {
+		LOW  = { lr, lg, lb },
+		MID  = { mr, mg, mb },
+		HIGH = { hr, hg, hb },
+	}
+end
+
+-- Local aliases for use within core.lua
+local STATUS_COLOR = MHCT.COLORS.STATUS
+local BOSS_COLOR   = MHCT.COLORS.BOSS
+local RARE_COLOR   = MHCT.COLORS.RARE
 
 -- Common symbols
 local ELITE_SYMBOL = "+"
@@ -223,140 +268,86 @@ MHCT.CACHED_ICONS = CACHED_ICONS
 local pcall = pcall
 
 -- Safe boolean API call for WoW 12.x secret booleans.
--- Returns: true, false, or "secret" (for secret/error/nil cases).
+-- Returns: true, false, or "secret" (for secret/nil cases).
+--
+-- In Midnight (12.0+), boolean unit APIs (UnitIsAFK, UnitIsDead, etc.) return secret
+-- values in restricted contexts rather than throwing. issecretvalue() is the correct
+-- detection path — pcall() is unnecessary overhead here.
 local function getSafeBooleanState(apiFunc, unit)
 	if not apiFunc or not unit then
 		return "secret"
 	end
 
-	local ok, value = pcall(apiFunc, unit)
-	if not ok then
+	local value = apiFunc(unit)
+	if value == nil or issecretvalue(value) then
 		return "secret"
 	end
 
-	if issecretvalue(value) then
-		return "secret"
-	end
-
-	if value == nil then
-		return "secret"
-	end
-
-	if value == true then
-		return true
-	end
-
-	return false
+	return value == true
 end
 
--- Check if CurveConstants.ScaleTo100 is available (converts 0-1 to 0-100 range)
+-- CurveConstants.ScaleTo100 (Midnight) returns percent values in 0-100 directly,
+-- bypassing the legacy 0-1 multiplication. Resolved once at load (see GetHealthPercent).
 local CURVE_SCALE_TO_100 = CurveConstants and CurveConstants.ScaleTo100 or nil
-MHCT.CURVE_SCALE_TO_100 = CURVE_SCALE_TO_100
 
--- Get health percent in 0-100 range, secret-safe
+-- Get health percent in 0-100 range, secret-safe.
 -- Returns: percent (0-100), isSecret (boolean)
--- Uses CurveConstants.ScaleTo100 when available for direct 0-100 output
-MHCT.GetHealthPercent = function(unit)
-	if not unit then
-		return nil, false
-	end
-
-	local percent = nil
-	local isSecret = false
-	local hasPercent = false
-
-	-- Try CurveConstants.ScaleTo100 first (returns 0-100 directly)
-	if CURVE_SCALE_TO_100 then
+--
+-- CURVE_SCALE_TO_100 is checked once at load time so each call avoids a runtime branch.
+-- CurveConstants.ScaleTo100 gives 0-100 output directly; the legacy path scales *100.
+if CURVE_SCALE_TO_100 then
+	MHCT.GetHealthPercent = function(unit)
+		if not unit then return nil, false end
 		local ok, pct = pcall(UnitHealthPercent, unit, false, CURVE_SCALE_TO_100)
-		if ok and issecretvalue(pct) then
-			percent = pct
-			isSecret = true
-			hasPercent = true
-		elseif ok and pct ~= nil then
-			percent = pct
-			hasPercent = true
-		end
+		if not ok or pct == nil then return nil, false end
+		if issecretvalue(pct) then return pct, true end
+		return pct, false
 	end
-
-	-- Fallback: standard UnitHealthPercent (0-1 range), convert to 0-100
-	if not hasPercent then
+else
+	-- Legacy: UnitHealthPercent returns 0-1 range; scale to 0-100
+	MHCT.GetHealthPercent = function(unit)
+		if not unit then return nil, false end
 		local ok, pct = pcall(UnitHealthPercent, unit)
-		if ok and issecretvalue(pct) then
-			isSecret = true
-			percent = pct -- Will be 0-1, tag must handle this
-		elseif ok and pct ~= nil then
-			if not isSecret then
-				-- Can do arithmetic on non-secret values
-				percent = pct * 100
-			end
-		end
+		if not ok or pct == nil then return nil, false end
+		if issecretvalue(pct) then return pct, true end
+		return pct * 100, false
 	end
-
-	return percent, isSecret
 end
 
--- Get power percent in 0-100 range, secret-safe
+-- Get power percent in 0-100 range, secret-safe.
 -- Returns: percent (0-100), isSecret (boolean)
 -- powerType: optional, defaults to unit's primary power type
-MHCT.GetPowerPercent = function(unit, powerType)
-	if not unit then
-		return nil, false
-	end
-
-	-- Get power type if not specified
-	if not powerType then
-		powerType = UnitPowerType(unit)
-	end
-
-	local percent = nil
-	local isSecret = false
-	local hasPercent = false
-
-	-- Try CurveConstants.ScaleTo100 first (returns 0-100 directly)
-	if CURVE_SCALE_TO_100 then
+--
+-- Same load-time curve-path split as GetHealthPercent — removes per-call branching.
+if CURVE_SCALE_TO_100 then
+	MHCT.GetPowerPercent = function(unit, powerType)
+		if not unit then return nil, false end
+		if not powerType then powerType = UnitPowerType(unit) end
 		local ok, pct = pcall(UnitPowerPercent, unit, powerType, false, CURVE_SCALE_TO_100)
-		if ok and issecretvalue(pct) then
-			percent = pct
-			isSecret = true
-			hasPercent = true
-		elseif ok and pct ~= nil then
-			percent = pct
-			hasPercent = true
-		end
+		if not ok or pct == nil then return nil, false end
+		if issecretvalue(pct) then return pct, true end
+		return pct, false
 	end
-
-	-- Fallback: standard UnitPowerPercent (0-1 range), convert to 0-100
-	if not hasPercent then
+else
+	-- Legacy: UnitPowerPercent returns 0-1 range; scale to 0-100
+	MHCT.GetPowerPercent = function(unit, powerType)
+		if not unit then return nil, false end
+		if not powerType then powerType = UnitPowerType(unit) end
 		local ok, pct = pcall(UnitPowerPercent, unit, powerType)
-		if ok and issecretvalue(pct) then
-			isSecret = true
-			percent = pct -- Will be 0-1, tag must handle this
-		elseif ok and pct ~= nil then
-			if not isSecret then
-				percent = pct * 100
-			end
-		end
+		if not ok or pct == nil then return nil, false end
+		if issecretvalue(pct) then return pct, true end
+		return pct * 100, false
 	end
-
-	return percent, isSecret
 end
 
--- Format a number with K/M/B suffix, secret-safe
--- Uses AbbreviateNumbers (Midnight) or AbbreviateLargeNumbers (legacy)
+-- Format a number with K/M/B suffix, secret-safe.
+-- AbbreviateNumbers is AllowedWhenTainted in 12.0+ (warcraft.wiki.gg/wiki/API_AbbreviateNumbers)
+-- and accepts secret values natively — no pcall, no legacy fallback needed.
 MHCT.FormatLargeNumber = function(value)
 	if value == nil then
 		return MHCT.SECRET_VALUE_FALLBACK_TEXT
 	end
-	-- Prefer AbbreviateNumbers (Midnight API) over AbbreviateLargeNumbers (legacy)
-	local abbr = AbbreviateNumbers or AbbreviateLargeNumbers
-	if abbr then
-		local ok, result = pcall(abbr, value)
-		if ok and result then
-			return result
-		end
-	end
-	-- Final fallback: string.format (works with secrets)
-	return format("%d", value)
+	return AbbreviateNumbers(value)
 end
 
 -- Format percent value using cached patterns
@@ -383,6 +374,68 @@ MHCT.FormatPercent = function(percentValue, decimals, includeSign)
 	return result
 end
 
+-- Shared absorb text helper, used by health.lua and misc.lua.
+-- withTrailingSpace: true for inline use before a health value (e.g. "(25k) 100k").
+--
+-- Zero-detection strategy:
+--   Non-secret: absorbAmount <= 0, then AbbreviateNumbers in parens (e.g. "(92.6K)")
+--   Secret:     TruncateWhenZero + WrapString only. Blizzard's APIs do not currently support
+--               combining AbbreviateNumbers with hide-when-zero on secret values
+--               (TruncateWhenZero only accepts numbers, AbbreviateNumbers always emits "0").
+--               Shows raw integer in parens when present. Confirmed by oUF maintainer p3lim
+--               and on the Blizzard forums; cannot be worked around in addon code.
+MHCT.getAbsorbText = function(unit, withTrailingSpace)
+	if not unit then return "" end
+
+	local absorbAmount = UnitGetTotalAbsorbs(unit)
+	if absorbAmount == nil then return "" end
+
+	if not issecretvalue(absorbAmount) then
+		if absorbAmount <= 0 then return "" end
+		local result = AbbreviateNumbers(absorbAmount)
+		if result == nil or result == "" or result == "0" then return "" end
+		local text = strconcat("(", result, ")")
+		return withTrailingSpace and strconcat(text, " ") or text
+	end
+
+	-- Secret path: never call AbbreviateNumbers — it always formats zero as "0".
+	if type(absorbAmount) ~= "number" or not TruncateWhenZero or not WrapString then
+		return ""
+	end
+
+	local infix = TruncateWhenZero(absorbAmount)
+	if infix == nil then return "" end
+
+	local suffix = withTrailingSpace and ") " or ")"
+	return WrapString(infix, "(", suffix)
+end
+
+-- Build a ColorCurveObject from HEALTH_GRADIENT_STOPS (0%, 50%, 100%).
+-- Midnight secret values block numeric percent + table lookup for text coloring, but
+-- UnitHealthPercent(unit, false, colorCurve) evaluates the gradient on the C side and
+-- returns a ColorMixin safe for GenerateHexColor(). See ColorCurveObject on warcraft.wiki.
+local HEALTH_COLOR_CURVE
+if CreateColorCurve and CreateColor and LuaCurveTypeLinear then
+	HEALTH_COLOR_CURVE = CreateColorCurve()
+	HEALTH_COLOR_CURVE:SetType(LuaCurveTypeLinear)
+	local lr, lg, lb = unpack(MHCT.HEALTH_GRADIENT_STOPS.LOW)
+	local mr, mg, mb = unpack(MHCT.HEALTH_GRADIENT_STOPS.MID)
+	local hr, hg, hb = unpack(MHCT.HEALTH_GRADIENT_STOPS.HIGH)
+	HEALTH_COLOR_CURVE:AddPoint(0.0, CreateColor(lr, lg, lb))
+	HEALTH_COLOR_CURVE:AddPoint(0.5, CreateColor(mr, mg, mb))
+	HEALTH_COLOR_CURVE:AddPoint(1.0, CreateColor(hr, hg, hb))
+end
+MHCT.HEALTH_COLOR_CURVE = HEALTH_COLOR_CURVE
+
+-- Returns opening color escape "|cffRRGGBB" for the unit's current health gradient color.
+-- nil when the curve is unavailable or evaluation fails (caller should use fallback).
+MHCT.getHealthGradientColorPrefix = function(unit)
+	if not unit or not HEALTH_COLOR_CURVE then return nil end
+	local ok, color = pcall(UnitHealthPercent, unit, false, HEALTH_COLOR_CURVE)
+	if not ok or not color then return nil end
+	return "|c" .. color:GenerateHexColor()
+end
+
 -------------------------------------
 -- HELPER FUNCTIONS
 -------------------------------------
@@ -406,9 +459,43 @@ MHCT.rgbToHex = function(r, g, b)
 	return format("%02X%02X%02X", r * 255, g * 255, b * 255)
 end
 
--- Removed - not used anywhere in the codebase
+-- Returns true when both player and unit are confirmed (non-secret, non-nil) max level.
+-- Centralizes the "hide at max level" comparison used by mh-smartlevel,
+-- mh-diff-level-hide, and mh-classification-name-level-smart.
+-- Returns false on any uncertainty (secret values, nil, mismatch) — the safe choice
+-- since a false negative just shows the level rather than hiding it.
+MHCT.isAtMaxLevelTogether = function(unit)
+	if not unit then return false end
+	local unitLevel = UnitEffectiveLevel(unit)
+	if unitLevel == nil or issecretvalue(unitLevel) then return false end
+	local playerLevel = UnitEffectiveLevel("player")
+	if playerLevel == nil or issecretvalue(playerLevel) then return false end
+	return playerLevel == MAX_PLAYER_LEVEL_VALUE and unitLevel == MAX_PLAYER_LEVEL_VALUE
+end
 
--- Optimized unit status check for ElvUI V15.0
+-- Returns (name, isSecret).
+-- Secret names can be passed to FontString for display but cannot be transformed
+-- (strupper, sub, #len check, etc. all break on secret strings in 12.0+).
+MHCT.getUnitNameSafe = function(unit)
+	if not unit then return nil, false end
+	local name = UnitName(unit)
+	if issecretvalue(name) then return name, true end
+	if name == nil or name == "" then return nil, false end
+	return name, false
+end
+
+-- Returns an UPPERCASE + length-capped name ready for display, or the raw secret name,
+-- or nil when the unit has no name. Centralizes the secret/nil guard that name.lua
+-- and combined.lua previously duplicated independently.
+MHCT.getFormattedUnitName = function(unit, length)
+	local name, isSecret = MHCT.getUnitNameSafe(unit)
+	if name == nil then return nil end
+	if isSecret then return name end
+	return E:ShortenString(strupper(name), length or MHCT.DEFAULT_TEXT_LENGTH)
+end
+
+-- Resolves the unit's display status (AFK, DND, Dead, Ghost, Offline) using
+-- secret-safe boolean reads. Returns the localized string or nil when none apply.
 MHCT.statusCheck = function(unit)
 	if not unit then
 		return nil
@@ -461,7 +548,10 @@ MHCT.getFormattedIcon = function(name, size, x, y)
 	return format(iconFormat, size or defaultSize, size or defaultSize, x or 0, y or 0)
 end
 
--- Optimized unit classification for ElvUI V14.0
+-- Returns the unit's classification key ("boss", "eliteplus", "elite", "rareelite",
+-- "rare", or the raw classification string) or nil for players / unresolvable units.
+-- All inputs are secret-checked since UnitClassification and UnitEffectiveLevel can
+-- both return secrets in restricted contexts.
 MHCT.classificationType = function(unit)
 	if not unit then
 		return nil
@@ -685,7 +775,7 @@ SlashCmdList["MHTAGS"] = function(msg)
 		print("|cff0388fc[ElvUI_mhTags]|r Debug Information:")
 		print(format("  Addon Version: |cffffcc00%s|r", MHCT.ADDON_VERSION))
 		print(format("  ElvUI Version: |cffffcc00%.2f|r", info.elvuiVersion or 0))
-		print("  Target WoW Version: |cffffcc0012.0.5+ (Midnight)|r")
+		print("  Target WoW Version: |cffffcc0012.0.5 (Midnight)|r")
 	elseif cmd == "help" then
 		print("|cff0388fc[ElvUI_mhTags]|r Commands:")
 		print("  |cffffcc00/mhtags|r - Show memory usage")

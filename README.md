@@ -1,29 +1,27 @@
 # ElvUI_mhTags
 
-[![Version](https://img.shields.io/badge/Version-10-brightgreen)](https://github.com/masomh-personal/ElvUI_mhTags)
+[![Version](https://img.shields.io/badge/Version-11-brightgreen)](https://github.com/masomh-personal/ElvUI_mhTags)
 [![ElvUI](https://img.shields.io/badge/Requires-ElvUI%2015.0+-blue)](https://www.tukui.org/download.php?ui=elvui)
-[![WoW](https://img.shields.io/badge/WoW-12.0.5%20Midnight+-orange)](https://worldofwarcraft.com)
+[![WoW](https://img.shields.io/badge/WoW-12.0.5%20Midnight-orange)](https://worldofwarcraft.com)
 [![License](https://img.shields.io/badge/License-GPL--3.0-yellow)](LICENSE)
 
-Custom tags for ElvUI unit frames on WoW Retail 12.0.5+ (Midnight).
+Custom tags for ElvUI unit frames on WoW Retail 12.0.5 (Midnight).
 
 ElvUI_mhTags adds health, power, name, classification, level, status, combined, and color-prefix tags for ElvUI Custom Texts. It is lightweight, Retail-only, and updated for Midnight's secret-value restrictions.
 
 ## Midnight Notes
 
-WoW 12 introduced secret values for some combat-sensitive data. This can affect health, power, absorb, and nameplate-related information in protected content.
-
-Because secret values cannot be compared, used for arithmetic, or used as table keys, this addon does not include health-gradient or hide-at-full health tags.
+WoW 12 introduced secret values for some combat-sensitive data. This addon uses Blizzard's 12.0 APIs (`AbbreviateNumbers`, `C_StringUtil.TruncateWhenZero`, `ColorCurveObject`, and related helpers) to stay compatible.
 
 Known behavior:
 
-- Absorb tags may show `(0)` when a zero absorb value is secret.
+- Health text gradient uses `[mh-color-health-gradient]` with Blizzard's ColorCurve API (not Lua percent math).
 - Deficit percent is hidden when WoW blocks the arithmetic needed to calculate it.
 - Secret names display as-is and are not uppercased, shortened, or abbreviated.
 
 ## Requirements
 
-- World of Warcraft Retail 12.0.5+ (Midnight)
+- World of Warcraft Retail 12.0.5 (Midnight)
 - ElvUI 15.0+
 
 ## Installation
@@ -39,6 +37,7 @@ Open ElvUI with `/ec`, choose a unit frame, open Custom Texts, and browse the `m
 Popular examples:
 
 - `[mh-health-current-percent]`: `100k | 85%`
+- `[mh-color-health-gradient][mh-health-current-percent]|r`: health text with emerald gradient by percent
 - `[mh-health-percent{0}]`: `85%`
 - `[mh-health-deficit]`: `-15k`, or a status such as `DEAD`
 - `[mh-name-caps{20}]`: uppercase name capped to 20 characters
@@ -106,7 +105,10 @@ Color tags return an opening color code. Use them before another tag and close w
 ```text
 [mh-color-pastel-green][mh-health-current-percent]|r
 [mh-color-custom{FF5733}][mh-name-caps{20}]|r
+[mh-color-health-gradient][mh-health-current-percent]|r
 ```
+
+- `[mh-color-health-gradient]`: health-percent gradient prefix using the emerald palette (emerald-red at low, emerald-yellow at mid, emerald-green at full). Uses Blizzard's ColorCurve API for Midnight secret-value compatibility. Example: `[mh-color-health-gradient][mh-health-current-percent]|r`
 
 Available color groups:
 

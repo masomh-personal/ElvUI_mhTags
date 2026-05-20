@@ -7,6 +7,29 @@ This project uses simple integer versions: 1, 2, 3, and so on.
 
 ---
 
+## [11] - May 20, 2026
+
+v11 requires WoW 12.0.5 (Midnight) and ElvUI 15.0+. It refactors the codebase around shared core helpers and restores health-percent text coloring using Blizzard's ColorCurve API.
+
+### Added
+
+- **`[mh-color-health-gradient]`** — health-percent text gradient prefix (emerald-red → emerald-yellow → emerald-green). Composes with any health tag. Uses `UnitHealthPercent` + `ColorCurveObject` so it works with Midnight secret values (Lua table lookup cannot).
+- **Shared core helpers** — `MHCT.getAbsorbText`, `MHCT.getUnitNameSafe`, `MHCT.getFormattedUnitName`, `MHCT.isAtMaxLevelTogether`, `MHCT.COLORS`, `MHCT.EMERALD_HEX`
+
+### Changed
+
+- **Centralized tag logic** — absorb, percent formatting, name handling, and max-level comparisons moved into `core.lua`; tag files delegate instead of duplicating
+- **Health deficit tags** — use `MHCT.FormatLargeNumber` (`AbbreviateNumbers`) for consistent abbreviation with other health tags
+- **12.0+ API cleanup** — `AbbreviateNumbers` and `C_StringUtil.TruncateWhenZero` for number/absorb formatting; load-time `CurveConstants.ScaleTo100` path for percent helpers; removed unnecessary `pcall` wrappers on boolean APIs
+- **Documentation** — README and TOC updated for v11 and WoW 12.0.5 (`Interface: 120005`)
+
+### Fixed
+
+- **Absorb display** — `(0)` no longer shown when absorb is zero. Non-secret absorbs use `AbbreviateNumbers` (e.g. `(92.6K)`); secret absorbs use `TruncateWhenZero` + `WrapString` and show the raw integer (e.g. `(92587)`). Blizzard does not currently expose an API to combine abbreviation with hide-when-zero on secret values — confirmed by oUF maintainer and Blizzard forum (Feb 2026).
+- **Status/classification colors** — shared via `MHCT.COLORS` so tags stay in sync
+
+---
+
 ## [10] - April 25, 2026
 
 ### Breaking Changes
