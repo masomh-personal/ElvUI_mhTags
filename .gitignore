@@ -9,8 +9,9 @@
 *.swo
 *.swn
 
-# IDE and editor settings
-.vscode/
+# IDE and editor settings (commit shared workspace config, ignore local overrides)
+.vscode/*
+!.vscode/extensions.json
 .idea/
 .cursor/
 *.sublime-project

@@ -1,0 +1,14 @@
+{
+	"$schema": "https://raw.githubusercontent.com/LuaLS/vscode-lua/master/setting/schema.json",
+	"runtime.version": "Lua 5.1",
+	"runtime.builtin": {
+		"io": "disable",
+		"os": "disable",
+		"package": "disable",
+		"debug": "disable"
+	},
+	"workspace.library": ["types"],
+	"workspace.checkThirdParty": true,
+	"diagnostics.globals": ["SLASH_MHTAGS1"],
+	"diagnostics.disable": ["lowercase-global"]
+}

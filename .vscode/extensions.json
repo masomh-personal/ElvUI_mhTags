@@ -1,0 +1,10 @@
+{
+	"recommendations": [
+		"sumneko.lua",
+		"ketho.wow-api",
+		"johnnymorganz.stylua",
+		"dwenegar.vscode-luacheck",
+		"stanzilla.vscode-wow-toc",
+		"EditorConfig.EditorConfig"
+	]
+}
