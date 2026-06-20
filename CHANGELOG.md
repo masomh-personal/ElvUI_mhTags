@@ -7,6 +7,14 @@ This project uses simple integer versions: 1, 2, 3, and so on.
 
 ---
 
+## [12] - June 20, 2026
+
+### Changed
+
+- **WoW 12.0.7 compatibility** — updated addon metadata for Midnight patch 12.0.7 (`Interface: 120007`) and bumped addon version to 12.
+
+---
+
 ## [11] - May 20, 2026
 
 v11 requires WoW 12.0.5 (Midnight) and ElvUI 15.0+. It refactors the codebase around shared core helpers and restores health-percent text coloring using Blizzard's ColorCurve API.

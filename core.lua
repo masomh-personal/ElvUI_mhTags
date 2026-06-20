@@ -11,7 +11,7 @@ local MHCT = ns.MHCT
 -------------------------------------
 -- ADDON VERSION INFO
 -------------------------------------
-MHCT.ADDON_VERSION = "11"
+MHCT.ADDON_VERSION = "12"
 MHCT.ADDON_NAME = "ElvUI_mhTags"
 
 -------------------------------------
@@ -62,7 +62,7 @@ local CreateColor = CreateColor
 local CreateColorCurve = C_CurveUtil and C_CurveUtil.CreateColorCurve
 local LuaCurveTypeLinear = Enum.LuaCurveType and Enum.LuaCurveType.Linear
 -- AbbreviateNumbers is AllowedWhenTainted in 12.0+ and accepts secret values natively.
--- Guaranteed to exist since TOC floor is 120005 (WoW 12.0.5).
+-- Guaranteed to exist since TOC floor is 120007 (WoW 12.0.7).
 local AbbreviateNumbers = AbbreviateNumbers
 -- TruncateWhenZero (12.0.5+): formats to integer string, or "" when zero (including secret zeros).
 -- WrapString (12.0+): joins prefix+infix+suffix only when infix is non-empty (C-side check; safe for secrets).
@@ -125,7 +125,7 @@ local function checkCompatibility()
 	if currentElvUIVersion > 0 and currentElvUIVersion < minElvUIVersion then
 		print(
 			format(
-				"|cffFF0000[ElvUI_mhTags Error]|r This addon requires ElvUI %.1f or higher for WoW 12.0.5 (Midnight). "
+				"|cffFF0000[ElvUI_mhTags Error]|r This addon requires ElvUI %.1f or higher for WoW 12.0.7 (Midnight). "
 					.. "Current version: %.2f. Please update ElvUI.",
 				minElvUIVersion,
 				currentElvUIVersion
@@ -775,7 +775,7 @@ SlashCmdList["MHTAGS"] = function(msg)
 		print("|cff0388fc[ElvUI_mhTags]|r Debug Information:")
 		print(format("  Addon Version: |cffffcc00%s|r", MHCT.ADDON_VERSION))
 		print(format("  ElvUI Version: |cffffcc00%.2f|r", info.elvuiVersion or 0))
-		print("  Target WoW Version: |cffffcc0012.0.5 (Midnight)|r")
+		print("  Target WoW Version: |cffffcc0012.0.7 (Midnight)|r")
 	elseif cmd == "help" then
 		print("|cff0388fc[ElvUI_mhTags]|r Commands:")
 		print("  |cffffcc00/mhtags|r - Show memory usage")
