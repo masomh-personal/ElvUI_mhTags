@@ -11,7 +11,7 @@ local MHCT = ns.MHCT
 -------------------------------------
 -- ADDON VERSION INFO
 -------------------------------------
-MHCT.ADDON_VERSION = "12"
+MHCT.ADDON_VERSION = "v12-1"
 MHCT.ADDON_NAME = "ElvUI_mhTags"
 
 -------------------------------------
@@ -74,8 +74,8 @@ local issecretvalue = issecretvalue
 -- Cache max player level at load time (doesn't change during session)
 local MAX_PLAYER_LEVEL_VALUE = GetMaxPlayerLevel()
 
--- ElvUI references - unpack once. Only E is shared with tag files (via MHCT.E);
--- L is kept local since it's only used here for status string keys.
+-- ElvUI references - unpack once. E is used for tag registration and name formatting;
+-- L is used for status string keys.
 local E, L = unpack(ElvUI)
 
 -------------------------------------
@@ -86,8 +86,6 @@ local function validateElvUIAPI()
 	local requiredFunctions = {
 		"AddTag",
 		"AddTagInfo",
-		"GetFormattedText",
-		"ShortValue",
 		"ShortenString",
 	}
 
@@ -140,9 +138,6 @@ local function checkCompatibility()
 end
 
 checkCompatibility()
-
--- Export E for tag modules (avoids re-unpacking ElvUI in each file)
-MHCT.E = E
 
 -------------------------------------
 -- CONSTANTS
@@ -785,6 +780,6 @@ SlashCmdList["MHTAGS"] = function(msg)
 		-- Default: show memory usage
 		UpdateAddOnMemoryUsage()
 		local memoryUsage = GetAddOnMemoryUsage("ElvUI_mhTags")
-		print(format("|cff0388fc[ElvUI_mhTags v%s]|r Memory: |cffffcc00%.2f KB|r", MHCT.ADDON_VERSION, memoryUsage))
+		print(format("|cff0388fc[ElvUI_mhTags %s]|r Memory: |cffffcc00%.2f KB|r", MHCT.ADDON_VERSION, memoryUsage))
 	end
 end

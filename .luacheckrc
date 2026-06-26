@@ -18,7 +18,6 @@ globals = {
 
 read_globals = {
 	-- Lua / WoW runtime
-	"assert",
 	"error",
 	"format",
 	"ipairs",
@@ -36,7 +35,6 @@ read_globals = {
 	"strupper",
 	"strtrim",
 	"strconcat",
-	"strmatch",
 	"gsub",
 	"gmatch",
 	"sub",
