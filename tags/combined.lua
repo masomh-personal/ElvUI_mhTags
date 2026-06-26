@@ -50,7 +50,7 @@ local function getClassificationNameLevel(unit, includeLevel, nameLength, includ
 		if not (useSmartLevel and MHCT.isAtMaxLevelTogether(unit)) then
 			local unitLevel = UnitEffectiveLevel(unit)
 			if unitLevel ~= nil then
-				local levelStr = MHCT.difficultyLevelFormatter(unit, unitLevel)
+				local levelStr = MHCT.difficultyLevelFormatter(unit, unitLevel, unitType)
 				if levelStr and levelStr ~= "" then
 					result = result .. " " .. levelStr
 				end

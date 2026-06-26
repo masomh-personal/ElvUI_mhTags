@@ -580,8 +580,9 @@ MHCT.classificationType = function(unit)
 	return classification
 end
 
--- Format difficulty level with colors and symbols - optimized
-MHCT.difficultyLevelFormatter = function(unit, unitLevel)
+-- Format difficulty level with colors and symbols.
+-- unitType may be passed by callers that already resolved classificationType(unit).
+MHCT.difficultyLevelFormatter = function(unit, unitLevel, unitType)
 	if not unit then
 		return ""
 	end
@@ -589,7 +590,7 @@ MHCT.difficultyLevelFormatter = function(unit, unitLevel)
 		return ""
 	end
 
-	local unitType = MHCT.classificationType(unit)
+	unitType = unitType or MHCT.classificationType(unit)
 	local hexColor
 
 	if unitType == "rare" or unitType == "rareelite" then
