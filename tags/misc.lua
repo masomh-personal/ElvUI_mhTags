@@ -31,9 +31,13 @@ MHCT.registerTag(
 	"Simple tag to show all unit levels if player is not max level. If max level, will show level of all non max level units",
 	"UNIT_LEVEL PLAYER_LEVEL_UP",
 	function(unit)
-		if not unit then return "" end
+		if not unit then
+			return ""
+		end
 		-- Hide level entirely when both player and unit are confirmed max level
-		if MHCT.isAtMaxLevelTogether(unit) then return "" end
+		if MHCT.isAtMaxLevelTogether(unit) then
+			return ""
+		end
 		return UnitEffectiveLevel(unit)
 	end
 )
@@ -56,8 +60,12 @@ MHCT.registerTag(
 -- Helper function for difficulty level formatting.
 -- hideAtMax: when true, returns "" if both player and unit are max level.
 local function formatDifficultyLevel(unit, hideAtMax)
-	if not unit then return "" end
-	if hideAtMax and MHCT.isAtMaxLevelTogether(unit) then return "" end
+	if not unit then
+		return ""
+	end
+	if hideAtMax and MHCT.isAtMaxLevelTogether(unit) then
+		return ""
+	end
 	return MHCT.difficultyLevelFormatter(unit, UnitEffectiveLevel(unit))
 end
 
@@ -125,4 +133,3 @@ MHCT.registerTag(
 		return format("|cff%s%s|r", MHCT.COLORS.STATUS, strupper(status))
 	end
 )
-

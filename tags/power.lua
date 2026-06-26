@@ -13,7 +13,7 @@ local MHCT = ns.MHCT
 
 -- Localize core utility functions
 local GetPowerPercent = MHCT.GetPowerPercent
-local FormatPercent   = MHCT.FormatPercent
+local FormatPercent = MHCT.FormatPercent
 
 -- Local constants
 local POWER_SUBCATEGORY = "power"
@@ -28,10 +28,14 @@ local DEFAULT_DECIMAL_PLACE = MHCT.DEFAULT_DECIMAL_PLACE
 -- Secret values: CurveConstants.ScaleTo100 path in GetPowerPercent returns 0-100 even
 -- for secrets, so FormatPercent handles them correctly with no special-casing needed.
 local function formatPowerPercent(unit, decimalPlaces, powerType)
-	if not unit then return "" end
+	if not unit then
+		return ""
+	end
 
 	local percent, isSecret = GetPowerPercent(unit, powerType)
-	if percent == nil then return "" end
+	if percent == nil then
+		return ""
+	end
 
 	-- Power tags omit the % sign by convention (user can append it in ElvUI text format)
 	-- For secret values, fall back to 0 decimals since we can't know the precision

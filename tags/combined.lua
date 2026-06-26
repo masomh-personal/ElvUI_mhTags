@@ -31,7 +31,9 @@ local function getClassificationNameLevel(unit, includeLevel, nameLength, includ
 
 	-- Classification icon: same logic as mh-classification-icon-fixed
 	local unitType = MHCT.classificationType(unit)
-	local iconStr = (unitType and MHCT.ICON_MAP[unitType]) and MHCT.getFormattedIcon(MHCT.ICON_MAP[unitType], MHCT.DEFAULT_ICON_SIZE) or ""
+	local iconStr = (unitType and MHCT.ICON_MAP[unitType])
+			and MHCT.getFormattedIcon(MHCT.ICON_MAP[unitType], MHCT.DEFAULT_ICON_SIZE)
+		or ""
 
 	-- MHCT.getFormattedUnitName centralizes the secret/nil/empty guard and CAPS+shorten
 	local nameStr = MHCT.getFormattedUnitName(unit, nameLength or DEFAULT_TEXT_LENGTH) or ""
