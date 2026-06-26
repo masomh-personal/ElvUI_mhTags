@@ -42,9 +42,9 @@ local EVENTS = {
 
 -- Localize core utility functions for performance
 local FormatLargeNumber = MHCT.FormatLargeNumber
-local FormatPercent     = MHCT.FormatPercent
-local GetHealthPercent  = MHCT.GetHealthPercent
-local getAbsorbText     = MHCT.getAbsorbText
+local FormatPercent = MHCT.FormatPercent
+local GetHealthPercent = MHCT.GetHealthPercent
+local getAbsorbText = MHCT.getAbsorbText
 
 -- Fallback text for secret values
 local SECRET_FALLBACK_TEXT = MHCT.SECRET_VALUE_FALLBACK_TEXT
@@ -64,7 +64,7 @@ MHCT.registerTag(
 		if not unit then
 			return ""
 		end
-		
+
 		local currentHp = UnitHealth(unit)
 
 		-- Use secret-safe formatting

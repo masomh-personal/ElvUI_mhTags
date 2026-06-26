@@ -11,7 +11,7 @@ local MHCT = ns.MHCT
 -------------------------------------
 -- ADDON VERSION INFO
 -------------------------------------
-MHCT.ADDON_VERSION = "12"
+MHCT.ADDON_VERSION = "v12-1"
 MHCT.ADDON_NAME = "ElvUI_mhTags"
 
 -------------------------------------
@@ -74,8 +74,8 @@ local issecretvalue = issecretvalue
 -- Cache max player level at load time (doesn't change during session)
 local MAX_PLAYER_LEVEL_VALUE = GetMaxPlayerLevel()
 
--- ElvUI references - unpack once. Only E is shared with tag files (via MHCT.E);
--- L is kept local since it's only used here for status string keys.
+-- ElvUI references - unpack once. E is used for tag registration and name formatting;
+-- L is used for status string keys.
 local E, L = unpack(ElvUI)
 
 -------------------------------------
@@ -86,8 +86,6 @@ local function validateElvUIAPI()
 	local requiredFunctions = {
 		"AddTag",
 		"AddTagInfo",
-		"GetFormattedText",
-		"ShortValue",
 		"ShortenString",
 	}
 
@@ -141,9 +139,6 @@ end
 
 checkCompatibility()
 
--- Export E for tag modules (avoids re-unpacking ElvUI in each file)
-MHCT.E = E
-
 -------------------------------------
 -- CONSTANTS
 -------------------------------------
@@ -161,23 +156,21 @@ MHCT.SECRET_VALUE_FALLBACK_TEXT = "---"
 -- classification.lua, misc.lua, and core.lua all reference these.
 MHCT.COLORS = {
 	STATUS = "D6BFA6",
-	BOSS   = "fc495e", -- light red
-	RARE   = "fc49f3", -- light magenta
-	ELITE  = "ffcc00", -- gold
+	BOSS = "fc495e", -- light red
+	RARE = "fc49f3", -- light magenta
+	ELITE = "ffcc00", -- gold
 }
 
 -- Emerald palette (hex values match mh-color-emerald-* in tags/color.lua)
 MHCT.EMERALD_HEX = {
-	RED    = "C85050",
+	RED = "C85050",
 	YELLOW = "C8C850",
-	GREEN  = "50C878",
+	GREEN = "50C878",
 }
 
 -- Convert 6-char hex ("RRGGBB") to normalized RGB (0-1) for ColorCurve stop definitions.
 local function gradientStopFromHex(hex)
-	return tonumber(sub(hex, 1, 2), 16) / 255,
-		tonumber(sub(hex, 3, 4), 16) / 255,
-		tonumber(sub(hex, 5, 6), 16) / 255
+	return tonumber(sub(hex, 1, 2), 16) / 255, tonumber(sub(hex, 3, 4), 16) / 255, tonumber(sub(hex, 5, 6), 16) / 255
 end
 
 -- Health gradient: emerald-red (0%) -> emerald-yellow (50%) -> emerald-green (100%)
@@ -186,16 +179,16 @@ do
 	local mr, mg, mb = gradientStopFromHex(MHCT.EMERALD_HEX.YELLOW)
 	local hr, hg, hb = gradientStopFromHex(MHCT.EMERALD_HEX.GREEN)
 	MHCT.HEALTH_GRADIENT_STOPS = {
-		LOW  = { lr, lg, lb },
-		MID  = { mr, mg, mb },
+		LOW = { lr, lg, lb },
+		MID = { mr, mg, mb },
 		HIGH = { hr, hg, hb },
 	}
 end
 
 -- Local aliases for use within core.lua
 local STATUS_COLOR = MHCT.COLORS.STATUS
-local BOSS_COLOR   = MHCT.COLORS.BOSS
-local RARE_COLOR   = MHCT.COLORS.RARE
+local BOSS_COLOR = MHCT.COLORS.BOSS
+local RARE_COLOR = MHCT.COLORS.RARE
 
 -- Common symbols
 local ELITE_SYMBOL = "+"
@@ -297,19 +290,31 @@ local CURVE_SCALE_TO_100 = CurveConstants and CurveConstants.ScaleTo100 or nil
 -- CurveConstants.ScaleTo100 gives 0-100 output directly; the legacy path scales *100.
 if CURVE_SCALE_TO_100 then
 	MHCT.GetHealthPercent = function(unit)
-		if not unit then return nil, false end
+		if not unit then
+			return nil, false
+		end
 		local ok, pct = pcall(UnitHealthPercent, unit, false, CURVE_SCALE_TO_100)
-		if not ok or pct == nil then return nil, false end
-		if issecretvalue(pct) then return pct, true end
+		if not ok or pct == nil then
+			return nil, false
+		end
+		if issecretvalue(pct) then
+			return pct, true
+		end
 		return pct, false
 	end
 else
 	-- Legacy: UnitHealthPercent returns 0-1 range; scale to 0-100
 	MHCT.GetHealthPercent = function(unit)
-		if not unit then return nil, false end
+		if not unit then
+			return nil, false
+		end
 		local ok, pct = pcall(UnitHealthPercent, unit)
-		if not ok or pct == nil then return nil, false end
-		if issecretvalue(pct) then return pct, true end
+		if not ok or pct == nil then
+			return nil, false
+		end
+		if issecretvalue(pct) then
+			return pct, true
+		end
 		return pct * 100, false
 	end
 end
@@ -321,21 +326,37 @@ end
 -- Same load-time curve-path split as GetHealthPercent — removes per-call branching.
 if CURVE_SCALE_TO_100 then
 	MHCT.GetPowerPercent = function(unit, powerType)
-		if not unit then return nil, false end
-		if not powerType then powerType = UnitPowerType(unit) end
+		if not unit then
+			return nil, false
+		end
+		if not powerType then
+			powerType = UnitPowerType(unit)
+		end
 		local ok, pct = pcall(UnitPowerPercent, unit, powerType, false, CURVE_SCALE_TO_100)
-		if not ok or pct == nil then return nil, false end
-		if issecretvalue(pct) then return pct, true end
+		if not ok or pct == nil then
+			return nil, false
+		end
+		if issecretvalue(pct) then
+			return pct, true
+		end
 		return pct, false
 	end
 else
 	-- Legacy: UnitPowerPercent returns 0-1 range; scale to 0-100
 	MHCT.GetPowerPercent = function(unit, powerType)
-		if not unit then return nil, false end
-		if not powerType then powerType = UnitPowerType(unit) end
+		if not unit then
+			return nil, false
+		end
+		if not powerType then
+			powerType = UnitPowerType(unit)
+		end
 		local ok, pct = pcall(UnitPowerPercent, unit, powerType)
-		if not ok or pct == nil then return nil, false end
-		if issecretvalue(pct) then return pct, true end
+		if not ok or pct == nil then
+			return nil, false
+		end
+		if issecretvalue(pct) then
+			return pct, true
+		end
 		return pct * 100, false
 	end
 end
@@ -385,15 +406,23 @@ end
 --               Shows raw integer in parens when present. Confirmed by oUF maintainer p3lim
 --               and on the Blizzard forums; cannot be worked around in addon code.
 MHCT.getAbsorbText = function(unit, withTrailingSpace)
-	if not unit then return "" end
+	if not unit then
+		return ""
+	end
 
 	local absorbAmount = UnitGetTotalAbsorbs(unit)
-	if absorbAmount == nil then return "" end
+	if absorbAmount == nil then
+		return ""
+	end
 
 	if not issecretvalue(absorbAmount) then
-		if absorbAmount <= 0 then return "" end
+		if absorbAmount <= 0 then
+			return ""
+		end
 		local result = AbbreviateNumbers(absorbAmount)
-		if result == nil or result == "" or result == "0" then return "" end
+		if result == nil or result == "" or result == "0" then
+			return ""
+		end
 		local text = strconcat("(", result, ")")
 		return withTrailingSpace and strconcat(text, " ") or text
 	end
@@ -404,7 +433,9 @@ MHCT.getAbsorbText = function(unit, withTrailingSpace)
 	end
 
 	local infix = TruncateWhenZero(absorbAmount)
-	if infix == nil then return "" end
+	if infix == nil then
+		return ""
+	end
 
 	local suffix = withTrailingSpace and ") " or ")"
 	return WrapString(infix, "(", suffix)
@@ -430,9 +461,13 @@ MHCT.HEALTH_COLOR_CURVE = HEALTH_COLOR_CURVE
 -- Returns opening color escape "|cffRRGGBB" for the unit's current health gradient color.
 -- nil when the curve is unavailable or evaluation fails (caller should use fallback).
 MHCT.getHealthGradientColorPrefix = function(unit)
-	if not unit or not HEALTH_COLOR_CURVE then return nil end
+	if not unit or not HEALTH_COLOR_CURVE then
+		return nil
+	end
 	local ok, color = pcall(UnitHealthPercent, unit, false, HEALTH_COLOR_CURVE)
-	if not ok or not color then return nil end
+	if not ok or not color then
+		return nil
+	end
 	return "|c" .. color:GenerateHexColor()
 end
 
@@ -465,11 +500,17 @@ end
 -- Returns false on any uncertainty (secret values, nil, mismatch) — the safe choice
 -- since a false negative just shows the level rather than hiding it.
 MHCT.isAtMaxLevelTogether = function(unit)
-	if not unit then return false end
+	if not unit then
+		return false
+	end
 	local unitLevel = UnitEffectiveLevel(unit)
-	if unitLevel == nil or issecretvalue(unitLevel) then return false end
+	if unitLevel == nil or issecretvalue(unitLevel) then
+		return false
+	end
 	local playerLevel = UnitEffectiveLevel("player")
-	if playerLevel == nil or issecretvalue(playerLevel) then return false end
+	if playerLevel == nil or issecretvalue(playerLevel) then
+		return false
+	end
 	return playerLevel == MAX_PLAYER_LEVEL_VALUE and unitLevel == MAX_PLAYER_LEVEL_VALUE
 end
 
@@ -477,10 +518,16 @@ end
 -- Secret names can be passed to FontString for display but cannot be transformed
 -- (strupper, sub, #len check, etc. all break on secret strings in 12.0+).
 MHCT.getUnitNameSafe = function(unit)
-	if not unit then return nil, false end
+	if not unit then
+		return nil, false
+	end
 	local name = UnitName(unit)
-	if issecretvalue(name) then return name, true end
-	if name == nil or name == "" then return nil, false end
+	if issecretvalue(name) then
+		return name, true
+	end
+	if name == nil or name == "" then
+		return nil, false
+	end
 	return name, false
 end
 
@@ -489,8 +536,12 @@ end
 -- and combined.lua previously duplicated independently.
 MHCT.getFormattedUnitName = function(unit, length)
 	local name, isSecret = MHCT.getUnitNameSafe(unit)
-	if name == nil then return nil end
-	if isSecret then return name end
+	if name == nil then
+		return nil
+	end
+	if isSecret then
+		return name
+	end
 	return E:ShortenString(strupper(name), length or MHCT.DEFAULT_TEXT_LENGTH)
 end
 
@@ -585,8 +636,9 @@ MHCT.classificationType = function(unit)
 	return classification
 end
 
--- Format difficulty level with colors and symbols - optimized
-MHCT.difficultyLevelFormatter = function(unit, unitLevel)
+-- Format difficulty level with colors and symbols.
+-- unitType may be passed by callers that already resolved classificationType(unit).
+MHCT.difficultyLevelFormatter = function(unit, unitLevel, unitType)
 	if not unit then
 		return ""
 	end
@@ -594,7 +646,7 @@ MHCT.difficultyLevelFormatter = function(unit, unitLevel)
 		return ""
 	end
 
-	local unitType = MHCT.classificationType(unit)
+	unitType = unitType or MHCT.classificationType(unit)
 	local hexColor
 
 	if unitType == "rare" or unitType == "rareelite" then
@@ -785,6 +837,6 @@ SlashCmdList["MHTAGS"] = function(msg)
 		-- Default: show memory usage
 		UpdateAddOnMemoryUsage()
 		local memoryUsage = GetAddOnMemoryUsage("ElvUI_mhTags")
-		print(format("|cff0388fc[ElvUI_mhTags v%s]|r Memory: |cffffcc00%.2f KB|r", MHCT.ADDON_VERSION, memoryUsage))
+		print(format("|cff0388fc[ElvUI_mhTags %s]|r Memory: |cffffcc00%.2f KB|r", MHCT.ADDON_VERSION, memoryUsage))
 	end
 end

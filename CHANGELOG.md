@@ -3,15 +3,17 @@
 All notable changes to ElvUI_mhTags will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
-This project uses simple integer versions: 1, 2, 3, and so on.
+This project now uses expansion-based versions: `vMAJOR-RELEASE` (for example, `v12-1`).
+Future releases in the same expansion increment the release number (`v12-2`, `v12-3`), and the next expansion restarts at `v13-1`.
+Older releases used simple integer versions.
 
 ---
 
-## [12] - June 20, 2026
+## [v12-1] - June 20, 2026
 
 ### Changed
 
-- **WoW 12.0.7 compatibility** — updated addon metadata for Midnight patch 12.0.7 (`Interface: 120007`) and bumped addon version to 12.
+- **WoW 12.0.7 compatibility** — updated addon metadata for Midnight patch 12.0.7 (`Interface: 120007`) and adopted the `v12-1` expansion-based release version.
 
 ---
 
