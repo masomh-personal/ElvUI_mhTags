@@ -1,0 +1,22 @@
+#!/bin/sh
+set -eu
+
+ROOT=$(git rev-parse --show-toplevel)
+"$ROOT/scripts/check.sh"
+
+ZERO_SHA=0000000000000000000000000000000000000000
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+	if [ "$local_sha" = "$ZERO_SHA" ]; then
+		continue
+	fi
+
+	if [ "$remote_sha" = "$ZERO_SHA" ]; then
+		base_sha=$(git merge-base main "$local_sha")
+	else
+		base_sha=$remote_sha
+	fi
+
+	echo "Checking pushed commits for whitespace errors..."
+	git diff --check "$base_sha..$local_sha"
+done

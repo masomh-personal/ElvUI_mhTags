@@ -2,7 +2,7 @@
 ## Title: |cff1784d1ElvUI|r |cffccff33MH Tags|r
 ## Notes: Custom tags for ElvUI unit frames. WoW 12.0.7 (Midnight) Retail. Includes secret-safe health gradient coloring via ColorCurve.
 ## Author: mhDesigns
-## Version: v12-1
+## Version: v12-2
 ## X-Category: Unit Frames
 ## Category: Unit Frames
 ## Group: ElvUI
@@ -17,6 +17,8 @@
 ## X-Flavor: Retail
 
 core.lua
+core\secret.lua
+core\unit.lua
 tags\health.lua
 tags\power.lua
 tags\classification.lua
@@ -24,3 +26,4 @@ tags\color.lua
 tags\misc.lua
 tags\name.lua
 tags\combined.lua
+core\test.lua

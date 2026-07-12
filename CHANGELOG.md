@@ -9,11 +9,45 @@ Older releases used simple integer versions.
 
 ---
 
+## [v12-2] - July 12, 2026
+
+v12-2 improves frequent health, power, and status updates; adds repeatable quality gates; and separates runtime helpers without changing the public tag surface.
+
+### Added
+
+- **Repeatable verification** — added `TESTING.md` with open-world, nameplate, rated-PvP, absorb, status, raid, classification, slash-command, and restricted percentage-precision checks.
+- **In-game test dashboard** — `/mhtags test` displays every dynamic registered tag for `player` and `target`, omits deterministic eventless colors, includes important argument variants, updates from tag events, and isolates callback errors by row.
+- **Local quality gate** — added one `scripts/check.sh` command and an optional repository-managed pre-push hook for StyLua 2.5.2, Luacheck, TOC validation, and whitespace checks.
+
+### Changed
+
+- **Percent update hot paths** — call `UnitHealthPercent`, `UnitPowerPercent`, and health ColorCurve evaluation directly instead of wrapping values that become secret in `pcall`.
+- **Status update hot path** — query Feign Death only after the unit is confirmed dead, preserving Offline → Ghost → Dead → AFK → DND priority.
+- **Supported-client percentage path** — removed pre-Midnight percent fallbacks and require `CurveConstants.ScaleTo100`, matching the WoW 12.0.7 support floor.
+- **Combined tags** — reuse each unit-level read across classification, smart-level, and level formatting.
+- **Runtime organization** — split secret-value helpers into `core/secret.lua` and unit-display helpers into `core/unit.lua` while preserving the `MHCT` API.
+- **API guidance and stubs** — corrected secret-capable classification and health comments and aligned the ElvUI tag callback declaration with actual arguments.
+- **Package inventory** — removed twelve unreferenced icon variants while retaining every active status, classification, and addon icon.
+
+### Fixed
+
+- **Predicted health synchronization** — current health, percentage text, and health-gradient color now use predicted values consistently during incoming damage and healing.
+
+---
+
 ## [v12-1] - June 20, 2026
+
+v12-1 is the first expansion-based release for WoW 12.0.7 and includes the repository's initial Lua development-tool configuration.
+
+### Added
+
+- **Lua development tooling** — added EditorConfig, StyLua, Luacheck, LuaLS, recommended extension settings, and minimal ElvUI type stubs.
 
 ### Changed
 
 - **WoW 12.0.7 compatibility** — updated addon metadata for Midnight patch 12.0.7 (`Interface: 120007`) and adopted the `v12-1` expansion-based release version.
+- **Combined-tag classification reuse** — pass the resolved classification into level formatting instead of querying it twice.
+- **Consistent formatting** — applied StyLua formatting to runtime Lua files.
 
 ---
 
