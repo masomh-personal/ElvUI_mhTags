@@ -9,10 +9,15 @@ in-game checks for affected tags.
 Run these from the addon directory:
 
 ```bash
-stylua --check .
-luacheck .
-python3 scripts/validate_toc.py
-git diff --check
+./scripts/check.sh
+```
+
+The checker uses locally installed StyLua and Luacheck when available, otherwise
+it runs the pinned container tools through Podman. To run it automatically
+before every push, enable the repository-managed hook once:
+
+```bash
+git config core.hooksPath .githooks
 ```
 
 ## Quick smoke test

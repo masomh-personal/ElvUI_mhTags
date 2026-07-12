@@ -142,7 +142,7 @@ Decimal arguments are clamped to `0-3`.
 
 ## Development and Testing
 
-Use `/mhtags test` to inspect every dynamic registered tag against `player` and `target` in one scrollable dashboard. Deterministic, eventless color prefixes are omitted. See [TESTING.md](TESTING.md) for the dashboard workflow, static checks, restricted-content scenarios, and bug report template. Pull requests and branch pushes run StyLua, Luacheck, and TOC file validation automatically.
+Use `/mhtags test` to inspect every dynamic registered tag against `player` and `target` in one scrollable dashboard. Deterministic, eventless color prefixes are omitted. Run `./scripts/check.sh` for StyLua, Luacheck, TOC, and whitespace validation. A repository-managed pre-push hook can run the same checks automatically. See [TESTING.md](TESTING.md) for setup, restricted-content scenarios, and the bug report template.
 
 ## Support
 

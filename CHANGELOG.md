@@ -17,7 +17,7 @@ v12-2 improves frequent health, power, and status updates; adds repeatable quali
 
 - **Repeatable verification** — added `TESTING.md` with open-world, nameplate, rated-PvP, absorb, status, raid, classification, slash-command, and restricted percentage-precision checks.
 - **In-game test dashboard** — `/mhtags test` displays every dynamic registered tag for `player` and `target`, omits deterministic eventless colors, includes important argument variants, updates from tag events, and isolates callback errors by row.
-- **Automated quality gates** — added GitHub Actions checks for StyLua 2.5.2, Luacheck, and a zero-dependency TOC runtime-file validator.
+- **Local quality gate** — added one `scripts/check.sh` command and an optional repository-managed pre-push hook for StyLua 2.5.2, Luacheck, TOC validation, and whitespace checks.
 
 ### Changed
 
