@@ -30,7 +30,8 @@ local function getClassificationNameLevel(unit, includeLevel, nameLength, includ
 	end
 
 	-- Classification icon: same logic as mh-classification-icon-fixed
-	local unitType = MHCT.classificationType(unit)
+	local unitLevel = UnitEffectiveLevel(unit)
+	local unitType = MHCT.classificationType(unit, unitLevel)
 	local iconStr = (unitType and MHCT.ICON_MAP[unitType])
 			and MHCT.getFormattedIcon(MHCT.ICON_MAP[unitType], MHCT.DEFAULT_ICON_SIZE)
 		or ""
@@ -49,13 +50,10 @@ local function getClassificationNameLevel(unit, includeLevel, nameLength, includ
 	if includeLevel then
 		-- Smart level: hide entirely when player and unit are both confirmed max level.
 		-- Otherwise the difficulty formatter handles secret/nil internally.
-		if not (useSmartLevel and MHCT.isAtMaxLevelTogether(unit)) then
-			local unitLevel = UnitEffectiveLevel(unit)
-			if unitLevel ~= nil then
-				local levelStr = MHCT.difficultyLevelFormatter(unit, unitLevel, unitType)
-				if levelStr and levelStr ~= "" then
-					result = result .. " " .. levelStr
-				end
+		if not (useSmartLevel and MHCT.isAtMaxLevelTogether(unit, unitLevel)) then
+			local levelStr = MHCT.difficultyLevelFormatter(unit, unitLevel, unitType)
+			if levelStr and levelStr ~= "" then
+				result = result .. " " .. levelStr
 			end
 		end
 	end

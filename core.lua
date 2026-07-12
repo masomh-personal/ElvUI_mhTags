@@ -453,16 +453,19 @@ MHCT.rgbToHex = function(r, g, b)
 end
 
 -- Returns true when both player and unit are confirmed (non-secret, non-nil) max level.
+-- unitLevel may be supplied by callers that already queried UnitEffectiveLevel(unit).
 -- Centralizes the "hide at max level" comparison used by mh-smartlevel,
 -- mh-diff-level-hide, and mh-classification-name-level-smart.
 -- Returns false on any uncertainty (secret values, nil, mismatch) — the safe choice
 -- since a false negative just shows the level rather than hiding it.
-MHCT.isAtMaxLevelTogether = function(unit)
+MHCT.isAtMaxLevelTogether = function(unit, unitLevel)
 	if not unit then
 		return false
 	end
-	local unitLevel = UnitEffectiveLevel(unit)
-	if unitLevel == nil or issecretvalue(unitLevel) then
+	if not unitLevel then
+		unitLevel = UnitEffectiveLevel(unit)
+	end
+	if issecretvalue(unitLevel) or unitLevel == nil then
 		return false
 	end
 	local playerLevel = UnitEffectiveLevel("player")
@@ -561,9 +564,10 @@ end
 
 -- Returns the unit's classification key ("boss", "eliteplus", "elite", "rareelite",
 -- "rare", or the raw classification string) or nil for players / unresolvable units.
+-- unitLevel may be supplied by callers that already queried UnitEffectiveLevel(unit).
 -- All inputs are secret-checked since UnitClassification and UnitEffectiveLevel can
 -- both return secrets in restricted contexts.
-MHCT.classificationType = function(unit)
+MHCT.classificationType = function(unit, unitLevel)
 	if not unit then
 		return nil
 	end
@@ -572,7 +576,9 @@ MHCT.classificationType = function(unit)
 		return nil
 	end
 
-	local unitLevel = UnitEffectiveLevel(unit)
+	if not unitLevel then
+		unitLevel = UnitEffectiveLevel(unit)
+	end
 	local classification = UnitClassification(unit)
 	if issecretvalue(unitLevel) or issecretvalue(classification) or classification == nil then
 		return nil
