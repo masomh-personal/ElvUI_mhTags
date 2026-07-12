@@ -277,85 +277,46 @@ local function getSafeBooleanState(apiFunc, unit)
 end
 
 -- CurveConstants.ScaleTo100 (Midnight) returns percent values in 0-100 directly,
--- bypassing the legacy 0-1 multiplication. Resolved once at load (see GetHealthPercent).
+-- bypassing Lua arithmetic on secret percentage values.
 local CURVE_SCALE_TO_100 = CurveConstants and CurveConstants.ScaleTo100 or nil
+if not CURVE_SCALE_TO_100 then
+	error("ElvUI_mhTags: CurveConstants.ScaleTo100 is required on WoW 12.0.7 or later.")
+end
 
 -- Get health percent in 0-100 range, secret-safe.
 -- Returns: percent (0-100), isSecret (boolean)
---
--- CURVE_SCALE_TO_100 is checked once at load time so each call avoids a runtime branch.
--- CurveConstants.ScaleTo100 gives 0-100 output directly; the legacy path scales *100.
-if CURVE_SCALE_TO_100 then
-	MHCT.GetHealthPercent = function(unit)
-		if not unit then
-			return nil, false
-		end
-		local pct = UnitHealthPercent(unit, true, CURVE_SCALE_TO_100)
-		if pct == nil then
-			return nil, false
-		end
-		if issecretvalue(pct) then
-			return pct, true
-		end
-		return pct, false
+MHCT.GetHealthPercent = function(unit)
+	if not unit then
+		return nil, false
 	end
-else
-	-- Legacy: UnitHealthPercent returns 0-1 range; scale to 0-100
-	MHCT.GetHealthPercent = function(unit)
-		if not unit then
-			return nil, false
-		end
-		local pct = UnitHealthPercent(unit)
-		if pct == nil then
-			return nil, false
-		end
-		if issecretvalue(pct) then
-			return pct, true
-		end
-		return pct * 100, false
+	local pct = UnitHealthPercent(unit, true, CURVE_SCALE_TO_100)
+	if pct == nil then
+		return nil, false
 	end
+	if issecretvalue(pct) then
+		return pct, true
+	end
+	return pct, false
 end
 
 -- Get power percent in 0-100 range, secret-safe.
 -- Returns: percent (0-100), isSecret (boolean)
 -- powerType: optional, defaults to unit's primary power type
---
--- Same load-time curve-path split as GetHealthPercent — removes per-call branching.
-if CURVE_SCALE_TO_100 then
-	MHCT.GetPowerPercent = function(unit, powerType)
-		if not unit then
-			return nil, false
-		end
-		if not powerType then
-			powerType = UnitPowerType(unit)
-		end
-		local pct = UnitPowerPercent(unit, powerType, false, CURVE_SCALE_TO_100)
-		if pct == nil then
-			return nil, false
-		end
-		if issecretvalue(pct) then
-			return pct, true
-		end
-		return pct, false
+MHCT.GetPowerPercent = function(unit, powerType)
+	if not unit then
+		return nil, false
 	end
-else
-	-- Legacy: UnitPowerPercent returns 0-1 range; scale to 0-100
-	MHCT.GetPowerPercent = function(unit, powerType)
-		if not unit then
-			return nil, false
-		end
-		if not powerType then
-			powerType = UnitPowerType(unit)
-		end
-		local pct = UnitPowerPercent(unit, powerType)
-		if pct == nil then
-			return nil, false
-		end
-		if issecretvalue(pct) then
-			return pct, true
-		end
-		return pct * 100, false
+	if not powerType then
+		powerType = UnitPowerType(unit)
 	end
+	local pct = UnitPowerPercent(unit, powerType, false, CURVE_SCALE_TO_100)
+	if pct == nil then
+		return nil, false
+	end
+	if issecretvalue(pct) then
+		return pct, true
+	end
+	return pct, false
 end
 
 -- Format a number with K/M/B suffix, secret-safe.
