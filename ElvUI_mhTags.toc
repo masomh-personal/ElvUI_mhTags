@@ -17,6 +17,8 @@
 ## X-Flavor: Retail
 
 core.lua
+core\secret.lua
+core\unit.lua
 tags\health.lua
 tags\power.lua
 tags\classification.lua
