@@ -38,7 +38,6 @@ local EXTRA_CASES = {
 	{ name = "mh-power-percent", args = "3" },
 	{ name = "mh-name-caps", args = "10" },
 	{ name = "mh-classification-icon", args = "18" },
-	{ name = "mh-color-custom", args = "FF5733" },
 }
 
 local dashboard
@@ -55,11 +54,13 @@ local function createTestCases()
 	local definitionsByName = {}
 
 	for _, definition in ipairs(MHCT.registeredTags) do
-		definitionsByName[definition.name] = definition
-		tinsert(cases, {
-			definition = definition,
-			label = format("[%s]", definition.name),
-		})
+		if definition.events ~= "" then
+			definitionsByName[definition.name] = definition
+			tinsert(cases, {
+				definition = definition,
+				label = format("[%s]", definition.name),
+			})
+		end
 	end
 
 	for _, extra in ipairs(EXTRA_CASES) do

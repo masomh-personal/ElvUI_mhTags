@@ -28,9 +28,10 @@ git diff --check
 
 ## Test dashboard
 
-`/mhtags test` toggles an in-game dashboard that calls every registered tag for
-both `player` and `target`. It also includes important argument variants for
-percentage precision, name length, icon size, and custom colors.
+`/mhtags test` toggles an in-game dashboard that calls every dynamic registered
+tag for both `player` and `target`. Deterministic, eventless color prefixes are
+omitted. The dashboard also includes important argument variants for percentage
+precision, name length, and icon size.
 
 - Target a friendly unit, hostile unit, player, boss, rare, and elite while the
   dashboard is open.
