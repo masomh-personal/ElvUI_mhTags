@@ -5,9 +5,9 @@
 -- Requires WoW 12.0+ - uses native UnitHealthPercent/UnitHealthMissing APIs
 --
 -- Secret Value Handling:
--- In rated PvP and competitive content, health values may be "secret" and cannot
--- be compared or used in arithmetic. We use issecretvalue() to detect this and
--- fall back to displaying raw health values with a neutral color.
+-- In restricted content, health values may be secret and cannot be compared or
+-- used in Lua arithmetic. Shared helpers format displayable values directly;
+-- deficit tags hide when their required arithmetic is unavailable.
 -- ===================================================================================
 
 local _, ns = ...

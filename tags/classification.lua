@@ -3,8 +3,8 @@
 -- ===================================================================================
 --
 -- WoW 12.0+ Compatibility:
--- Classification APIs (UnitClassification, UnitEffectiveLevel) are not affected
--- by 12.0's secret value restrictions as they don't expose combat-sensitive data.
+-- UnitClassification and UnitEffectiveLevel are treated as secret-capable.
+-- Shared helpers return no classification when Blizzard restricts either value.
 -- ===================================================================================
 local _, ns = ...
 local MHCT = ns.MHCT
