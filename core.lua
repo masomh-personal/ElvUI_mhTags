@@ -562,9 +562,11 @@ MHCT.statusCheck = function(unit)
 	-- Only override tags with death when death is confirmed.
 	-- Any secret/unknown state should fall through so health still shows.
 	local deadState = getSafeBooleanState(UnitIsDead, unit)
-	local feignState = getSafeBooleanState(UnitIsFeignDeath, unit)
-	if deadState == true and feignState == false then
-		return L["Dead"]
+	if deadState == true then
+		local feignState = getSafeBooleanState(UnitIsFeignDeath, unit)
+		if feignState == false then
+			return L["Dead"]
+		end
 	end
 
 	local afkState = getSafeBooleanState(UnitIsAFK, unit)
