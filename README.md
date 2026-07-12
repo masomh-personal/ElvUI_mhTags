@@ -1,6 +1,6 @@
 # ElvUI_mhTags
 
-[![Version](https://img.shields.io/badge/Version-v12--1-brightgreen)](https://github.com/masomh-personal/ElvUI_mhTags)
+[![Version](https://img.shields.io/badge/Version-v12--2-brightgreen)](https://github.com/masomh-personal/ElvUI_mhTags)
 [![ElvUI](https://img.shields.io/badge/Requires-ElvUI%2015.0+-blue)](https://www.tukui.org/download.php?ui=elvui)
 [![WoW](https://img.shields.io/badge/WoW-12.0.7%20Midnight-orange)](https://worldofwarcraft.com)
 [![License](https://img.shields.io/badge/License-GPL--3.0-yellow)](LICENSE)
@@ -16,8 +16,10 @@ WoW 12 introduced secret values for some combat-sensitive data. This addon uses 
 Known behavior:
 
 - Health text gradient uses `[mh-color-health-gradient]` with Blizzard's ColorCurve API (not Lua percent math).
+- Current health, percentage text, and gradient color use Blizzard's predicted-health values so incoming damage and healing stay synchronized.
 - Deficit percent is hidden when WoW blocks the arithmetic needed to calculate it.
 - Secret names display as-is and are not uppercased, shortened, or abbreviated.
+- Power percentage intentionally omits the percent sign for compact unit-frame layouts.
 
 ## Requirements
 
@@ -62,7 +64,7 @@ Popular examples:
 
 ### Power
 
-- `[mh-power-percent{N}]`: current power percent, default 0 decimals
+- `[mh-power-percent{N}]`: current power percent without a percent sign, default 0 decimals
 
 ### Names
 
@@ -137,9 +139,13 @@ Decimal arguments are clamped to `0-3`.
 - `/mhtags debug`: show addon, ElvUI, and target WoW version info
 - `/mhtags help`: list commands
 
+## Development and Testing
+
+See [TESTING.md](TESTING.md) for the static checks, quick smoke test, restricted-content scenarios, and bug report template. Pull requests and branch pushes run StyLua, Luacheck, and TOC file validation automatically.
+
 ## Support
 
 - [GitHub Issues](https://github.com/masomh-personal/ElvUI_mhTags/issues)
 - [CurseForge](https://www.curseforge.com/wow/addons/mh-custom-tags-elvui-plugin)
 
-Bug reports should include your WoW version, ElvUI version, tag string, error message, and reproduction steps.
+Bug reports should include your WoW version, ElvUI version, tag string, error message, and reproduction steps. The complete report template is in [TESTING.md](TESTING.md).

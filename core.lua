@@ -7,7 +7,7 @@ local _, ns = ...
 ns.MHCT = {}
 local MHCT = ns.MHCT
 
-MHCT.ADDON_VERSION = "v12-1"
+MHCT.ADDON_VERSION = "v12-2"
 MHCT.ADDON_NAME = "ElvUI_mhTags"
 
 local format = string.format
