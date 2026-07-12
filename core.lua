@@ -257,9 +257,6 @@ MHCT.CACHED_ICONS = CACHED_ICONS
 -- in arithmetic operations. Common on nameplates and in competitive PvP.
 -------------------------------------
 
--- Localize pcall for performance
-local pcall = pcall
-
 -- Safe boolean API call for WoW 12.x secret booleans.
 -- Returns: true, false, or "secret" (for secret/nil cases).
 --
@@ -293,8 +290,8 @@ if CURVE_SCALE_TO_100 then
 		if not unit then
 			return nil, false
 		end
-		local ok, pct = pcall(UnitHealthPercent, unit, false, CURVE_SCALE_TO_100)
-		if not ok or pct == nil then
+		local pct = UnitHealthPercent(unit, false, CURVE_SCALE_TO_100)
+		if pct == nil then
 			return nil, false
 		end
 		if issecretvalue(pct) then
@@ -308,8 +305,8 @@ else
 		if not unit then
 			return nil, false
 		end
-		local ok, pct = pcall(UnitHealthPercent, unit)
-		if not ok or pct == nil then
+		local pct = UnitHealthPercent(unit)
+		if pct == nil then
 			return nil, false
 		end
 		if issecretvalue(pct) then
@@ -332,8 +329,8 @@ if CURVE_SCALE_TO_100 then
 		if not powerType then
 			powerType = UnitPowerType(unit)
 		end
-		local ok, pct = pcall(UnitPowerPercent, unit, powerType, false, CURVE_SCALE_TO_100)
-		if not ok or pct == nil then
+		local pct = UnitPowerPercent(unit, powerType, false, CURVE_SCALE_TO_100)
+		if pct == nil then
 			return nil, false
 		end
 		if issecretvalue(pct) then
@@ -350,8 +347,8 @@ else
 		if not powerType then
 			powerType = UnitPowerType(unit)
 		end
-		local ok, pct = pcall(UnitPowerPercent, unit, powerType)
-		if not ok or pct == nil then
+		local pct = UnitPowerPercent(unit, powerType)
+		if pct == nil then
 			return nil, false
 		end
 		if issecretvalue(pct) then
@@ -464,8 +461,8 @@ MHCT.getHealthGradientColorPrefix = function(unit)
 	if not unit or not HEALTH_COLOR_CURVE then
 		return nil
 	end
-	local ok, color = pcall(UnitHealthPercent, unit, false, HEALTH_COLOR_CURVE)
-	if not ok or not color then
+	local color = UnitHealthPercent(unit, false, HEALTH_COLOR_CURVE)
+	if not color then
 		return nil
 	end
 	return "|c" .. color:GenerateHexColor()
