@@ -26,3 +26,4 @@ tags\color.lua
 tags\misc.lua
 tags\name.lua
 tags\combined.lua
+core\test.lua

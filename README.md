@@ -137,11 +137,12 @@ Decimal arguments are clamped to `0-3`.
 
 - `/mhtags`: show addon memory usage
 - `/mhtags debug`: show addon, ElvUI, and target WoW version info
+- `/mhtags test`: toggle the in-game dashboard for all registered tags
 - `/mhtags help`: list commands
 
 ## Development and Testing
 
-See [TESTING.md](TESTING.md) for the static checks, quick smoke test, restricted-content scenarios, and bug report template. Pull requests and branch pushes run StyLua, Luacheck, and TOC file validation automatically.
+Use `/mhtags test` to inspect every registered tag against `player` and `target` in one scrollable dashboard. See [TESTING.md](TESTING.md) for the dashboard workflow, static checks, restricted-content scenarios, and bug report template. Pull requests and branch pushes run StyLua, Luacheck, and TOC file validation automatically.
 
 ## Support
 

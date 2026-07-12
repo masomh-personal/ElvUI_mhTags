@@ -114,10 +114,18 @@ MHCT.PERCENT_FORMATS = {
 	[3] = "%.3f",
 }
 
+MHCT.registeredTags = {}
 MHCT.registerTag = function(name, subCategory, description, events, func)
 	local fullCategory = MHCT.TAG_CATEGORY_NAME .. " [" .. subCategory .. "]"
 	E:AddTagInfo(name, fullCategory, description)
 	E:AddTag(name, events, func)
+	tinsert(MHCT.registeredTags, {
+		name = name,
+		subCategory = subCategory,
+		description = description,
+		events = events,
+		func = func,
+	})
 	return name
 end
 
@@ -131,10 +139,17 @@ SlashCmdList["MHTAGS"] = function(msg)
 		print(format("  Addon Version: |cffffcc00%s|r", MHCT.ADDON_VERSION))
 		print(format("  ElvUI Version: |cffffcc00%.2f|r", info.elvuiVersion or 0))
 		print("  Target WoW Version: |cffffcc0012.0.7 (Midnight)|r")
+	elseif cmd == "test" then
+		if MHCT.toggleTestDashboard then
+			MHCT.toggleTestDashboard()
+		else
+			print("|cffFF0000[ElvUI_mhTags Error]|r Test dashboard is unavailable.")
+		end
 	elseif cmd == "help" then
 		print("|cff0388fc[ElvUI_mhTags]|r Commands:")
 		print("  |cffffcc00/mhtags|r - Show memory usage")
 		print("  |cffffcc00/mhtags debug|r - Show version info")
+		print("  |cffffcc00/mhtags test|r - Toggle the in-game tag test dashboard")
 		print("  |cffffcc00/mhtags help|r - Show this help")
 	else
 		UpdateAddOnMemoryUsage()

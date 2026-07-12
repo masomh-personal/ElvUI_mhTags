@@ -22,7 +22,25 @@ git diff --check
 3. Open `/ec`, select a unit frame, and confirm the `mhTags` categories appear
    under Available Tags.
 4. Run `/mhtags`, `/mhtags debug`, and `/mhtags help`.
-5. Exercise the tags affected by the current change.
+5. Run `/mhtags test`, target a unit, and confirm the dashboard reports zero
+   callback errors.
+6. Exercise the scenarios affected by the current change.
+
+## Test dashboard
+
+`/mhtags test` toggles an in-game dashboard that calls every registered tag for
+both `player` and `target`. It also includes important argument variants for
+percentage precision, name length, icon size, and custom colors.
+
+- Target a friendly unit, hostile unit, player, boss, rare, and elite while the
+  dashboard is open.
+- Use the Refresh button after changing a state if the event-driven update has
+  not occurred yet.
+- Hover a row to see the tag description.
+- A blank value can be valid for conditional tags. The dashboard's callback
+  error count detects thrown errors; visual correctness still requires checking
+  expected output.
+- Close the dashboard when finished so it performs no further tag evaluations.
 
 ## In-game matrix
 
