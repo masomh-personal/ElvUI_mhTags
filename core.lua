@@ -290,7 +290,7 @@ if CURVE_SCALE_TO_100 then
 		if not unit then
 			return nil, false
 		end
-		local pct = UnitHealthPercent(unit, false, CURVE_SCALE_TO_100)
+		local pct = UnitHealthPercent(unit, true, CURVE_SCALE_TO_100)
 		if pct == nil then
 			return nil, false
 		end
@@ -440,7 +440,7 @@ end
 
 -- Build a ColorCurveObject from HEALTH_GRADIENT_STOPS (0%, 50%, 100%).
 -- Midnight secret values block numeric percent + table lookup for text coloring, but
--- UnitHealthPercent(unit, false, colorCurve) evaluates the gradient on the C side and
+-- UnitHealthPercent(unit, true, colorCurve) evaluates the gradient on the C side and
 -- returns a ColorMixin safe for GenerateHexColor(). See ColorCurveObject on warcraft.wiki.
 local HEALTH_COLOR_CURVE
 if CreateColorCurve and CreateColor and LuaCurveTypeLinear then
@@ -461,7 +461,7 @@ MHCT.getHealthGradientColorPrefix = function(unit)
 	if not unit or not HEALTH_COLOR_CURVE then
 		return nil
 	end
-	local color = UnitHealthPercent(unit, false, HEALTH_COLOR_CURVE)
+	local color = UnitHealthPercent(unit, true, HEALTH_COLOR_CURVE)
 	if not color then
 		return nil
 	end
