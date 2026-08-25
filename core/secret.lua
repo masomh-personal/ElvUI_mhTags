@@ -21,7 +21,7 @@ local issecretvalue = issecretvalue
 -- Scale percentages in C so restricted values never require Lua arithmetic.
 local CURVE_SCALE_TO_100 = CurveConstants and CurveConstants.ScaleTo100 or nil
 if not CURVE_SCALE_TO_100 then
-	error("ElvUI_mhTags: CurveConstants.ScaleTo100 is required on WoW 12.0.7 or later.")
+	error("ElvUI_mhTags: CurveConstants.ScaleTo100 is required on supported WoW clients.")
 end
 
 -- Returns percent (0-100), isSecret.

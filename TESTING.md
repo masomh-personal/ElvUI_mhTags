@@ -26,7 +26,8 @@ git config core.hooksPath .githooks
 2. Run `/reload` and confirm no Lua errors appear.
 3. Open `/ec`, select a unit frame, and confirm the `mhTags` categories appear
    under Available Tags.
-4. Run `/mhtags`, `/mhtags debug`, and `/mhtags help`.
+4. Run `/mhtags`, `/mhtags debug`, and `/mhtags help`; confirm debug reports
+   addon v12-3, WoW 12.1.0, and ElvUI 15.19 or newer.
 5. Run `/mhtags test`, target a unit, and confirm the dashboard reports zero
    callback errors.
 6. Exercise the scenarios affected by the current change.
@@ -74,8 +75,10 @@ Test enemy nameplates and restricted content such as rated PvP when available:
   errors.
 - `[mh-health-percent-nosign{1}]` renders without a percent sign.
 - `[mh-health-deficit-percent{1}]` hides when Blizzard prevents arithmetic.
-- Secret names display as provided by Blizzard without uppercase, shortening,
-  or abbreviation.
+- In active PvP matches, where WoW 12.1 no longer marks `UnitName` secret,
+  uppercase, shortening, and abbreviation work normally.
+- In any context where Blizzard still returns a secret name, it displays as
+  provided without uppercase, shortening, or abbreviation.
 - `[mh-color-health-gradient]` continues to produce a health-based color.
 
 Record the exact content type, unit frame, tag string, and Lua error if a
