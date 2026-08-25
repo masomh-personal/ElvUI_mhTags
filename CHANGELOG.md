@@ -9,6 +9,18 @@ Older releases used simple integer versions.
 
 ---
 
+## [v12-3] - August 25, 2026
+
+v12-3 updates ElvUI_mhTags for WoW 12.1.0 after auditing the Blizzard and ElvUI APIs used by the addon; no runtime tag changes were required.
+
+### Changed
+
+- **WoW 12.1 compatibility** — updated addon metadata for Midnight patch 12.1.0 (`Interface: 120100`).
+- **ElvUI compatibility floor** — require ElvUI 15.19+, the patch-day release for WoW 12.1.0; current ElvUI 15.25 retains compatible `AddTag`, `AddTagInfo`, and `ShortenString` APIs.
+- **Compatibility guidance** — refreshed release documentation and the in-game test matrix for WoW 12.1 restricted-content behavior.
+
+---
+
 ## [v12-2] - July 12, 2026
 
 v12-2 improves frequent health, power, and status updates; adds repeatable quality gates; and separates runtime helpers without changing the public tag surface.

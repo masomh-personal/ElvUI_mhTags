@@ -7,7 +7,7 @@ local _, ns = ...
 ns.MHCT = {}
 local MHCT = ns.MHCT
 
-MHCT.ADDON_VERSION = "v12-2"
+MHCT.ADDON_VERSION = "v12-3"
 MHCT.ADDON_NAME = "ElvUI_mhTags"
 
 local format = string.format
@@ -51,13 +51,13 @@ end
 validateElvUIAPI()
 
 local function checkCompatibility()
-	local minElvUIVersion = 15.0
+	local minElvUIVersion = 15.19
 	local currentElvUIVersion = tonumber(E.version) or 0
 
 	if currentElvUIVersion > 0 and currentElvUIVersion < minElvUIVersion then
 		print(
 			format(
-				"|cffFF0000[ElvUI_mhTags Error]|r This addon requires ElvUI %.1f or higher for WoW 12.0.7 (Midnight). "
+				"|cffFF0000[ElvUI_mhTags Error]|r This addon requires ElvUI %.2f or higher for WoW 12.1.0 (Midnight). "
 					.. "Current version: %.2f. Please update ElvUI.",
 				minElvUIVersion,
 				currentElvUIVersion
@@ -138,7 +138,7 @@ SlashCmdList["MHTAGS"] = function(msg)
 		print("|cff0388fc[ElvUI_mhTags]|r Debug Information:")
 		print(format("  Addon Version: |cffffcc00%s|r", MHCT.ADDON_VERSION))
 		print(format("  ElvUI Version: |cffffcc00%.2f|r", info.elvuiVersion or 0))
-		print("  Target WoW Version: |cffffcc0012.0.7 (Midnight)|r")
+		print("  Target WoW Version: |cffffcc0012.1.0 (Midnight)|r")
 	elseif cmd == "test" then
 		if MHCT.toggleTestDashboard then
 			MHCT.toggleTestDashboard()

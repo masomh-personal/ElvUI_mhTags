@@ -1,17 +1,17 @@
 # ElvUI_mhTags
 
-[![Version](https://img.shields.io/badge/Version-v12--2-brightgreen)](https://github.com/masomh-personal/ElvUI_mhTags)
-[![ElvUI](https://img.shields.io/badge/Requires-ElvUI%2015.0+-blue)](https://www.tukui.org/download.php?ui=elvui)
-[![WoW](https://img.shields.io/badge/WoW-12.0.7%20Midnight-orange)](https://worldofwarcraft.com)
+[![Version](https://img.shields.io/badge/Version-v12--3-brightgreen)](https://github.com/masomh-personal/ElvUI_mhTags)
+[![ElvUI](https://img.shields.io/badge/Requires-ElvUI%2015.19+-blue)](https://www.tukui.org/download.php?ui=elvui)
+[![WoW](https://img.shields.io/badge/WoW-12.1.0%20Midnight-orange)](https://worldofwarcraft.com)
 [![License](https://img.shields.io/badge/License-GPL--3.0-yellow)](LICENSE)
 
-Custom tags for ElvUI unit frames on WoW Retail 12.0.7 (Midnight).
+Custom tags for ElvUI unit frames on WoW Retail 12.1.0 (Midnight).
 
 ElvUI_mhTags adds health, power, name, classification, level, status, combined, and color-prefix tags for ElvUI Custom Texts. It is lightweight, Retail-only, and updated for Midnight's secret-value restrictions.
 
 ## Midnight Notes
 
-WoW 12 introduced secret values for some combat-sensitive data. This addon uses Blizzard's 12.0 APIs (`AbbreviateNumbers`, `C_StringUtil.TruncateWhenZero`, `ColorCurveObject`, and related helpers) to stay compatible.
+WoW 12 introduced secret values for some combat-sensitive data. This addon uses Blizzard's 12.0+ APIs (`AbbreviateNumbers`, `C_StringUtil.TruncateWhenZero`, `ColorCurveObject`, and related helpers) to stay compatible.
 
 Known behavior:
 
@@ -23,8 +23,8 @@ Known behavior:
 
 ## Requirements
 
-- World of Warcraft Retail 12.0.7 (Midnight)
-- ElvUI 15.0+
+- World of Warcraft Retail 12.1.0 (Midnight)
+- ElvUI 15.19+
 
 ## Installation
 
