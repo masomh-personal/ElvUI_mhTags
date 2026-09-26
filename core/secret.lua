@@ -3,6 +3,7 @@ local _, ns = ...
 local MHCT = ns.MHCT
 
 local format = string.format
+local floor = math.floor
 local unpack = unpack
 
 local UnitHealthPercent = UnitHealthPercent
@@ -70,7 +71,7 @@ MHCT.FormatPercent = function(percentValue, decimals, includeSign)
 	if percentValue == nil then
 		return MHCT.SECRET_VALUE_FALLBACK_TEXT
 	end
-	decimals = decimals or 0
+	decimals = floor(decimals or 0)
 	if decimals < 0 then
 		decimals = 0
 	end

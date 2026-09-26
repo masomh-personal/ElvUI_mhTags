@@ -1,30 +1,14 @@
--- ===================================================================================
--- MISCELLANEOUS TAGS
--- ===================================================================================
---
--- WoW 12.0+ Compatibility:
--- UnitEffectiveLevel and UnitGetTotalAbsorbs CAN return secret values in restricted
--- contexts (rated PvP, encounters). Level comparisons are routed through
--- MHCT.isAtMaxLevelTogether; absorb display is handled by MHCT.getAbsorbText.
--- ===================================================================================
+-- Level, absorb, difficulty, and status tags. Level comparisons go through
+-- MHCT.isAtMaxLevelTogether and absorb display through MHCT.getAbsorbText.
 local _, ns = ...
 local MHCT = ns.MHCT
 
--- Localize Lua functions
-local format = string.format
-
--- Localize WoW API functions
 local UnitEffectiveLevel = UnitEffectiveLevel
-local strupper = strupper
+local issecretvalue = issecretvalue
 
--- Local constants
 local MISC_SUBCATEGORY = "misc"
+local UNKNOWN_LEVEL_TEXT = MHCT.UNKNOWN_LEVEL_TEXT
 
--- ===================================================================================
--- LEVEL TAGS
--- ===================================================================================
-
--- Smart level tag - only shows non-max levels when player is max level
 MHCT.registerTag(
 	"mh-smartlevel",
 	MISC_SUBCATEGORY,
@@ -34,11 +18,14 @@ MHCT.registerTag(
 		if not unit then
 			return ""
 		end
-		-- Hide level entirely when both player and unit are confirmed max level
 		if MHCT.isAtMaxLevelTogether(unit) then
 			return ""
 		end
-		return UnitEffectiveLevel(unit)
+		local level = UnitEffectiveLevel(unit)
+		if not issecretvalue(level) and level < 0 then
+			return UNKNOWN_LEVEL_TEXT
+		end
+		return level
 	end
 )
 
@@ -48,17 +35,10 @@ MHCT.registerTag(
 	"Absorb shield amount in parentheses. No color applied; use with color tags if desired. Example: [mh-color-yellow][mh-absorb]|r",
 	"UNIT_ABSORB_AMOUNT_CHANGED",
 	function(unit)
-		-- withTrailingSpace=false: standalone tag, no trailing space needed
 		return MHCT.getAbsorbText(unit, false)
 	end
 )
 
--- ===================================================================================
--- DIFFICULTY TAGS
--- ===================================================================================
-
--- Helper function for difficulty level formatting.
--- hideAtMax: when true, returns "" if both player and unit are max level.
 local function formatDifficultyLevel(unit, hideAtMax)
 	if not unit then
 		return ""
@@ -69,17 +49,13 @@ local function formatDifficultyLevel(unit, hideAtMax)
 	return MHCT.difficultyLevelFormatter(unit, UnitEffectiveLevel(unit))
 end
 
--- Then use this helper in both difficulty level tags
 MHCT.registerTag(
 	"mh-diff-level",
 	MISC_SUBCATEGORY,
 	"Unit level colored by difficulty (gray/green/red). Always shows level.",
 	"UNIT_LEVEL PLAYER_LEVEL_UP",
 	function(unit)
-		if not unit then
-			return ""
-		end
-		return formatDifficultyLevel(unit, false) -- false = don't hide at max level
+		return formatDifficultyLevel(unit, false)
 	end
 )
 
@@ -89,18 +65,10 @@ MHCT.registerTag(
 	"Unit level colored by difficulty. Hides when you and the unit are both max level.",
 	"UNIT_LEVEL PLAYER_LEVEL_UP",
 	function(unit)
-		if not unit then
-			return ""
-		end
-		return formatDifficultyLevel(unit, true) -- true = hide at max level
+		return formatDifficultyLevel(unit, true)
 	end
 )
 
--- ===================================================================================
--- STATUS TAGS
--- ===================================================================================
-
--- Status tag with icons
 MHCT.registerTag(
 	"mh-status",
 	MISC_SUBCATEGORY,
@@ -124,12 +92,9 @@ MHCT.registerTag(
 			return ""
 		end
 		local status = MHCT.statusCheck(unit)
-		-- Early return for common case
 		if not status then
 			return ""
 		end
-
-		-- Use MHCT.COLORS.STATUS to stay in sync with the status color defined in core.lua
-		return format("|cff%s%s|r", MHCT.COLORS.STATUS, strupper(status))
+		return MHCT.getStatusText(status)
 	end
 )

@@ -25,7 +25,7 @@ local UnitClassification = UnitClassification
 local GetCreatureDifficultyColor = GetCreatureDifficultyColor
 local UnitName = UnitName
 local IsInRaid = IsInRaid
-local GetNumGroupMembers = GetNumGroupMembers
+local UnitInRaid = UnitInRaid
 local GetRaidRosterInfo = GetRaidRosterInfo
 local issecretvalue = issecretvalue
 
@@ -38,7 +38,7 @@ local RARE_COLOR = MHCT.COLORS.RARE
 
 local ELITE_SYMBOL = "+"
 local ELITE_PLUS_SYMBOL = "◆"
-local BOSS_SYMBOL = "??"
+local UNKNOWN_LEVEL_TEXT = MHCT.UNKNOWN_LEVEL_TEXT
 
 MHCT.iconTable = {
 	["default"] = "|TInterface\\AddOns\\ElvUI_mhTags\\icons\\deadc:%s:%s:%s:%s|t",
@@ -249,21 +249,27 @@ MHCT.difficultyLevelFormatter = function(unit, unitLevel, unitType)
 		hexColor = MHCT.rgbToHex(difficultyColor.r, difficultyColor.g, difficultyColor.b)
 	end
 
+	local levelText = unitLevel < 0 and UNKNOWN_LEVEL_TEXT or unitLevel
 	if unitType == "boss" then
-		return format("|cff%s%s|r", BOSS_COLOR, BOSS_SYMBOL)
+		return format("|cff%s%s|r", BOSS_COLOR, UNKNOWN_LEVEL_TEXT)
 	elseif unitType == "eliteplus" then
-		return format("|cff%s%s%s|r", hexColor, unitLevel, ELITE_PLUS_SYMBOL)
+		return format("|cff%s%s%s|r", hexColor, levelText, ELITE_PLUS_SYMBOL)
 	elseif unitType == "elite" then
-		return format("|cff%s%s%s|r", hexColor, unitLevel, ELITE_SYMBOL)
+		return format("|cff%s%s%s|r", hexColor, levelText, ELITE_SYMBOL)
 	elseif unitType == "rareelite" then
 		if unitLevel < 0 then
-			return format("|cff%s%sR|r", hexColor, BOSS_SYMBOL)
+			return format("|cff%s%sR|r", hexColor, UNKNOWN_LEVEL_TEXT)
 		end
 		return format("|cff%s%sR%s|r", hexColor, unitLevel, ELITE_SYMBOL)
 	elseif unitType == "rare" then
-		return format("|cff%s%sR|r", hexColor, unitLevel)
+		return format("|cff%s%sR|r", hexColor, levelText)
 	end
-	return format("|cff%s%s|r", hexColor, unitLevel)
+	return format("|cff%s%s|r", hexColor, levelText)
+end
+
+-- Colored uppercase status text without an icon.
+MHCT.getStatusText = function(status)
+	return FORMATTED_STATUS_CACHE[status] or format("|cff%s%s|r", STATUS_COLOR, strupper(tostring(status)))
 end
 
 MHCT.statusFormatter = function(status, size, reverse)
@@ -273,10 +279,7 @@ MHCT.statusFormatter = function(status, size, reverse)
 
 	local iconSize = size or MHCT.DEFAULT_ICON_SIZE
 	local iconName = STATUS_ICON_MAP[status]
-	local formattedStatus = FORMATTED_STATUS_CACHE[status]
-	if not formattedStatus then
-		formattedStatus = format("|cff%s%s|r", STATUS_COLOR, strupper(tostring(status)))
-	end
+	local formattedStatus = MHCT.getStatusText(status)
 	if not iconName then
 		return formattedStatus
 	end
@@ -351,18 +354,17 @@ MHCT.appendRaidGroupToName = function(unit, formattedName)
 	if formattedName == nil or formattedName == "" then
 		return formattedName or ""
 	end
-	local name = UnitName(unit)
-	if issecretvalue(name) then
+	if not IsInRaid() then
 		return formattedName
 	end
-	if name == nil or not IsInRaid() then
+	-- Roster names include "-Realm" for cross-realm members, so match by raid index, not name.
+	local raidIndex = UnitInRaid(unit)
+	if raidIndex == nil or issecretvalue(raidIndex) then
 		return formattedName
 	end
-	for i = 1, GetNumGroupMembers() do
-		local raidName, _, group = GetRaidRosterInfo(i)
-		if raidName == name then
-			return format("%s |cff00FFFF(%s)|r", formattedName, group)
-		end
+	local _, _, group = GetRaidRosterInfo(raidIndex)
+	if group == nil then
+		return formattedName
 	end
-	return formattedName
+	return format("%s |cff00FFFF(%s)|r", formattedName, group)
 end
