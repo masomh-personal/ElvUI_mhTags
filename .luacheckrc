@@ -12,6 +12,7 @@ ignore = {
 
 -- Writable globals defined by this addon
 globals = {
+	"ElvUI_mhTags_OnAddonCompartmentClick",
 	"SLASH_MHTAGS1",
 	"SlashCmdList",
 }
@@ -45,9 +46,11 @@ read_globals = {
 	"ElvUI",
 
 	-- WoW 12.0+ APIs used by ElvUI_mhTags
+	"C_AddOnProfiler",
 	"C_AddOns",
 	"C_StringUtil",
 	"C_CurveUtil",
+	"C_Timer",
 	"Enum",
 	"CurveConstants",
 	"issecretvalue",
@@ -56,13 +59,15 @@ read_globals = {
 	"CreateColor",
 	"GameTooltip",
 	"UIParent",
+	"UISpecialFrames",
 	"GetAddOnMemoryUsage",
 	"UpdateAddOnMemoryUsage",
+	"GetBuildInfo",
 	"GetCreatureDifficultyColor",
 	"GetMaxPlayerLevel",
-	"GetNumGroupMembers",
 	"GetRaidRosterInfo",
 	"IsInRaid",
+	"UnitInRaid",
 	"UnitClassification",
 	"UnitEffectiveLevel",
 	"UnitGetTotalAbsorbs",

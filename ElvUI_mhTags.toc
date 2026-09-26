@@ -1,6 +1,6 @@
-## Interface: 120100
+## Interface: 120100, 120105
 ## Title: |cff1784d1ElvUI|r |cffccff33MH Tags|r
-## Notes: Custom tags for ElvUI unit frames. WoW 12.1.0 (Midnight) Retail. Includes secret-safe health gradient coloring via ColorCurve.
+## Notes: Custom tags for ElvUI unit frames. WoW 12.1 (Midnight) Retail. Includes secret-safe health gradient coloring via ColorCurve.
 ## Author: mhDesigns
 ## Version: v12-3
 ## X-Category: Unit Frames
@@ -8,6 +8,7 @@
 ## Group: ElvUI
 ## RequiredDeps: ElvUI
 ## IconTexture: Interface\AddOns\ElvUI_mhTags\icons\addon_icon.png
+## AddonCompartmentFunc: ElvUI_mhTags_OnAddonCompartmentClick
 ## X-Website: https://github.com/masomh-personal/ElvUI_mhTags
 ## X-Curse-Project-ID: 949599
 ## X-License: GPL-3.0
