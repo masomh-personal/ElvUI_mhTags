@@ -3,8 +3,10 @@ local _, ns = ...
 local MHCT = ns.MHCT
 
 local CreateFrame = CreateFrame
+local After = C_Timer.After
 local GameTooltip = GameTooltip
 local UIParent = UIParent
+local UISpecialFrames = UISpecialFrames
 local format = string.format
 local gmatch = string.gmatch
 local ipairs = ipairs
@@ -110,7 +112,6 @@ local function refreshDashboard(frame)
 			#frame.rows
 		)
 	)
-	frame.dirty = false
 end
 
 local function createRow(parent, testCase, index)
@@ -150,8 +151,10 @@ local function createRow(parent, testCase, index)
 		GameTooltip:AddLine(self.testCase.definition.description, 1, 1, 1, true)
 		GameTooltip:Show()
 	end)
-	row:SetScript("OnLeave", function()
-		GameTooltip:Hide()
+	row:SetScript("OnLeave", function(self)
+		if GameTooltip:IsOwned(self) then
+			GameTooltip:Hide()
+		end
 	end)
 
 	return row
@@ -249,42 +252,40 @@ local function createDashboard()
 			end
 		end
 	end
-	for event in pairs(watchedEvents) do
-		frame:RegisterEvent(event)
+	-- Coalesce bursts of tag events into one refresh per REFRESH_DELAY.
+	local refreshPending = false
+	local function refreshAfterDelay()
+		refreshPending = false
+		if frame:IsShown() then
+			refreshDashboard(frame)
+		end
 	end
 
-	frame:SetScript("OnEvent", function(self)
-		self.dirty = true
-	end)
-	frame:SetScript("OnUpdate", function(self, elapsed)
-		if not self.dirty then
+	frame:SetScript("OnEvent", function()
+		if refreshPending then
 			return
 		end
-		self.elapsed = (self.elapsed or 0) + elapsed
-		if self.elapsed < REFRESH_DELAY then
-			return
-		end
-		self.elapsed = 0
-		refreshDashboard(self)
+		refreshPending = true
+		After(REFRESH_DELAY, refreshAfterDelay)
 	end)
 	frame:SetScript("OnShow", function(self)
-		self.dirty = true
-		self.elapsed = REFRESH_DELAY
+		for event in pairs(watchedEvents) do
+			self:RegisterEvent(event)
+		end
+		refreshDashboard(self)
+	end)
+	frame:SetScript("OnHide", function(self)
+		self:UnregisterAllEvents()
 	end)
 
+	tinsert(UISpecialFrames, frame:GetName())
+	frame:Hide()
 	return frame
 end
 
 MHCT.toggleTestDashboard = function()
 	if not dashboard then
 		dashboard = createDashboard()
-		refreshDashboard(dashboard)
-		return
 	end
-
-	if dashboard:IsShown() then
-		dashboard:Hide()
-	else
-		dashboard:Show()
-	end
+	dashboard:SetShown(not dashboard:IsShown())
 end
