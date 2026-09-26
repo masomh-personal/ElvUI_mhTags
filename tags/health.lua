@@ -1,33 +1,21 @@
--- ===================================================================================
--- UNIFIED HEALTH TAGS - WoW 12.0+ (Midnight)
--- ===================================================================================
--- This file contains all health-related tags for ElvUI_mhTags
--- Requires WoW 12.0+ - uses native UnitHealthPercent/UnitHealthMissing APIs
---
--- Secret Value Handling:
--- In restricted content, health values may be secret and cannot be compared or
--- used in Lua arithmetic. Shared helpers format displayable values directly;
--- deficit tags hide when their required arithmetic is unavailable.
--- ===================================================================================
-
+-- Health tags. Health values may be secret in restricted content: shared helpers
+-- format them directly, and deficit tags hide when their arithmetic is unavailable.
 local _, ns = ...
 local MHCT = ns.MHCT
 
--- Localize WoW 12.0+ API functions (required - no fallbacks)
 local UnitHealth = UnitHealth
 local UnitHealthMissing = UnitHealthMissing
 local issecretvalue = issecretvalue
 
--- ===================================================================================
--- CONSTANTS
--- ===================================================================================
+local FormatLargeNumber = MHCT.FormatLargeNumber
+local FormatPercent = MHCT.FormatPercent
+local GetHealthPercent = MHCT.GetHealthPercent
+local getAbsorbText = MHCT.getAbsorbText
 
 local HEALTH_SUBCATEGORY = "health"
-
--- Common display constants
+local SECRET_FALLBACK_TEXT = MHCT.SECRET_VALUE_FALLBACK_TEXT
 local VERTICAL_SEPARATOR = " | "
 
--- Event constant groups for clarity and maintainability
 local EVENTS = {
 	HEALTH_ONLY = "UNIT_HEALTH UNIT_MAXHEALTH",
 	HEALTH_STATUS = "UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION PLAYER_FLAGS_CHANGED",
@@ -35,26 +23,6 @@ local EVENTS = {
 	HEALTH_ABSORB_STATUS = "UNIT_HEALTH UNIT_MAXHEALTH UNIT_ABSORB_AMOUNT_CHANGED UNIT_CONNECTION PLAYER_FLAGS_CHANGED",
 }
 
--- ===================================================================================
--- SHARED HELPER FUNCTIONS
--- Uses utility functions from core.lua for DRY secret-safe operations
--- ===================================================================================
-
--- Localize core utility functions for performance
-local FormatLargeNumber = MHCT.FormatLargeNumber
-local FormatPercent = MHCT.FormatPercent
-local GetHealthPercent = MHCT.GetHealthPercent
-local getAbsorbText = MHCT.getAbsorbText
-
--- Fallback text for secret values
-local SECRET_FALLBACK_TEXT = MHCT.SECRET_VALUE_FALLBACK_TEXT
-
--- ===================================================================================
--- SECTION 1: BASIC HEALTH DISPLAY
--- ===================================================================================
--- These tags show current health value with various formatting options
-
--- Current health value only (uses secret-safe formatting)
 MHCT.registerTag(
 	"mh-health-current",
 	HEALTH_SUBCATEGORY,
@@ -64,20 +32,10 @@ MHCT.registerTag(
 		if not unit then
 			return ""
 		end
-
-		local currentHp = UnitHealth(unit)
-
-		-- Use secret-safe formatting
-		local currentText = FormatLargeNumber(currentHp)
-		if currentText == nil then
-			return SECRET_FALLBACK_TEXT
-		end
-
-		return currentText
+		return FormatLargeNumber(UnitHealth(unit))
 	end
 )
 
--- Current health with absorb shield
 MHCT.registerTag(
 	"mh-health-current-absorb",
 	HEALTH_SUBCATEGORY,
@@ -87,26 +45,10 @@ MHCT.registerTag(
 		if not unit then
 			return ""
 		end
-
-		local currentHp = UnitHealth(unit)
-		-- withTrailingSpace=true so absorb and health are separated: "(25k) 100k"
-		local absorbText = getAbsorbText(unit, true)
-
-		local currentText = FormatLargeNumber(currentHp)
-		if currentText == nil then
-			return absorbText .. SECRET_FALLBACK_TEXT
-		end
-
-		return absorbText .. currentText
+		return getAbsorbText(unit, true) .. FormatLargeNumber(UnitHealth(unit))
 	end
 )
 
--- ===================================================================================
--- SECTION 2: HEALTH PERCENTAGE
--- ===================================================================================
--- Tags that display health as a percentage with various options
-
--- Simple percentage with configurable decimals and status check
 MHCT.registerTag(
 	"mh-health-percent",
 	HEALTH_SUBCATEGORY,
@@ -122,18 +64,10 @@ MHCT.registerTag(
 			return statusFormatted
 		end
 
-		-- Get percent (0-100 range) - works even for secret values
-		local percent, percentIsSecret = GetHealthPercent(unit)
-		if not percentIsSecret and percent == nil then
-			return SECRET_FALLBACK_TEXT
-		end
-
-		local decimals = MHCT.parseDecimalArg(args, 1)
-		return FormatPercent(percent, decimals, true)
+		return FormatPercent(GetHealthPercent(unit), MHCT.parseDecimalArg(args, 1), true)
 	end
 )
 
--- Percentage without % sign
 MHCT.registerTag(
 	"mh-health-percent-nosign",
 	HEALTH_SUBCATEGORY,
@@ -149,23 +83,10 @@ MHCT.registerTag(
 			return statusFormatted
 		end
 
-		local percent, percentIsSecret = GetHealthPercent(unit)
-		if not percentIsSecret and percent == nil then
-			return SECRET_FALLBACK_TEXT
-		end
-
-		local decimals = MHCT.parseDecimalArg(args, 1)
-		-- includeSign=false: returns raw number, no % appended
-		return FormatPercent(percent, decimals, false)
+		return FormatPercent(GetHealthPercent(unit), MHCT.parseDecimalArg(args, 1), false)
 	end
 )
 
--- ===================================================================================
--- SECTION 3: COMBINED HEALTH AND PERCENTAGE
--- ===================================================================================
--- Tags that show both current health and percentage in various formats
-
--- Current | Percent (always shows both)
 MHCT.registerTag(
 	"mh-health-current-percent",
 	HEALTH_SUBCATEGORY,
@@ -181,21 +102,15 @@ MHCT.registerTag(
 			return statusFormatted
 		end
 
-		local currentHp = UnitHealth(unit)
-		local percent, percentIsSecret = GetHealthPercent(unit)
-
-		if not percentIsSecret and percent == nil then
+		local percent = GetHealthPercent(unit)
+		if percent == nil then
 			return SECRET_FALLBACK_TEXT
 		end
 
-		local currentText = FormatLargeNumber(currentHp)
-		-- Fixed at 1 decimal to match original PERCENT_FORMAT ("%.1f%%")
-		local percentText = FormatPercent(percent, 1, true)
-		return currentText .. VERTICAL_SEPARATOR .. percentText
+		return FormatLargeNumber(UnitHealth(unit)) .. VERTICAL_SEPARATOR .. FormatPercent(percent, 1, true)
 	end
 )
 
--- Percent | Current (always shows both)
 MHCT.registerTag(
 	"mh-health-percent-current",
 	HEALTH_SUBCATEGORY,
@@ -211,20 +126,15 @@ MHCT.registerTag(
 			return statusFormatted
 		end
 
-		local currentHp = UnitHealth(unit)
-		local percent, percentIsSecret = GetHealthPercent(unit)
-
-		if not percentIsSecret and percent == nil then
+		local percent = GetHealthPercent(unit)
+		if percent == nil then
 			return SECRET_FALLBACK_TEXT
 		end
 
-		local currentText = FormatLargeNumber(currentHp)
-		local percentText = FormatPercent(percent, 1, true)
-		return percentText .. VERTICAL_SEPARATOR .. currentText
+		return FormatPercent(percent, 1, true) .. VERTICAL_SEPARATOR .. FormatLargeNumber(UnitHealth(unit))
 	end
 )
 
--- Current | Percent with absorb shield (always shows both)
 MHCT.registerTag(
 	"mh-health-current-percent-absorb",
 	HEALTH_SUBCATEGORY,
@@ -240,28 +150,19 @@ MHCT.registerTag(
 			return statusFormatted
 		end
 
-		local currentHp = UnitHealth(unit)
-		local percent, percentIsSecret = GetHealthPercent(unit)
-		-- withTrailingSpace=true so absorb prefixes inline: "(25k) 100k | 85%"
 		local absorbText = getAbsorbText(unit, true)
-
-		if not percentIsSecret and percent == nil then
+		local percent = GetHealthPercent(unit)
+		if percent == nil then
 			return absorbText .. SECRET_FALLBACK_TEXT
 		end
 
-		local currentText = FormatLargeNumber(currentHp)
-		local percentText = FormatPercent(percent, 1, true)
-		return absorbText .. currentText .. VERTICAL_SEPARATOR .. percentText
+		return absorbText
+			.. FormatLargeNumber(UnitHealth(unit))
+			.. VERTICAL_SEPARATOR
+			.. FormatPercent(percent, 1, true)
 	end
 )
 
--- ===================================================================================
--- SECTION 4: HEALTH DEFICIT
--- ===================================================================================
--- Tags that show missing health in various formats
--- Uses WoW 12.0+ native UnitHealthMissing() API
-
--- Numeric deficit with status
 MHCT.registerTag(
 	"mh-health-deficit",
 	HEALTH_SUBCATEGORY,
@@ -278,19 +179,13 @@ MHCT.registerTag(
 		end
 
 		local missing = UnitHealthMissing(unit)
-
-		-- Secret value or no deficit: return empty
 		if issecretvalue(missing) or missing == 0 then
 			return ""
 		end
-
-		-- FormatLargeNumber matches the abbreviation style of mh-health-current
-		-- (AbbreviateNumbers, e.g. "15k") so paired tags stay visually consistent
-		return "-" .. MHCT.FormatLargeNumber(missing)
+		return "-" .. FormatLargeNumber(missing)
 	end
 )
 
--- Numeric deficit without status check
 MHCT.registerTag(
 	"mh-health-deficit-nostatus",
 	HEALTH_SUBCATEGORY,
@@ -302,20 +197,13 @@ MHCT.registerTag(
 		end
 
 		local missing = UnitHealthMissing(unit)
-
-		-- Secret value or no deficit: return empty
 		if issecretvalue(missing) or missing == 0 then
 			return ""
 		end
-
-		return "-" .. MHCT.FormatLargeNumber(missing)
+		return "-" .. FormatLargeNumber(missing)
 	end
 )
 
--- Percentage deficit with status
--- Note: Secret values (restricted PvP/encounters) cannot have arithmetic applied —
--- 100 - secret would error. We already know isSecret from GetHealthPercent, so we
--- branch directly instead of using a pcall closure.
 MHCT.registerTag(
 	"mh-health-deficit-percent",
 	HEALTH_SUBCATEGORY,
@@ -331,9 +219,8 @@ MHCT.registerTag(
 			return statusFormatted
 		end
 
+		-- Secret percentages cannot be subtracted from 100 in Lua.
 		local percent, percentIsSecret = GetHealthPercent(unit)
-
-		-- Can't compute deficit on secret values; also nothing to show at full health
 		if percentIsSecret or percent == nil then
 			return ""
 		end
@@ -343,7 +230,6 @@ MHCT.registerTag(
 			return ""
 		end
 
-		local decimals = MHCT.parseDecimalArg(args, 1)
-		return "-" .. FormatPercent(deficit, decimals, true)
+		return "-" .. FormatPercent(deficit, MHCT.parseDecimalArg(args, 1), true)
 	end
 )

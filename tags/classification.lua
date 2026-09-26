@@ -1,28 +1,17 @@
--- ===================================================================================
--- CLASSIFICATION TAGS - Optimized for efficiency
--- ===================================================================================
---
--- WoW 12.0+ Compatibility:
--- UnitClassification and UnitEffectiveLevel are treated as secret-capable.
--- Shared helpers return no classification when Blizzard restricts either value.
--- ===================================================================================
+-- Classification tags. MHCT.classificationType returns nil when Blizzard restricts
+-- the unit's classification or level.
 local _, ns = ...
 local MHCT = ns.MHCT
 
--- Localize Lua functions
 local format = string.format
 
--- Local constants
 local CLASSIFICATION_SUBCATEGORY = "classification"
 local DEFAULT_ICON_SIZE = MHCT.DEFAULT_ICON_SIZE
 
--- Use centralized color constants from core.lua to avoid duplicate definitions.
--- core.lua sets MHCT.COLORS before any tag file loads.
 local BOSS_COLOR = MHCT.COLORS.BOSS
 local ELITE_COLOR = MHCT.COLORS.ELITE
 local RARE_COLOR = MHCT.COLORS.RARE
 
--- Pre-built classification text tables (avoid creating tables per call)
 local CLASSIFICATION_TEXT = {
 	boss = format("|cff%s[Boss]|r", BOSS_COLOR),
 	elite = format("|cff%s[Elite]|r", ELITE_COLOR),
@@ -47,11 +36,6 @@ local CLASSIFICATION_FULL = {
 	eliteplus = "Elite+",
 }
 
--- ===================================================================================
--- UNIT CLASSIFICATION (ICONS)
--- ===================================================================================
-
--- Dynamic size classification icon
 MHCT.registerTag(
 	"mh-classification-icon",
 	CLASSIFICATION_SUBCATEGORY,
@@ -72,7 +56,6 @@ MHCT.registerTag(
 	end
 )
 
--- Fixed size classification icon
 MHCT.registerTag(
 	"mh-classification-icon-fixed",
 	CLASSIFICATION_SUBCATEGORY,
@@ -92,11 +75,6 @@ MHCT.registerTag(
 	end
 )
 
--- ===================================================================================
--- UNIT CLASSIFICATION (TEXT)
--- ===================================================================================
-
--- Text-based classification with color coding (uses pre-built table)
 MHCT.registerTag(
 	"mh-classification-text",
 	CLASSIFICATION_SUBCATEGORY,
@@ -111,7 +89,6 @@ MHCT.registerTag(
 	end
 )
 
--- Text-based classification with symbols (compact version, uses pre-built table)
 MHCT.registerTag(
 	"mh-classification-symbols",
 	CLASSIFICATION_SUBCATEGORY,
@@ -126,7 +103,6 @@ MHCT.registerTag(
 	end
 )
 
--- Full descriptive classification without brackets (uses pre-built table)
 MHCT.registerTag(
 	"mh-classification-plain",
 	CLASSIFICATION_SUBCATEGORY,

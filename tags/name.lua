@@ -1,25 +1,12 @@
--- ===================================================================================
--- NAME RELATED TAGS - Optimized for efficiency
--- ===================================================================================
---
--- WoW 12.0+ Compatibility:
--- UnitName() may return secret values in combat for non-player units in 12.0+.
--- We use issecretvalue() to detect this and handle gracefully.
--- ===================================================================================
+-- Name tags. UnitName can be secret when unit identity is restricted; secret names
+-- display as-is because they cannot be uppercased, shortened, or abbreviated.
 local _, ns = ...
 local MHCT = ns.MHCT
 
--- Localize WoW API functions
--- strupper is still needed directly in formatAbbreviatedName
 local strupper = strupper
 
--- Local constants
 local NAME_SUBCATEGORY = "name"
 local DEFAULT_TEXT_LENGTH = MHCT.DEFAULT_TEXT_LENGTH
-
--- ===================================================================================
--- NAME RELATED TAGS
--- ===================================================================================
 
 MHCT.registerTag(
 	"mh-name-caps",
@@ -28,7 +15,6 @@ MHCT.registerTag(
 	"UNIT_NAME_UPDATE",
 	function(unit, _, args)
 		local length = MHCT.parseDecimalArg(args, DEFAULT_TEXT_LENGTH)
-		-- MHCT.getFormattedUnitName handles secret/nil/empty and CAPS+shorten in one call
 		local name = MHCT.getFormattedUnitName(unit, length)
 		if name == nil then
 			return ""
@@ -46,7 +32,6 @@ MHCT.registerTag(
 		if not unit then
 			return ""
 		end
-		-- Status check first; status wins over name display
 		local statusFormatted = MHCT.formatWithStatusCheck(unit)
 		if statusFormatted then
 			return statusFormatted
@@ -76,22 +61,17 @@ MHCT.registerTag(
 	end
 )
 
--- ===================================================================================
--- Helper for abbreviation tags — uses MHCT.getUnitNameSafe so secret/nil handling
--- is centralized in core.lua rather than repeated here.
+-- lengthThreshold: when given, names at or under this many bytes are only uppercased.
 local function formatAbbreviatedName(unit, reverse, lengthThreshold)
 	local name, isSecret = MHCT.getUnitNameSafe(unit)
 	if name == nil then
 		return ""
 	end
-	-- Secret names can't be transformed (strupper/#len would error on them)
 	if isSecret then
 		return name
 	end
 
 	local uppercaseName = strupper(name)
-
-	-- Only abbreviate when name exceeds the threshold (if one is given)
 	if lengthThreshold and #name <= lengthThreshold then
 		return uppercaseName
 	end
@@ -99,7 +79,6 @@ local function formatAbbreviatedName(unit, reverse, lengthThreshold)
 	return MHCT.abbreviate(uppercaseName, reverse, unit)
 end
 
--- Abbreviation tags using the helper
 MHCT.registerTag(
 	"mh-name-abbrev",
 	NAME_SUBCATEGORY,
@@ -126,7 +105,6 @@ MHCT.registerTag(
 	"Name in CAPS; abbreviates only if longer than {N} characters (default 25). Use {N} for length threshold. Example: [mh-name-abbrev-if-long{30}]",
 	"UNIT_NAME_UPDATE",
 	function(unit, _, nameLen)
-		-- Use parseDecimalArg for consistency with all other {N} tags
 		return formatAbbreviatedName(unit, false, MHCT.parseDecimalArg(nameLen, 25))
 	end
 )

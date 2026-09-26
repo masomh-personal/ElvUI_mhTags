@@ -1,16 +1,7 @@
--- ===================================================================================
--- COMBINED TAGS - All-in-one tags that combine classification, name, and level
--- ===================================================================================
---
--- Separation of concerns: keeps generic modules (name, classification, misc) lean.
--- Combined tags reuse the same logic via MHCT and WoW APIs.
--- ===================================================================================
-
+-- Combined tags: classification icon, name, and level built from the shared MHCT helpers.
 local _, ns = ...
 local MHCT = ns.MHCT
 
--- UnitEffectiveLevel still used directly to fetch the unit's level for display.
--- Level-comparison logic is delegated to MHCT.isAtMaxLevelTogether.
 local UnitEffectiveLevel = UnitEffectiveLevel
 local issecretvalue = issecretvalue
 
@@ -19,37 +10,29 @@ local DEFAULT_TEXT_LENGTH = MHCT.DEFAULT_TEXT_LENGTH
 local EVENTS_COMBINED = "UNIT_CLASSIFICATION_CHANGED UNIT_NAME_UPDATE UNIT_LEVEL PLAYER_LEVEL_UP"
 local EVENTS_COMBINED_RAID = EVENTS_COMBINED .. " GROUP_ROSTER_UPDATE"
 
--- Helper: classification icon + name (optionally + difficulty level, optionally + raid group, optionally + smart level)
--- Icon logic matches mh-classification-icon-fixed exactly (classificationType → ICON_MAP → getFormattedIcon).
--- nameLength: max character length for name (default DEFAULT_TEXT_LENGTH).
--- includeRaidGroup: if true, append raid group via MHCT.appendRaidGroupToName (same as mh-name-caps-with-raid-group).
--- useSmartLevel: if true, only show level when mh-smartlevel would (hide when player and unit are both max level).
+-- The icon matches mh-classification-icon-fixed, the raid group matches
+-- mh-name-caps-with-raid-group, and useSmartLevel matches mh-smartlevel.
 local function getClassificationNameLevel(unit, includeLevel, nameLength, includeRaidGroup, useSmartLevel)
 	if not unit then
 		return ""
 	end
 
-	-- Classification icon: same logic as mh-classification-icon-fixed
 	local unitLevel = UnitEffectiveLevel(unit)
 	local unitType = MHCT.classificationType(unit, unitLevel)
 	local iconStr = (unitType and MHCT.ICON_MAP[unitType])
 			and MHCT.getFormattedIcon(MHCT.ICON_MAP[unitType], MHCT.DEFAULT_ICON_SIZE)
 		or ""
 
-	-- MHCT.getFormattedUnitName centralizes the secret/nil/empty guard and CAPS+shorten
 	local nameStr = MHCT.getFormattedUnitName(unit, nameLength or DEFAULT_TEXT_LENGTH) or ""
-	-- Secret names pass through as-is; skip raid group append since we can't compare them
 	local nameIsSecret = issecretvalue(nameStr)
 	if includeRaidGroup and not nameIsSecret and nameStr ~= "" then
 		nameStr = MHCT.appendRaidGroupToName(unit, nameStr)
 	end
 
-	-- Build result using .. (table.concat fails with secret values)
+	-- table.concat rejects secret values, so build with ..
 	local result = iconStr .. nameStr
 
 	if includeLevel then
-		-- Smart level: hide entirely when player and unit are both confirmed max level.
-		-- Otherwise the difficulty formatter handles secret/nil internally.
 		if not (useSmartLevel and MHCT.isAtMaxLevelTogether(unit, unitLevel)) then
 			local levelStr = MHCT.difficultyLevelFormatter(unit, unitLevel, unitType)
 			if levelStr and levelStr ~= "" then
@@ -60,11 +43,6 @@ local function getClassificationNameLevel(unit, includeLevel, nameLength, includ
 	return result
 end
 
--- ===================================================================================
--- COMBINED TAG REGISTRATION
--- ===================================================================================
-
--- Classification icon + name + difficulty level
 MHCT.registerTag(
 	"mh-classification-name-level",
 	COMBINED_SUBCATEGORY,
