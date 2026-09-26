@@ -35,7 +35,7 @@ else
 	exit 1
 fi
 
-echo "Validating TOC runtime files..."
+echo "Validating TOC runtime files and release version..."
 python3 scripts/validate_toc.py
 
 echo "Checking uncommitted whitespace..."
