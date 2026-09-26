@@ -16,7 +16,7 @@ Fixes cross-realm raid groups, "??" levels, and fractional decimal arguments; re
 ### Added
 
 - **Addon Compartment entry** — clicking ElvUI_mhTags in the minimap addon menu toggles the test dashboard.
-- **CPU readout** — `/mhtags` prints the addon's recent average CPU time per frame from Blizzard's addon profiler next to memory usage.
+- **CPU readout** — `/mhtags` prints the addon's recent average CPU time per frame, in microseconds, from Blizzard's addon profiler next to memory usage.
 - **Release version check** — `scripts/check.sh` fails when the TOC version, README badge, and latest CHANGELOG release disagree.
 
 ### Changed

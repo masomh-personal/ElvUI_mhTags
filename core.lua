@@ -136,8 +136,8 @@ local function printUsage()
 	local memoryUsage = GetAddOnMemoryUsage(addonName)
 	print(format("|cff0388fc[ElvUI_mhTags %s]|r Memory: |cffffcc00%.2f KB|r", MHCT.ADDON_VERSION, memoryUsage))
 	if IsAddOnProfilerEnabled() then
-		local cpuTime = GetAddOnMetric(addonName, RECENT_AVERAGE_TIME)
-		print(format("  CPU: |cffffcc00%.3f ms|r per frame (average of the last 60 frames)", cpuTime))
+		local cpuMicroseconds = GetAddOnMetric(addonName, RECENT_AVERAGE_TIME) * 1000
+		print(format("  CPU: |cffffcc00%.2f µs|r per frame (average of the last 60 frames)", cpuMicroseconds))
 	else
 		print("  CPU: addon profiler is disabled")
 	end
