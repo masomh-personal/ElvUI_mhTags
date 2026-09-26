@@ -9,9 +9,9 @@ Older releases used simple integer versions.
 
 ---
 
-## [Unreleased]
+## [v12-4] - September 25, 2026
 
-Fixes cross-realm raid groups, "??" levels, and fractional decimal arguments; readies the addon for WoW 12.1.5; and makes the test dashboard reachable from the Addon Compartment.
+v12-4 fixes cross-realm raid groups, "??" levels, and fractional decimal arguments; readies the addon for WoW 12.1.5; and makes the test dashboard reachable from the Addon Compartment.
 
 ### Added
 

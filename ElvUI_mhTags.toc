@@ -2,7 +2,7 @@
 ## Title: |cff1784d1ElvUI|r |cffccff33MH Tags|r
 ## Notes: Custom tags for ElvUI unit frames. WoW 12.1 (Midnight) Retail. Includes secret-safe health gradient coloring via ColorCurve.
 ## Author: mhDesigns
-## Version: v12-3
+## Version: v12-4
 ## X-Category: Unit Frames
 ## Category: Unit Frames
 ## Group: ElvUI
