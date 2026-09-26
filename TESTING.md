@@ -26,11 +26,14 @@ git config core.hooksPath .githooks
 2. Run `/reload` and confirm no Lua errors appear.
 3. Open `/ec`, select a unit frame, and confirm the `mhTags` categories appear
    under Available Tags.
-4. Run `/mhtags`, `/mhtags debug`, and `/mhtags help`; confirm debug reports
-   addon v12-3, WoW 12.1.0, and ElvUI 15.19 or newer.
+4. Run `/mhtags`, `/mhtags debug`, and `/mhtags help`; confirm `/mhtags` prints
+   memory and a CPU line, and debug reports the TOC `Version`, your client
+   version and build, and an ElvUI version at or above the TOC `X-Min-ElvUI`.
 5. Run `/mhtags test`, target a unit, and confirm the dashboard reports zero
    callback errors.
-6. Exercise the scenarios affected by the current change.
+6. Close the dashboard with Escape, then reopen it from the minimap Addon
+   Compartment entry.
+7. Exercise the scenarios affected by the current change.
 
 ## Test dashboard
 
@@ -66,6 +69,7 @@ precision, name length, and icon size.
   and healing:
   - `[mh-color-health-gradient][mh-health-current-percent]|r`
 - Confirm the power tag intentionally omits the percent sign.
+- `[mh-health-percent{1.5}]` renders with one decimal and raises no Lua error.
 
 ### Secret values
 
@@ -120,7 +124,8 @@ Test normal, rare, elite, rare elite, and boss units:
 - `[mh-classification-name-level-smart]`
 
 Confirm smart level tags hide only when both player and unit are confirmed at
-maximum level.
+maximum level. Units shown as "??" in Blizzard frames (bosses, "??" rares, much
+higher-level players) must show `??`, never `-1`.
 
 ### Names and raid groups
 
@@ -129,6 +134,8 @@ maximum level.
   - `[mh-name-caps-with-raid-group]`
   - `[mh-classification-name-level-raid-group]`
 - Confirm the displayed subgroup changes after moving a member between groups.
+- Confirm cross-realm members (names shown with a realm suffix in the raid
+  roster) also show their subgroup.
 
 ## Bug report template
 

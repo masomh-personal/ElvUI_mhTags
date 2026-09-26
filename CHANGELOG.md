@@ -9,6 +9,32 @@ Older releases used simple integer versions.
 
 ---
 
+## [Unreleased]
+
+Fixes cross-realm raid groups, "??" levels, and fractional decimal arguments; readies the addon for WoW 12.1.5; and makes the test dashboard reachable from the Addon Compartment.
+
+### Added
+
+- **Addon Compartment entry** — clicking ElvUI_mhTags in the minimap addon menu toggles the test dashboard.
+- **CPU readout** — `/mhtags` prints the addon's recent average CPU time per frame from Blizzard's addon profiler next to memory usage.
+- **Release version check** — `scripts/check.sh` fails when the TOC version, README badge, and latest CHANGELOG release disagree.
+
+### Changed
+
+- **WoW 12.1.5 readiness** — the TOC lists `Interface: 120100, 120105` so the addon loads on the 12.1.5 PTR without enabling out-of-date addons.
+- **Version reporting** — the addon version and minimum ElvUI version come from TOC metadata, and `/mhtags debug` shows the actual client version and build instead of a hard-coded patch.
+- **Test dashboard lifecycle** — the dashboard listens for tag events only while open, coalesces bursts into one timer-driven refresh instead of per-frame polling, and closes with Escape.
+- **Simplification** — removed an unreachable ElvUI load guard, redundant nil branches in health tags, and banner comments; color prefixes are built once at load; `[mh-status-noicon]` reuses the cached status text.
+
+### Fixed
+
+- **Cross-realm raid groups** — `[mh-name-caps-with-raid-group]` and `[mh-classification-name-level-raid-group]` now show the group for cross-realm raid members by looking up the unit's raid index instead of matching names (one lookup instead of up to 40).
+- **Unknown levels** — units with a "??" level that are not bosses (rares, high-level players) show `??` instead of `-1` in `[mh-diff-level]`, `[mh-diff-level-hide]`, `[mh-smartlevel]`, and combined level tags.
+- **Fractional decimal arguments** — percent tags such as `[mh-health-percent{1.5}]` round the argument down instead of raising a Lua error on every update.
+- **Tooltip ownership** — leaving a dashboard row hides the tooltip only when the dashboard still owns it.
+
+---
+
 ## [v12-3] - August 25, 2026
 
 v12-3 updates ElvUI_mhTags for WoW 12.1.0 after auditing the Blizzard and ElvUI APIs used by the addon; no runtime tag changes were required.

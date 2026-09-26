@@ -135,14 +135,29 @@ Decimal arguments are clamped to `0-3`.
 
 ## Commands
 
-- `/mhtags`: show addon memory usage
-- `/mhtags debug`: show addon, ElvUI, and target WoW version info
-- `/mhtags test`: toggle the in-game dashboard for dynamic registered tags
+- `/mhtags`: show addon memory usage and recent CPU time per frame
+- `/mhtags debug`: show addon, ElvUI, and WoW client versions
+- `/mhtags test`: toggle the in-game dashboard for dynamic registered tags (also available from the minimap Addon Compartment; Escape closes it)
 - `/mhtags help`: list commands
+
+## Runtime Design
+
+- **Load:** `core.lua` creates the shared `MHCT` namespace and reads version metadata from the TOC; `core/secret.lua` and `core/unit.lua` add secret-safe formatting and unit helpers; the `tags/` files register tags with ElvUI; `core/test.lua` defines the dashboard but builds nothing until it is opened.
+- **Runtime:** outside the dashboard, the addon has no `OnUpdate` handlers, timers, or event frames of its own. ElvUI calls each tag function when one of the tag's registered events fires for that unit frame.
+- **Dashboard:** only while it is open, it listens to the union of tag events and refreshes at most once every 0.25 seconds. Closing it unregisters every event.
 
 ## Development and Testing
 
-Use `/mhtags test` to inspect every dynamic registered tag against `player` and `target` in one scrollable dashboard. Deterministic, eventless color prefixes are omitted. Run `./scripts/check.sh` for StyLua, Luacheck, TOC, and whitespace validation. A repository-managed pre-push hook can run the same checks automatically. See [TESTING.md](TESTING.md) for setup, restricted-content scenarios, and the bug report template.
+Use `/mhtags test` to inspect every dynamic registered tag against `player` and `target` in one scrollable dashboard. Deterministic, eventless color prefixes are omitted. Run `./scripts/check.sh` for StyLua, Luacheck, TOC, release-version, and whitespace validation. A repository-managed pre-push hook can run the same checks automatically.
+
+Manual test steps:
+
+1. `/reload` with Lua errors enabled and confirm no errors.
+2. Run `/mhtags`, `/mhtags debug`, and `/mhtags help`.
+3. Open the dashboard from `/mhtags test` or the Addon Compartment, target a few unit types, and confirm zero callback errors.
+4. Run the scenarios in [TESTING.md](TESTING.md) that match your change.
+
+See [TESTING.md](TESTING.md) for setup, restricted-content scenarios, and the bug report template.
 
 ## Support
 
